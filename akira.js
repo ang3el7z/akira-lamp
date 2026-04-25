@@ -1113,9 +1113,22 @@
                     logo.loading = 'lazy';
                     logo.onload = function () {
                         if (card.getAttribute('data-akira-card-key') !== requestKey) return;
-                        titleNode.replaceWith(logo);
+                        titleNode.style.transition = 'opacity 0.18s ease';
+                        titleNode.style.opacity = '0';
+                        setTimeout(function () {
+                            if (card.getAttribute('data-akira-card-key') !== requestKey) return;
+                            titleNode.replaceWith(logo);
+                            logo.style.opacity = '0';
+                            logo.style.transition = 'opacity 0.28s ease';
+                            requestAnimationFrame(function () {
+                                requestAnimationFrame(function () { logo.style.opacity = '1'; });
+                            });
+                        }, 180);
                     };
-                    logo.onerror = function () { titleNode.style.display = ''; };
+                    logo.onerror = function () {
+                        titleNode.style.opacity = '';
+                        titleNode.style.transition = '';
+                    };
                     logo.src = url;
                 });
             }
@@ -1264,7 +1277,9 @@
                     '</div>';
                 state.hero = hero;
                 requestAnimationFrame(function () {
-                    hero.classList.remove('is-entering');
+                    requestAnimationFrame(function () {
+                        hero.classList.remove('is-entering');
+                    });
                 });
             }
 
@@ -1339,6 +1354,8 @@
 
                     titleNode.textContent = title;
                     titleNode.style.display = '';
+                    titleNode.style.opacity = '';
+                    titleNode.style.transition = '';
                     metaNode.textContent = meta.join(' • ');
                     descNode.textContent = clean(item.overview || '') || tr('full_notext', 'Description is missing');
                     var info = detailInfo(item, ready.details, card);
@@ -1366,16 +1383,29 @@
                     if (descTextNode) descTextNode.textContent = info.description;
 
                     logoNode.style.display = 'none';
+                    logoNode.style.opacity = '0';
+                    logoNode.style.transition = '';
                     logoNode.removeAttribute('src');
                     if (ready.logo && isOn(KEY.heroLogo, true)) {
                         logoNode.onload = function () {
                             if (requestId !== state.heroReq || state.heroTargetKey !== key) return;
-                            logoNode.style.display = 'block';
-                            titleNode.style.display = 'none';
+                            titleNode.style.transition = 'opacity 0.2s ease';
+                            titleNode.style.opacity = '0';
+                            setTimeout(function () {
+                                if (requestId !== state.heroReq || state.heroTargetKey !== key) return;
+                                titleNode.style.display = 'none';
+                                logoNode.style.display = 'block';
+                                logoNode.style.transition = 'opacity 0.35s ease';
+                                requestAnimationFrame(function () {
+                                    requestAnimationFrame(function () { logoNode.style.opacity = '1'; });
+                                });
+                            }, 200);
                         };
                         logoNode.onerror = function () {
                             logoNode.style.display = 'none';
                             titleNode.style.display = '';
+                            titleNode.style.opacity = '';
+                            titleNode.style.transition = '';
                         };
                         logoNode.src = ready.logo;
                     }
@@ -1534,56 +1564,83 @@
 
         function animateFullLogoSwap(node, img, key) {
             if (!node || !img) return;
-            var startHeight = 0;
-            try { startHeight = Math.ceil(node.getBoundingClientRect().height || 0); } catch (e) {}
+            if (node.classList.contains('is-swapping')) return;
             node.classList.add('is-swapping');
-            node.style.overflow = 'hidden';
-            if (startHeight) node.style.height = startHeight + 'px';
-            node.style.setProperty('transition', 'opacity .22s ease', 'important');
-            node.style.setProperty('opacity', '0', 'important');
+
+            var FADE_OUT = 270;
+            var MORPH    = 440;
+            var FADE_IN  = 380;
+
+            var startH = 0;
+            try { startH = Math.ceil(node.getBoundingClientRect().height || 0); } catch (e) {}
+
+            img.className = 'akira-full-logo';
+            img.style.opacity = '0';
+            img.style.display = 'block';
+
+            // 1. Fade out existing text
+            node.style.transition = 'opacity ' + (FADE_OUT / 1000) + 's ease';
+            node.style.opacity = '0';
 
             setTimeout(function () {
-                if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
+                if ((node.getAttribute('data-akira-movie-key') || '') !== key) {
+                    node.style.transition = '';
+                    node.style.opacity = '';
+                    node.classList.remove('is-swapping');
+                    return;
+                }
+
+                // 2. Swap content while invisible
                 node.innerHTML = '<div class="akira-full-logo-holder"></div>';
                 var holder = qs('.akira-full-logo-holder', node);
                 if (holder) holder.appendChild(img);
                 node.classList.remove('akira-full-title-pending');
-                node.classList.add('akira-full-title');
-                node.classList.add('is-ready');
+                node.classList.add('akira-full-title', 'is-ready');
                 node.setAttribute('data-akira-logo-src', img.src || '');
-                node.style.setProperty('opacity', '1', 'important');
-                node.style.setProperty('transition', 'height .42s cubic-bezier(.4,0,.2,1), opacity .26s ease', 'important');
+                node.style.transition = 'none';
+                node.style.opacity = '1';
 
-                requestAnimationFrame(function () {
-                    var targetHeight = 0;
-                    var previousHeight = node.style.height;
-                    node.style.height = 'auto';
-                    try { targetHeight = Math.ceil(node.getBoundingClientRect().height || 0); } catch (e) {}
-                    if (startHeight && targetHeight) {
-                        node.style.height = startHeight + 'px';
-                        requestAnimationFrame(function () {
-                            node.style.height = targetHeight + 'px';
-                            img.style.transition = 'opacity .36s ease';
-                            img.style.opacity = '1';
-                        });
-                    } else {
-                        node.style.height = previousHeight || '';
-                        img.style.transition = 'opacity .36s ease';
-                        img.style.opacity = '1';
-                    }
-                });
+                // 3. Measure and morph height
+                node.style.overflow = 'hidden';
+                node.style.boxSizing = 'border-box';
+                if (startH) node.style.height = startH + 'px';
+                void node.offsetHeight;
 
-                setTimeout(function () {
-                    if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
-                    node.classList.remove('is-swapping');
+                var targetH = 0;
+                try { node.style.height = 'auto'; targetH = Math.ceil(node.getBoundingClientRect().height || 0); } catch (e) {}
+
+                if (startH && targetH && Math.abs(startH - targetH) > 4) {
+                    node.style.height = startH + 'px';
+                    void node.offsetHeight;
+                    node.style.transition = 'height ' + (MORPH / 1000) + 's cubic-bezier(.4,0,.2,1)';
+                    requestAnimationFrame(function () { node.style.height = targetH + 'px'; });
+                } else {
                     node.style.height = '';
                     node.style.overflow = '';
-                    node.style.removeProperty('transition');
-                    node.style.removeProperty('opacity');
-                    img.style.opacity = '';
+                    node.style.boxSizing = '';
+                }
+
+                // 4. Fade in logo partway through morph
+                setTimeout(function () {
+                    if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
+                    img.style.transition = 'opacity ' + (FADE_IN / 1000) + 's ease';
+                    img.style.opacity = '1';
+                }, Math.max(0, MORPH - 140));
+
+                // 5. Cleanup
+                setTimeout(function () {
+                    if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
+                    node.style.height = '';
+                    node.style.overflow = '';
+                    node.style.boxSizing = '';
+                    node.style.transition = '';
+                    node.style.opacity = '';
                     img.style.transition = '';
-                }, 900);
-            }, 230);
+                    img.style.opacity = '';
+                    node.classList.remove('is-swapping');
+                }, MORPH + FADE_IN + 80);
+
+            }, FADE_OUT);
         }
 
         function applyFullLogo(movie) {
@@ -1634,27 +1691,42 @@
             var root = qs('.activity--active .full-start-new') || qs('.activity--active .full-start');
             if (!root) return;
             var main = qs('.full-start-new__buttons, .full-start__buttons', root);
+            if (!main) return;
             var container = qs('.buttons--container', root);
-            if (!main || !container) return;
 
-            var anchor = qs('.button--play, .view--online, .full-start__button.selector', main);
             var moved = [];
-            ['.view--online', '.view--torrent', '.view--trailer', '.button--book', '.button--reaction', '.button--subscribe', '.button--options'].forEach(function (selector) {
-                qsa(selector, container).forEach(function (button) {
-                    if (main.contains(button)) return;
-                    if (moved.indexOf(button) > -1) return;
-                    moved.push(button);
-                    button.classList.remove('hide');
-                    button.classList.add('akira-moved-button');
-                    if (!button.classList.contains('selector')) button.classList.add('selector');
-                    button.setAttribute('data-selector', 'true');
-                    if (anchor && anchor.nextSibling) main.insertBefore(button, anchor.nextSibling);
-                    else if (anchor) main.appendChild(button);
-                    else main.appendChild(button);
-                    anchor = button;
+            var anchor = null;
+            var allSelectors = ['.button--play', '.view--online', '.view--torrent', '.view--trailer', '.button--book', '.button--reaction', '.button--subscribe', '.button--options'];
+
+            function doMove(button, isPrimary) {
+                if (moved.indexOf(button) > -1) return;
+                if (button.parentNode === main) { anchor = button; return; }
+                moved.push(button);
+                button.classList.remove('hide');
+                if (!button.classList.contains('selector')) button.classList.add('selector');
+                button.setAttribute('data-selector', 'true');
+                if (!isPrimary) button.classList.add('akira-moved-button');
+                if (anchor && anchor.parentNode === main && anchor.nextSibling) main.insertBefore(button, anchor.nextSibling);
+                else if (anchor && anchor.parentNode === main) main.appendChild(button);
+                else main.insertBefore(button, main.firstChild);
+                anchor = button;
+            }
+
+            if (container) {
+                allSelectors.forEach(function (sel) {
+                    qsa(sel, container).forEach(function (btn) {
+                        doMove(btn, sel === '.button--play' || sel === '.view--online');
+                    });
                 });
+                container.classList.add('hide');
+            }
+
+            qsa('.button--play', main).forEach(function (btn) {
+                if (btn.parentNode !== main) return;
+                var hasText = (btn.textContent || '').trim();
+                var hasIcon = qs('svg, img', btn);
+                if (!hasText && !hasIcon) btn.style.display = 'none';
             });
-            container.classList.add('hide');
         }
 
         function triggerEvent(node, name) {
@@ -2087,7 +2159,7 @@
                 'body.' + cfg.bodyClass + ' .akira-topbar__icon svg { width: 1.08em; height: 1.08em; }',
                 'body.' + cfg.bodyClass + ' .akira-topbar__clock { height: 2.18em; min-width: 4.1em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .72em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 800; }',
                 'body.' + cfg.bodyClass + ' .akira-topbar__item.focus, body.' + cfg.bodyClass + ' .akira-topbar__item.hover, body.' + cfg.bodyClass + ' .akira-topbar__item.is-active, body.' + cfg.bodyClass + ' .akira-topbar__clock.focus, body.' + cfg.bodyClass + ' .akira-topbar__clock.hover { background: rgba(255,255,255,.15); color: #fff; transform: translateY(-1px); }',
-                'body.' + cfg.bodyClass + ' .akira-hero { position: relative; height: clamp(300px, 38vh, 540px); margin: .6em 1.1em 1.05em; border-radius: 10px; overflow: hidden; background: #111; box-shadow: 0 18px 54px rgba(0,0,0,.38); isolation: isolate; }',
+                'body.' + cfg.bodyClass + ' .akira-hero { position: relative; height: clamp(300px, 42vh, 640px); margin: .6em 1.1em 1.05em; border-radius: 10px; overflow: hidden; background: #111; box-shadow: 0 18px 54px rgba(0,0,0,.38); isolation: isolate; }',
                 'body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .akira-hero { margin-top: 4.05em; }',
                 'body.' + cfg.bodyClass + ' .akira-hero__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.01); opacity: .86; }',
                 'body.' + cfg.bodyClass + ' .akira-hero__shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.95) 0%, rgba(0,0,0,.72) 42%, rgba(0,0,0,.12) 100%), linear-gradient(0deg, rgba(0,0,0,.84) 0%, rgba(0,0,0,0) 48%); }',
@@ -2134,7 +2206,9 @@
                 'body.' + cfg.bodyClass + '[' + attrPerf + '="economy"] .card__view, body.' + cfg.bodyClass + '[' + attrPerf + '="economy"] .akira-topbar__items, body.' + cfg.bodyClass + '[' + attrPerf + '="economy"] .akira-topbar__right { transition-duration: .08s !important; box-shadow: none !important; }',
                 '@keyframes akira-desc-scroll { 0%, 28% { transform: translateY(0); } 100% { transform: translateY(calc(-100% + 3.05em)); } }',
                 '@media (max-width: 900px) { body.' + cfg.bodyClass + ' .akira-topbar__items { display: none !important; } body.' + cfg.bodyClass + ' .akira-hero { height: clamp(280px, 42vh, 460px); margin-left: .65em; margin-right: .65em; } body.' + cfg.bodyClass + ' .akira-hero__content { width: 100%; padding: 1.05em; } body.' + cfg.bodyClass + ' .akira-hero__desc { -webkit-line-clamp: 2; } }',
-                '@media (max-width: 560px) { body.' + cfg.bodyClass + ' .akira-topbar__brand { font-size: .78em; padding: 0 .7em; } body.' + cfg.bodyClass + ' .akira-topbar { left: .65em; right: .65em; } body.' + cfg.bodyClass + ' .akira-hero__title { font-size: 2em; } }'
+                '@media (max-width: 560px) { body.' + cfg.bodyClass + ' .akira-topbar__brand { font-size: .78em; padding: 0 .7em; } body.' + cfg.bodyClass + ' .akira-topbar { left: .65em; right: .65em; } body.' + cfg.bodyClass + ' .akira-hero__title { font-size: 2em; } }',
+                '@media (min-width: 2000px) { body.' + cfg.bodyClass + ' .akira-hero { height: clamp(400px, 44vh, 760px); } body.' + cfg.bodyClass + ' .akira-hero__content { width: min(72em, 66%); } body.' + cfg.bodyClass + ' .akira-hero__logo { max-height: 11em; } body.' + cfg.bodyClass + ' .akira-hero__title { font-size: clamp(2.4em, 3.8vw, 5em); } }',
+                '@media (min-width: 2560px) { body.' + cfg.bodyClass + ' .akira-hero { height: clamp(480px, 46vh, 900px); } body.' + cfg.bodyClass + ' .akira-hero__logo { max-height: 13em; } body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid { grid-template-columns: repeat(auto-fill, minmax(22em, 1fr)) !important; } }'
             ].join('\n');
             css += '\n' + [
                 'body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__body { position: relative !important; z-index: 48 !important; min-height: 0 !important; height: 0 !important; padding: 0 !important; overflow: visible !important; }',
@@ -2147,10 +2221,10 @@
                 'body.' + cfg.bodyClass + ' .akira-topbar__items { max-width: calc(100vw - var(--akira-brand-w, 5.2em) - 17em) !important; overflow: hidden !important; }',
                 'body.' + cfg.bodyClass + ' .akira-topbar__brand { display: none !important; }',
                 'body.' + cfg.bodyClass + ' .akira-home-host { position: relative !important; overflow: visible !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero { display: block !important; width: calc(100% - 2.2em) !important; flex: 0 0 auto !important; clear: both !important; z-index: 6 !important; margin: 4.25em 1.1em 1.45em !important; contain: layout paint !important; }',
+                'body.' + cfg.bodyClass + ' .akira-hero { display: block !important; width: calc(100% - 2.2em) !important; flex: 0 0 auto !important; clear: both !important; z-index: 6 !important; margin: 4.25em 1.1em 1.45em !important; }',
                 'body.' + cfg.bodyClass + '[' + attrTopbar + '="off"] .akira-hero { margin-top: .85em !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero.is-entering { max-height: 0 !important; opacity: 0 !important; margin-top: 0 !important; margin-bottom: 0 !important; transform: translateY(-.8em) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero { max-height: clamp(300px, 38vh, 540px) !important; transition: max-height .44s cubic-bezier(.22,.61,.36,1), margin .44s cubic-bezier(.22,.61,.36,1), opacity .3s ease, transform .36s ease !important; }',
+                'body.' + cfg.bodyClass + ' .akira-hero.is-entering { max-height: 0 !important; opacity: 0 !important; margin-top: 0 !important; margin-bottom: 0 !important; overflow: hidden !important; }',
+                'body.' + cfg.bodyClass + ' .akira-hero { max-height: clamp(300px, 42vh, 640px) !important; transition: max-height .58s cubic-bezier(.22,.61,.36,1), margin .58s cubic-bezier(.22,.61,.36,1), opacity .38s ease .08s !important; }',
                 'body.' + cfg.bodyClass + ' .akira-hero + .items-line, body.' + cfg.bodyClass + ' .akira-hero + .scroll__body, body.' + cfg.bodyClass + ' .akira-hero ~ .items-line, body.' + cfg.bodyClass + ' .akira-hero ~ .scroll__body { position: relative !important; z-index: 1 !important; clear: both !important; }',
                 'body.' + cfg.bodyClass + ' .items-line__head, body.' + cfg.bodyClass + ' .items-line__body, body.' + cfg.bodyClass + ' .items-cards { position: relative !important; z-index: 1 !important; }',
                 'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(var(--akira-card-w), 1fr)) !important; gap: 1.05em .78em !important; align-items: start !important; padding-left: 1.1em !important; padding-right: 1.1em !important; }',
@@ -2165,7 +2239,8 @@
                 'body.' + cfg.bodyClass + ' .full-start-new__buttons .button--play, body.' + cfg.bodyClass + ' .full-start__buttons .button--play { background: #fff !important; color: #050505 !important; border-color: #fff !important; }',
                 'body.' + cfg.bodyClass + ' .full-start-new__buttons .button--play, body.' + cfg.bodyClass + ' .full-start__buttons .button--play, body.' + cfg.bodyClass + ' .full-start-new__buttons .view--online, body.' + cfg.bodyClass + ' .full-start__buttons .view--online { order: 0 !important; }',
                 'body.' + cfg.bodyClass + ' .full-start-new__buttons .akira-moved-button, body.' + cfg.bodyClass + ' .full-start__buttons .akira-moved-button { order: 1 !important; position: relative !important; z-index: 3 !important; }',
-                'body.' + cfg.bodyClass + ' .buttons--container { display: none !important; }',
+                'body.' + cfg.bodyClass + ' .buttons--container.hide { display: none !important; }',
+                'body.' + cfg.bodyClass + ' .buttons--container:not(.hide) { display: flex !important; flex-wrap: wrap !important; gap: .62em !important; align-items: center !important; margin-top: .42em !important; }',
                 'body.' + cfg.bodyClass + '[' + attrTopbarAlign + '="center"] .akira-topbar { left: 0 !important; right: 0 !important; top: .54em !important; z-index: 49 !important; pointer-events: none !important; }',
                 'body.' + cfg.bodyClass + '[' + attrTopbarAlign + '="center"] .akira-topbar__inner { position: relative !important; width: 100% !important; justify-content: center !important; pointer-events: none !important; }',
                 'body.' + cfg.bodyClass + '[' + attrTopbarAlign + '="center"] .akira-topbar__items { position: absolute !important; left: 50% !important; top: 0 !important; transform: translateX(-50%) !important; max-width: calc(100vw - 23em) !important; pointer-events: auto !important; }',
@@ -2186,8 +2261,9 @@
                 'body.' + cfg.bodyClass + ' .akira-hero__desc { display: block !important; max-height: 3.05em !important; min-height: 3.05em !important; overflow: hidden !important; -webkit-line-clamp: unset !important; -webkit-box-orient: unset !important; }',
                 'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line { margin-bottom: 2.25em !important; overflow: visible !important; }',
                 'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line__body { overflow: visible !important; padding: .45em 0 1.1em !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line__body .card { flex: 0 0 var(--akira-card-w) !important; width: var(--akira-card-w) !important; min-width: var(--akira-card-w) !important; height: var(--akira-card-h) !important; min-height: var(--akira-card-h) !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card--small, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card--wide, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card.collection-card { width: var(--akira-card-w) !important; min-width: var(--akira-card-w) !important; height: var(--akira-card-h) !important; min-height: var(--akira-card-h) !important; }',
+                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line__body .card:not(.card-episode) { flex: 0 0 var(--akira-card-w) !important; width: var(--akira-card-w) !important; min-width: var(--akira-card-w) !important; height: var(--akira-card-h) !important; min-height: var(--akira-card-h) !important; }',
+                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card--small:not(.card-episode) { width: var(--akira-card-w) !important; min-width: var(--akira-card-w) !important; height: var(--akira-card-h) !important; min-height: var(--akira-card-h) !important; }',
+                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card-episode { flex: none !important; width: auto !important; min-width: 0 !important; height: auto !important; min-height: 0 !important; }',
                 'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__img img, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__img picture { width: 100% !important; height: 100% !important; object-fit: cover !important; }',
                 'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-cards { gap: 1.12em !important; padding: .2em 1.3em .9em !important; align-items: flex-start !important; }',
                 'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-cards .card, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line .card { margin-right: .42em !important; margin-bottom: 1.45em !important; }',
@@ -2209,7 +2285,7 @@
                 'body.' + cfg.bodyClass + ' .akira-episode-title { max-width: 82% !important; color: #fff !important; font-size: .9em !important; line-height: 1.15 !important; font-weight: 900 !important; text-shadow: 0 6px 16px rgba(0,0,0,.8) !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; }',
                 'body.' + cfg.bodyClass + ' .akira-episode-logo { display: block !important; max-width: 78% !important; max-height: 3.1em !important; object-fit: contain !important; object-position: left bottom !important; filter: drop-shadow(0 5px 12px rgba(0,0,0,.78)) !important; }',
                 'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(18.5em, 1fr)) !important; grid-auto-rows: var(--akira-card-h) !important; gap: 2.15em 1.18em !important; align-items: start !important; padding: .8em 1.3em 2.2em !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid .card { width: 100% !important; min-width: 0 !important; min-height: var(--akira-card-h) !important; height: var(--akira-card-h) !important; margin: 0 !important; }',
+                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid .card:not(.card-episode) { width: 100% !important; min-width: 0 !important; min-height: var(--akira-card-h) !important; height: var(--akira-card-h) !important; margin: 0 !important; }',
                 'body.' + cfg.bodyClass + ' .full-start-new, body.' + cfg.bodyClass + ' .full-start { position: relative !important; overflow: hidden !important; min-height: 80vh !important; margin: 0 !important; padding: 0 !important; background: transparent !important; }',
                 'body.' + cfg.bodyClass + ' .full-start-new .full-start-new__background, body.' + cfg.bodyClass + ' .full-start-new .full-start__background, body.' + cfg.bodyClass + ' .full-start__background { position: absolute !important; inset: -6em 0 auto 0 !important; width: 100% !important; height: calc(100% + 6em) !important; margin: 0 !important; padding: 0 !important; mask-image: none !important; -webkit-mask-image: none !important; }',
                 'body.' + cfg.bodyClass + ' .full-start-new .full-start-new__background img, body.' + cfg.bodyClass + ' .full-start-new .full-start__background img, body.' + cfg.bodyClass + ' .full-start__background img { width: 100% !important; height: 100% !important; object-fit: cover !important; filter: none !important; }',
@@ -2257,6 +2333,8 @@
                 'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button.focus *, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button.focus *, body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button:hover *, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button:hover * { color: #fff !important; fill: #fff !important; }',
                 '@media (max-width: 768px) { body.' + cfg.bodyClass + ' .full-start-new__background, body.' + cfg.bodyClass + ' .full-start__background { display: none !important; } body.' + cfg.bodyClass + ' .full-start-new, body.' + cfg.bodyClass + ' .full-start { background-image: var(--akira-full-mobile-bg) !important; background-size: cover !important; background-position: center top !important; background-repeat: no-repeat !important; } body.' + cfg.bodyClass + ' .full-start-new__body, body.' + cfg.bodyClass + ' .full-start__body { min-height: 76vh !important; padding-left: 4% !important; padding-right: 4% !important; } body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: 92vw !important; max-width: 92vw !important; } body.' + cfg.bodyClass + ' .akira-full-logo { max-height: 130px !important; } }',
                 '@media (min-width: 1920px) { body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: min(980px, 50vw) !important; max-width: min(980px, 50vw) !important; } body.' + cfg.bodyClass + ' .akira-full-logo { max-height: clamp(170px, 13vw, 310px) !important; } }',
+                '@media (min-width: 2000px) { body.' + cfg.bodyClass + ' .akira-hero { max-height: clamp(400px, 44vh, 760px) !important; } body.' + cfg.bodyClass + ' .akira-hero__content { width: min(72em, 66%) !important; } body.' + cfg.bodyClass + ' .akira-hero__logo { max-height: 11em !important; } body.' + cfg.bodyClass + ' .akira-hero__title { font-size: clamp(2.4em, 3.8vw, 5em) !important; } body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: min(1100px, 52vw) !important; max-width: min(1100px, 52vw) !important; } }',
+                '@media (min-width: 2560px) { body.' + cfg.bodyClass + ' .akira-hero { max-height: clamp(480px, 46vh, 900px) !important; } body.' + cfg.bodyClass + ' .akira-hero__logo { max-height: 13em !important; } body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid { grid-template-columns: repeat(auto-fill, minmax(22em, 1fr)) !important; } body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: min(1280px, 54vw) !important; max-width: min(1280px, 54vw) !important; } body.' + cfg.bodyClass + ' .akira-full-logo { max-height: clamp(200px, 14vw, 360px) !important; } }',
                 '@media (max-width: 900px) { body.' + cfg.bodyClass + ' .akira-topbar { left: .75em !important; right: .75em !important; top: 3.65em !important; } body.' + cfg.bodyClass + ' .akira-topbar__right { margin-left: auto !important; } body.' + cfg.bodyClass + ' .head__menu-icon.akira-head-brand { left: .75em !important; top: .55em !important; } body.' + cfg.bodyClass + ' .akira-hero { width: calc(100% - 1.3em) !important; margin: 6.65em .65em 1.1em !important; } }'
             ].join('\n');
             if (style.textContent !== css) style.textContent = css;
