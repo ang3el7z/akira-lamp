@@ -225,6 +225,7 @@
             heroReq: 0,
             fullMovie: null,
             fullMovieKey: '',
+            fullFogTick: false,
             lastCard: null
         };
 
@@ -1490,8 +1491,99 @@
             node.classList.remove('akira-full-title');
             node.classList.remove('akira-full-title-pending');
             node.classList.remove('is-ready');
+            node.classList.remove('is-swapping');
             node.removeAttribute('data-akira-movie-key');
+            node.removeAttribute('data-akira-logo-src');
+            node.style.height = '';
+            node.style.overflow = '';
+            node.style.removeProperty('transition');
+            node.style.removeProperty('opacity');
             node.textContent = original;
+        }
+
+        function activeFullRoot() {
+            return qs('.activity--active .full-start-new') || qs('.activity--active .full-start');
+        }
+
+        function syncFullBackdrop(movie) {
+            var root = activeFullRoot();
+            if (!root || !movie) return;
+            var bg = backdrop(movie, 'original') || backdrop(movie, 'w1280');
+            if (!bg) {
+                var fallback = qs('.full-start-new__left img, .full-start__left img, .full-start-new__poster img, .full-start__poster img', root);
+                if (fallback) bg = fallback.getAttribute('src') || '';
+            }
+            if (bg) root.style.setProperty('--akira-full-mobile-bg', 'url(' + bg + ')');
+        }
+
+        function updateFullFog(target) {
+            if (!pluginEnabled()) return;
+            var scroll = target && target.classList && target.classList.contains('scroll__body') ? target : null;
+            if (!scroll && target && target.closest) scroll = target.closest('.scroll__body');
+            var root = scroll && scroll.querySelector ? (scroll.querySelector('.full-start-new') || scroll.querySelector('.full-start')) : activeFullRoot();
+            if (!root) return;
+            var top = scroll ? scroll.scrollTop : 0;
+            var opacity = Math.min(0.94, 0.58 + Math.max(0, top) / 520);
+            root.style.setProperty('--akira-full-fog', String(opacity));
+        }
+
+        function prepareFullLogoImage(img) {
+            img.className = 'akira-full-logo';
+            img.style.opacity = '0';
+        }
+
+        function animateFullLogoSwap(node, img, key) {
+            if (!node || !img) return;
+            var startHeight = 0;
+            try { startHeight = Math.ceil(node.getBoundingClientRect().height || 0); } catch (e) {}
+            node.classList.add('is-swapping');
+            node.style.overflow = 'hidden';
+            if (startHeight) node.style.height = startHeight + 'px';
+            node.style.setProperty('transition', 'opacity .22s ease', 'important');
+            node.style.setProperty('opacity', '0', 'important');
+
+            setTimeout(function () {
+                if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
+                node.innerHTML = '<div class="akira-full-logo-holder"></div>';
+                var holder = qs('.akira-full-logo-holder', node);
+                if (holder) holder.appendChild(img);
+                node.classList.remove('akira-full-title-pending');
+                node.classList.add('akira-full-title');
+                node.classList.add('is-ready');
+                node.setAttribute('data-akira-logo-src', img.src || '');
+                node.style.setProperty('opacity', '1', 'important');
+                node.style.setProperty('transition', 'height .42s cubic-bezier(.4,0,.2,1), opacity .26s ease', 'important');
+
+                requestAnimationFrame(function () {
+                    var targetHeight = 0;
+                    var previousHeight = node.style.height;
+                    node.style.height = 'auto';
+                    try { targetHeight = Math.ceil(node.getBoundingClientRect().height || 0); } catch (e) {}
+                    if (startHeight && targetHeight) {
+                        node.style.height = startHeight + 'px';
+                        requestAnimationFrame(function () {
+                            node.style.height = targetHeight + 'px';
+                            img.style.transition = 'opacity .36s ease';
+                            img.style.opacity = '1';
+                        });
+                    } else {
+                        node.style.height = previousHeight || '';
+                        img.style.transition = 'opacity .36s ease';
+                        img.style.opacity = '1';
+                    }
+                });
+
+                setTimeout(function () {
+                    if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
+                    node.classList.remove('is-swapping');
+                    node.style.height = '';
+                    node.style.overflow = '';
+                    node.style.removeProperty('transition');
+                    node.style.removeProperty('opacity');
+                    img.style.opacity = '';
+                    img.style.transition = '';
+                }, 900);
+            }, 230);
         }
 
         function applyFullLogo(movie) {
@@ -1502,6 +1594,7 @@
                 return;
             }
             if (!movie) movie = state.fullMovie;
+            syncFullBackdrop(movie);
             var fallbackTitle = titles[0].getAttribute('data-akira-title') || titles[0].textContent;
             var title = movieTitle(movie, fallbackTitle);
             var key = movieKey(movie) || title;
@@ -1521,16 +1614,12 @@
                     if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
                     if (node.classList.contains('akira-full-title') && qs('.akira-full-logo', node)) return;
                     var img = new Image();
-                    img.className = 'akira-full-logo';
                     img.alt = title || '';
+                    prepareFullLogoImage(img);
                     img.onload = function () {
                         if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
-                        node.innerHTML = '<div class="akira-full-logo-holder"></div>';
-                        var holder = qs('.akira-full-logo-holder', node);
-                        if (holder) holder.appendChild(img);
-                        node.classList.remove('akira-full-title-pending');
-                        node.classList.add('akira-full-title');
-                        node.classList.add('is-ready');
+                        if (node.getAttribute('data-akira-logo-src') === img.src && qs('.akira-full-logo', node)) return;
+                        animateFullLogoSwap(node, img, key);
                     };
                     img.onerror = function () {
                         restoreFullTitle(node);
@@ -2140,6 +2229,34 @@
                 'body.' + cfg.bodyClass + ' .full-start-new__buttons, body.' + cfg.bodyClass + ' .full-start__buttons { display: flex !important; flex-wrap: wrap !important; gap: .62em !important; align-items: center !important; margin-top: .42em !important; }',
                 'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button, body.' + cfg.bodyClass + ' .full-start-new__button { min-height: 2.76em !important; padding: 0 1.02em !important; border-radius: 8px !important; border: 1px solid rgba(255,255,255,.13) !important; background: rgba(120,120,120,.2) !important; color: rgba(255,255,255,.86) !important; box-shadow: 0 4px 16px rgba(0,0,0,.3) !important; backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important; transform: none !important; }',
                 'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button.focus, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button.focus, body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button:hover, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button:hover { background: linear-gradient(92deg, ' + p.accent + ', ' + p.accent2 + ') !important; color: #fff !important; border-color: rgba(255,255,255,.28) !important; box-shadow: 0 0 20px ' + p.soft + ', 0 8px 28px rgba(0,0,0,.42) !important; transform: scale(1.035) !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new, body.' + cfg.bodyClass + ' .full-start { min-height: clamp(560px, 82vh, 920px) !important; isolation: isolate !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new .full-start-new__background, body.' + cfg.bodyClass + ' .full-start-new .full-start__background, body.' + cfg.bodyClass + ' .full-start__background { top: -6em !important; inset: -6em 0 auto 0 !important; height: calc(100% + 6em) !important; opacity: .98 !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new .full-start-new__background img, body.' + cfg.bodyClass + ' .full-start-new .full-start__background img, body.' + cfg.bodyClass + ' .full-start__background img { transform: scale(1.006) !important; filter: saturate(1.02) contrast(1.03) brightness(.92) !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new::before, body.' + cfg.bodyClass + ' .full-start::before { inset: -6em 0 0 0 !important; height: calc(100% + 6em) !important; background: linear-gradient(to top, ' + p.bg + ' 0%, rgba(7,7,7,.86) 28%, rgba(7,7,7,.28) 64%, rgba(7,7,7,0) 88%), linear-gradient(90deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.35) 36%, rgba(0,0,0,.04) 78%) !important; opacity: var(--akira-full-fog, .58) !important; transition: opacity .12s linear !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__body, body.' + cfg.bodyClass + ' .full-start__body { min-height: clamp(560px, 82vh, 920px) !important; padding: clamp(5.8em, 9vh, 8em) 5% clamp(2.1em, 4.6vh, 3.6em) !important; align-items: flex-end !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: min(650px, 48vw) !important; max-width: min(650px, 48vw) !important; padding: 0 !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__title, body.' + cfg.bodyClass + ' .full-start__title { font-size: clamp(2.05em, 3.7vw, 4.2em) !important; font-weight: 850 !important; line-height: 1.06 !important; margin: 0 0 .24em !important; text-shadow: 0 2px 10px rgba(0,0,0,.70), 0 6px 24px rgba(0,0,0,.82) !important; }',
+                'body.' + cfg.bodyClass + ' .akira-full-title { min-height: clamp(110px, 13vw, 230px) !important; }',
+                'body.' + cfg.bodyClass + ' .akira-full-title.is-swapping { opacity: 1 !important; }',
+                'body.' + cfg.bodyClass + ' .akira-full-title-pending { opacity: .58 !important; transform: translateY(.08em) !important; }',
+                'body.' + cfg.bodyClass + ' .akira-full-logo-holder { width: min(92vw, 820px) !important; max-width: 100% !important; min-height: 0 !important; display: inline-flex !important; align-items: flex-end !important; }',
+                'body.' + cfg.bodyClass + ' .akira-full-logo { width: auto !important; max-width: 100% !important; max-height: clamp(120px, 15vw, 240px) !important; object-fit: contain !important; object-position: left bottom !important; filter: none !important; background: none !important; box-shadow: none !important; padding-bottom: .08em !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__head, body.' + cfg.bodyClass + ' .full-start__head { order: -2 !important; font-size: .86em !important; font-weight: 650 !important; color: rgba(255,255,255,.82) !important; margin: 0 0 .46em !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__tagline, body.' + cfg.bodyClass + ' .full-start__tagline, body.' + cfg.bodyClass + ' .full-start__title-original { font-size: .88em !important; font-weight: 550 !important; font-style: italic !important; line-height: 1.32 !important; color: rgba(255,255,255,.68) !important; margin: 0 0 .34em !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__rate-line, body.' + cfg.bodyClass + ' .full-start__rate-line { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: .58em !important; margin: .16em 0 .34em !important; font-size: .84em !important; color: rgba(255,255,255,.86) !important; }',
+                'body.' + cfg.bodyClass + ' .full-start__rate, body.' + cfg.bodyClass + ' .full-start-new__rate { display: inline-flex !important; align-items: baseline !important; gap: .3em !important; padding: 0 !important; border: 0 !important; background: transparent !important; color: rgba(255,255,255,.9) !important; box-shadow: none !important; }',
+                'body.' + cfg.bodyClass + ' .full-start__rate > div:first-child, body.' + cfg.bodyClass + ' .full-start-new__rate > div:first-child { font-size: 1.18em !important; font-weight: 850 !important; color: #fff !important; }',
+                'body.' + cfg.bodyClass + ' .full-start__rate .source--name, body.' + cfg.bodyClass + ' .full-start-new__rate .source--name { font-size: .78em !important; font-weight: 750 !important; color: rgba(255,255,255,.72) !important; text-transform: uppercase !important; }',
+                'body.' + cfg.bodyClass + ' .full-start__pg, body.' + cfg.bodyClass + ' .full-start-new__pg { min-width: 2.2em !important; height: 1.72em !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 0 .35em !important; border: 1px solid rgba(255,255,255,.62) !important; background: transparent !important; color: #fff !important; border-radius: 0 !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__details, body.' + cfg.bodyClass + ' .full-start__details { max-width: 100% !important; margin: 0 0 .34em !important; font-size: .84em !important; font-weight: 560 !important; color: rgba(255,255,255,.76) !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__text, body.' + cfg.bodyClass + ' .full-start__text, body.' + cfg.bodyClass + ' .full-start-new__description, body.' + cfg.bodyClass + ' .full-start__description { max-width: 540px !important; margin: .08em 0 .8em !important; font-size: .88em !important; line-height: 1.42 !important; color: rgba(255,255,255,.78) !important; -webkit-line-clamp: 4 !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__buttons, body.' + cfg.bodyClass + ' .full-start__buttons { gap: .68em !important; margin-top: .22em !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button, body.' + cfg.bodyClass + ' .full-start-new__button { min-height: 2.8em !important; padding: 0 1.08em !important; border-radius: 8px !important; border: 1px solid rgba(255,255,255,.11) !important; background: rgba(118,118,118,.20) !important; color: rgba(255,255,255,.84) !important; text-shadow: 0 2px 4px rgba(0,0,0,.5) !important; box-shadow: 0 4px 16px rgba(0,0,0,.30) !important; transition: background .3s ease, transform .2s ease, box-shadow .3s ease, border-color .3s ease !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__buttons .button--play, body.' + cfg.bodyClass + ' .full-start__buttons .button--play { background: rgba(255,255,255,.94) !important; color: #050505 !important; border-color: rgba(255,255,255,.82) !important; text-shadow: none !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button.focus, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button.focus, body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button:hover, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button:hover { background: linear-gradient(92deg, ' + p.accent + ', ' + p.accent2 + ') !important; color: #fff !important; border-color: rgba(255,255,255,.30) !important; box-shadow: 0 0 20px ' + p.soft + ', 0 8px 28px rgba(0,0,0,.40) !important; transform: scale(1.04) !important; }',
+                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button.focus *, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button.focus *, body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button:hover *, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button:hover * { color: #fff !important; fill: #fff !important; }',
+                '@media (max-width: 768px) { body.' + cfg.bodyClass + ' .full-start-new__background, body.' + cfg.bodyClass + ' .full-start__background { display: none !important; } body.' + cfg.bodyClass + ' .full-start-new, body.' + cfg.bodyClass + ' .full-start { background-image: var(--akira-full-mobile-bg) !important; background-size: cover !important; background-position: center top !important; background-repeat: no-repeat !important; } body.' + cfg.bodyClass + ' .full-start-new__body, body.' + cfg.bodyClass + ' .full-start__body { min-height: 76vh !important; padding-left: 4% !important; padding-right: 4% !important; } body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: 92vw !important; max-width: 92vw !important; } body.' + cfg.bodyClass + ' .akira-full-logo { max-height: 130px !important; } }',
+                '@media (min-width: 1920px) { body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: min(980px, 50vw) !important; max-width: min(980px, 50vw) !important; } body.' + cfg.bodyClass + ' .akira-full-logo { max-height: clamp(170px, 13vw, 310px) !important; } }',
                 '@media (max-width: 900px) { body.' + cfg.bodyClass + ' .akira-topbar { left: .75em !important; right: .75em !important; top: 3.65em !important; } body.' + cfg.bodyClass + ' .akira-topbar__right { margin-left: auto !important; } body.' + cfg.bodyClass + ' .head__menu-icon.akira-head-brand { left: .75em !important; top: .55em !important; } body.' + cfg.bodyClass + ' .akira-hero { width: calc(100% - 1.3em) !important; margin: 6.65em .65em 1.1em !important; } }'
             ].join('\n');
             if (style.textContent !== css) style.textContent = css;
@@ -2565,6 +2682,16 @@
                 }
             }, true);
 
+            document.addEventListener('scroll', function (event) {
+                if (state.fullFogTick) return;
+                state.fullFogTick = true;
+                var target = event.target;
+                requestAnimationFrame(function () {
+                    state.fullFogTick = false;
+                    updateFullFog(target);
+                });
+            }, true);
+
             window.addEventListener('resize', function () { syncBodyState(); schedulePatch(true); });
             window.addEventListener('orientationchange', function () { syncBodyState(); schedulePatch(true); });
             try {
@@ -2583,6 +2710,7 @@
             patchTopbar();
             processCards(document.body);
             updateHero();
+            updateFullFog();
             applyFullLogo(state.fullMovie);
             moveSplitButtons();
             startHeroLoop();
