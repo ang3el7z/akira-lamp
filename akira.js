@@ -797,7 +797,6 @@
         icon.setAttribute('data-selector', 'true');
         icon.setAttribute('tabindex', '0');
         icon.innerHTML = '<span>' + escapeHtml(brandName()) + '</span>';
-        bindAction(icon, function () { openAction('main'); });
         requestAnimationFrame(function () {
             try {
                 var width = Math.ceil(icon.getBoundingClientRect().width || 0);
@@ -1705,6 +1704,7 @@
             + 'body.' + CFG.bodyClass + '[data-akira-theme="on"]{background-color:var(--akira-bg)!important;color:var(--akira-text)!important;font-family:var(--akira-font)!important;}\n'
             + 'body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__body,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__wrapper{background:transparent!important;box-shadow:none!important;overflow:visible!important;}\n'
             + 'body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__title,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__time,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__split,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__logo,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .open--search,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__settings{display:none!important;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__body{position:relative!important;z-index:48!important;min-height:0!important;height:0!important;padding:0!important;overflow:visible!important;}\n'
             + 'body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__history,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__source,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__markers,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__backward,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .settings-icon-holder,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__action,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__button{display:none!important;}\n'
             + 'body.' + CFG.bodyClass + ' .head__menu-icon.akira-head-brand{position:absolute!important;left:1.05em!important;top:.54em!important;z-index:60!important;max-width:min(30vw,22em)!important;min-width:4.4em!important;height:2.62em!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0 .95em!important;border-radius:8px!important;background:linear-gradient(92deg,var(--akira-accent),var(--akira-accent-2))!important;color:' + p.focusText + '!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 10px 28px rgba(' + p.rgb + ',.22)!important;overflow:hidden!important;}\n'
             + 'body.' + CFG.bodyClass + ' .head__menu-icon.akira-head-brand span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:900;font-size:.88em;line-height:1;letter-spacing:0;color:inherit;}\n'
