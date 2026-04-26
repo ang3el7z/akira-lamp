@@ -3,2838 +3,1815 @@
 
     if (typeof Lampa === 'undefined') return;
 
-    var CONFIG = {
-        id: 'akira',
-        guard: '__AKIRA_UI_V2__',
-        name: 'Akira',
-        brand: 'AKIRA',
-        styleId: 'akira-ui-style',
-        bodyClass: 'akira-ui',
-        settingsComponent: 'akira',
-        sourceKey: 'akira_tmdb',
-        sourceLabel: 'AKIRA',
+    var CFG = {
+        guard: '__AKIRA_UNIFIED_PLUGIN__',
+        version: '0.1.0',
         prefix: 'akira_',
-        defaultTheme: 'red_premium',
-        defaultCardSize: 'md',
-        defaultNav: ['main', 'movie', 'tv', 'anime', 'release', 'favorite'],
-        tmdbKey: '4ef0d7355d9ffb5151e987764708ce96',
-        copy: {
-            ru: {
-                about: 'Netflix-подача, большой hero-блок, верхнее меню, логотипы и подборки TMDB.',
-                enabled: 'Включить Akira',
-                theme: 'Стиль',
-                topbar: 'Верхний бар как Apple TV',
-                hero: 'Большая карточка на главной',
-                heroLogo: 'Логотип в большой карточке',
-                logoLang: 'Язык логотипов',
-                cards: 'Широкие карточки с описанием',
-                cardLogo: 'Логотипы в карточках',
-                fullLogo: 'Логотип внутри карточки фильма',
-                splitButtons: 'Раздельные кнопки в карточке фильма',
-                cardSize: 'Размер карточек',
-                perf: 'Производительность',
-                tmdbRows: 'Подборки TMDB на главной',
-                topnavOpen: 'Настроить пункты верхнего бара',
-                topnavTitle: 'Пункты верхнего бара',
-                reset: 'Сбросить настройки Akira',
-                reloadHint: 'Изменения подборок применятся после перезагрузки главной.',
-                open: 'Открыть'
-            },
-            en: {
-                about: 'Netflix-style home, large hero, Apple TV top bar, logos, and TMDB rows.',
-                enabled: 'Enable Akira',
-                theme: 'Style',
-                topbar: 'Apple TV style top bar',
-                topbarAlign: 'Top bar position',
-                hero: 'Large hero card on home',
-                heroLogo: 'Logo in hero card',
-                logoLang: 'Logo language',
-                cards: 'Wide cards with metadata',
-                cardLogo: 'Logos in cards',
-                fullLogo: 'Logo inside full card',
-                splitButtons: 'Separate buttons in full card',
-                cardSize: 'Card size',
-                perf: 'Performance',
-                tmdbRows: 'TMDB rows on home',
-                topnavOpen: 'Configure top bar items',
-                topnavTitle: 'Top bar items',
-                reset: 'Reset Akira settings',
-                reloadHint: 'Collection changes apply after reloading home.',
-                open: 'Open'
-            },
-            uk: {
-                about: 'Netflix-подача, великий hero-блок, верхнє меню, логотипи та добірки TMDB.',
-                enabled: 'Увімкнути Akira',
-                theme: 'Стиль',
-                topbar: 'Верхній бар як Apple TV',
-                hero: 'Велика картка на головній',
-                heroLogo: 'Логотип у великій картці',
-                logoLang: 'Мова логотипів',
-                cards: 'Широкі картки з описом',
-                cardLogo: 'Логотипи в картках',
-                fullLogo: 'Логотип у картці фільму',
-                splitButtons: 'Окремі кнопки в картці фільму',
-                cardSize: 'Розмір карток',
-                perf: 'Продуктивність',
-                tmdbRows: 'Добірки TMDB на головній',
-                topnavOpen: 'Налаштувати пункти верхнього бара',
-                topnavTitle: 'Пункти верхнього бара',
-                reset: 'Скинути налаштування Akira',
-                reloadHint: 'Зміни добірок застосуються після перезавантаження головної.',
-                open: 'Відкрити'
-            }
+        component: 'akira',
+        styleId: 'akira-unified-style',
+        bodyClass: 'akira-ui',
+        brand: 'AKIRA'
+    };
+
+    if (window[CFG.guard]) return;
+    window[CFG.guard] = true;
+
+    var C = {
+        root: 'akira',
+        topbar: 'akira_topbar',
+        topnav: 'akira_topnav',
+        interface: 'akira_interface',
+        detail: 'akira_detail',
+        buttons: 'akira_buttons',
+        logos: 'akira_logos',
+        tmdb: 'akira_tmdb',
+        scale: 'akira_scale'
+    };
+
+    var K = {
+        enabled: CFG.prefix + 'enabled',
+        themeEnabled: CFG.prefix + 'theme_enabled',
+        accent: CFG.prefix + 'accent',
+        topbar: CFG.prefix + 'topbar',
+        topbarAlign: CFG.prefix + 'topbar_align',
+        brandName: CFG.prefix + 'brand_name',
+        topnavItems: CFG.prefix + 'topnav_items',
+        interfaceEnabled: CFG.prefix + 'interface_enabled',
+        detailEnabled: CFG.prefix + 'detail_enabled',
+        cardDesign: CFG.prefix + 'card_design',
+        buttonsSeparate: CFG.prefix + 'buttons_separate',
+        buttonsBig: CFG.prefix + 'buttons_big',
+        translateTv: CFG.prefix + 'translate_tv',
+        animations: CFG.prefix + 'animations',
+        logos: CFG.prefix + 'logos_enabled',
+        logoLang: CFG.prefix + 'logo_lang',
+        logoSize: CFG.prefix + 'logo_size',
+        logoHideHead: CFG.prefix + 'logo_hide_head',
+        scale: CFG.prefix + 'scale_enabled',
+        tmdb: CFG.prefix + 'tmdb_enabled'
+    };
+
+    var TOPBAR_FALLBACK = [
+        { action: 'main', label: { ru: 'Главная', en: 'Home', uk: 'Головна' }, lang: 'title_main' },
+        { action: 'movie', label: { ru: 'Фильмы', en: 'Movies', uk: 'Фільми' }, lang: 'menu_movies' },
+        { action: 'tv', label: { ru: 'Сериалы', en: 'TV', uk: 'Серіали' }, lang: 'menu_tv' },
+        { action: 'anime', label: { ru: 'Аниме', en: 'Anime', uk: 'Аніме' }, lang: 'menu_anime' },
+        { action: 'cartoon', label: { ru: 'Мультфильмы', en: 'Cartoons', uk: 'Мультфільми' }, lang: 'menu_multmovie' },
+        { action: 'release', label: { ru: 'Новинки', en: 'New', uk: 'Новинки' }, lang: 'title_new' },
+        { action: 'favorite', label: { ru: 'Закладки', en: 'Bookmarks', uk: 'Закладки' }, lang: 'menu_bookmark' }
+    ];
+
+    var PALETTES = {
+        netflix: { label: 'Netflix Red', accent: '#e50914', accent2: '#ff3b47', rgb: '229,9,20', focusText: '#fff' },
+        graphite: { label: 'Graphite Red', accent: '#f04444', accent2: '#f59e0b', rgb: '240,68,68', focusText: '#fff' },
+        mint: { label: 'Cinema Mint', accent: '#35c7a5', accent2: '#6ee7b7', rgb: '53,199,165', focusText: '#061413' },
+        cyan: { label: 'Ice Cyan', accent: '#22d3ee', accent2: '#60a5fa', rgb: '34,211,238', focusText: '#03131b' }
+    };
+
+    var TEXT = {
+        ru: {
+            title: 'Akira',
+            about: 'Единый плагин Akira: верхний бар, горизонтальный интерфейс, деталка, логотипы, TMDB-подборки и авто-масштаб.',
+            enabled: 'Включить Akira',
+            openTopbar: 'Верхний бар',
+            openInterface: 'Главная и карточки',
+            openDetail: 'Деталка фильма',
+            openButtons: 'Кнопки деталки',
+            openLogos: 'Логотипы',
+            openTmdb: 'TMDB-подборки',
+            openScale: 'Авто-масштаб',
+            enableTopbar: 'Включить верхний бар',
+            brand: 'Название бренда',
+            align: 'Положение верхнего бара',
+            alignStart: 'Слева',
+            alignCenter: 'По центру',
+            configureTopnav: 'Настроить пункты верхнего бара',
+            topnavTitle: 'Пункты верхнего бара',
+            show: 'Показывать',
+            hide: 'Скрыть',
+            enableInterface: 'Включить большую карточку на главной',
+            enableTheme: 'Включить тему Akira/Netflix',
+            accent: 'Акцент темы',
+            cardDesign: 'Дизайн маленьких карточек',
+            enableDetail: 'Включить дизайн деталки',
+            buttonsSeparate: 'Развернуть онлайн/торренты/трейлеры',
+            buttonsBig: 'Показывать подписи кнопок',
+            translateTv: 'Перевести метку TV',
+            animations: 'Анимации фокуса',
+            enableLogos: 'Логотипы вместо названий',
+            logoLang: 'Язык логотипов',
+            logoSize: 'Размер логотипов TMDB',
+            logoHideHead: 'Переносить год/страну при логотипе',
+            clearLogoCache: 'Очистить кэш логотипов',
+            enableTmdb: 'Включить источник Akira TMDB',
+            enableScale: 'Включить адаптивный масштаб',
+            reset: 'Сбросить настройки Akira',
+            ok: 'Готово',
+            reload: 'Изменения полностью применятся после перезагрузки текущего экрана',
+            on: 'Вкл',
+            off: 'Выкл',
+            auto: 'Авто'
         },
-        themes: {
-            red_premium: {
-                label: { ru: 'Netflix Premium', en: 'Netflix Premium', uk: 'Netflix Premium' },
-                accent: '#e50914',
-                accent2: '#ff3b47',
-                focusText: '#ffffff',
-                bg: '#070707',
-                bg2: '#121212',
-                panel: 'rgba(14,14,16,.78)',
-                panel2: 'rgba(24,24,26,.88)',
-                edge: 'rgba(255,255,255,.12)',
-                soft: 'rgba(229,9,20,.20)'
-            },
-            graphite_red: {
-                label: { ru: 'Graphite Red', en: 'Graphite Red', uk: 'Graphite Red' },
-                accent: '#f04444',
-                accent2: '#f59e0b',
-                focusText: '#ffffff',
-                bg: '#090b0f',
-                bg2: '#171a21',
-                panel: 'rgba(18,20,27,.78)',
-                panel2: 'rgba(26,29,38,.90)',
-                edge: 'rgba(255,255,255,.12)',
-                soft: 'rgba(240,68,68,.18)'
-            },
-            cinema_mint: {
-                label: { ru: 'Cinema Mint', en: 'Cinema Mint', uk: 'Cinema Mint' },
-                accent: '#35c7a5',
-                accent2: '#6ee7b7',
-                focusText: '#061413',
-                bg: '#071416',
-                bg2: '#122022',
-                panel: 'rgba(8,23,25,.80)',
-                panel2: 'rgba(16,32,35,.90)',
-                edge: 'rgba(255,255,255,.12)',
-                soft: 'rgba(53,199,165,.18)'
-            },
-            ice_cyan: {
-                label: { ru: 'Ice Cyan', en: 'Ice Cyan', uk: 'Ice Cyan' },
-                accent: '#22d3ee',
-                accent2: '#60a5fa',
-                focusText: '#03131b',
-                bg: '#06131d',
-                bg2: '#101f2b',
-                panel: 'rgba(7,20,30,.80)',
-                panel2: 'rgba(13,31,44,.90)',
-                edge: 'rgba(255,255,255,.12)',
-                soft: 'rgba(34,211,238,.18)'
-            }
+        en: {
+            title: 'Akira',
+            about: 'Unified Akira plugin: top bar, horizontal home, detail page, logos, TMDB collections, and adaptive scale.',
+            enabled: 'Enable Akira',
+            openTopbar: 'Top bar',
+            openInterface: 'Home and cards',
+            openDetail: 'Movie detail',
+            openButtons: 'Detail buttons',
+            openLogos: 'Logos',
+            openTmdb: 'TMDB collections',
+            openScale: 'Auto scale',
+            enableTopbar: 'Enable top bar',
+            brand: 'Brand name',
+            align: 'Top bar position',
+            alignStart: 'Left',
+            alignCenter: 'Center',
+            configureTopnav: 'Configure top bar items',
+            topnavTitle: 'Top bar items',
+            show: 'Show',
+            hide: 'Hide',
+            enableInterface: 'Enable home hero card',
+            enableTheme: 'Enable Akira/Netflix theme',
+            accent: 'Theme accent',
+            cardDesign: 'Small card design',
+            enableDetail: 'Enable detail design',
+            buttonsSeparate: 'Ungroup online/torrents/trailers',
+            buttonsBig: 'Show button labels',
+            translateTv: 'Translate TV label',
+            animations: 'Focus animations',
+            enableLogos: 'Use logos instead of titles',
+            logoLang: 'Logo language',
+            logoSize: 'TMDB logo size',
+            logoHideHead: 'Move year/country when logo is active',
+            clearLogoCache: 'Clear logo cache',
+            enableTmdb: 'Enable Akira TMDB source',
+            enableScale: 'Enable adaptive scale',
+            reset: 'Reset Akira settings',
+            ok: 'Done',
+            reload: 'Changes fully apply after reloading the current screen',
+            on: 'On',
+            off: 'Off',
+            auto: 'Auto'
+        },
+        uk: {
+            title: 'Akira',
+            about: 'Єдиний плагін Akira: верхній бар, горизонтальний інтерфейс, деталка, логотипи, TMDB-добірки та авто-масштаб.',
+            enabled: 'Увімкнути Akira',
+            openTopbar: 'Верхній бар',
+            openInterface: 'Головна і картки',
+            openDetail: 'Деталка фільму',
+            openButtons: 'Кнопки деталки',
+            openLogos: 'Логотипи',
+            openTmdb: 'TMDB-добірки',
+            openScale: 'Авто-масштаб',
+            enableTopbar: 'Увімкнути верхній бар',
+            brand: 'Назва бренду',
+            align: 'Положення верхнього бара',
+            alignStart: 'Зліва',
+            alignCenter: 'По центру',
+            configureTopnav: 'Налаштувати пункти верхнього бара',
+            topnavTitle: 'Пункти верхнього бара',
+            show: 'Показувати',
+            hide: 'Сховати',
+            enableInterface: 'Увімкнути велику картку на головній',
+            enableTheme: 'Увімкнути тему Akira/Netflix',
+            accent: 'Акцент теми',
+            cardDesign: 'Дизайн малих карток',
+            enableDetail: 'Увімкнути дизайн деталки',
+            buttonsSeparate: 'Розгорнути онлайн/торенти/трейлери',
+            buttonsBig: 'Показувати підписи кнопок',
+            translateTv: 'Перекласти мітку TV',
+            animations: 'Анімації фокуса',
+            enableLogos: 'Логотипи замість назв',
+            logoLang: 'Мова логотипів',
+            logoSize: 'Розмір логотипів TMDB',
+            logoHideHead: 'Переносити рік/країну при логотипі',
+            clearLogoCache: 'Очистити кеш логотипів',
+            enableTmdb: 'Увімкнути джерело Akira TMDB',
+            enableScale: 'Увімкнути адаптивний масштаб',
+            reset: 'Скинути налаштування Akira',
+            ok: 'Готово',
+            reload: 'Зміни повністю застосуються після перезавантаження поточного екрана',
+            on: 'Увімк',
+            off: 'Вимк',
+            auto: 'Авто'
         }
     };
 
-    if (window[CONFIG.guard]) return;
-    window[CONFIG.guard] = true;
+    var now = new Date();
+    var today = now.toISOString().substr(0, 10);
+    var currentYear = now.getFullYear();
+    var lastYear = currentYear - 1;
 
-    mountAkira(CONFIG);
+    var COLLECTIONS = [
+        { id: 'hot_new_releases', label: 'Самые свежие премьеры', icon: '', request: 'discover/movie?sort_by=primary_release_date.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&vote_count.gte=50&vote_average.gte=6&with_runtime.gte=40&without_genres=99&region=RU' },
+        { id: 'trending_movies', label: 'Топ фильмов недели', icon: '', request: 'trending/movie/week' },
+        { id: 'fresh_online', label: 'Сейчас смотрят', icon: '', request: 'discover/movie?sort_by=popularity.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&vote_count.gte=50&vote_average.gte=6&with_runtime.gte=40&without_genres=99&region=RU' },
+        { id: 'cult_cinema', label: 'Популярные фильмы с 80-х', icon: '', request: 'discover/movie?primary_release_date.gte=1980-01-01&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500' },
+        { id: 'top_studios', label: 'Золотая десятка студий', icon: '', request: 'discover/movie?with_companies=6194|33|4|306|5|12|8411|9195|2|7295&sort_by=popularity.desc&vote_average.gte=7.0&vote_count.gte=1000' },
+        { id: 'best_current_year', label: 'Лучшие фильмы ' + currentYear, icon: '', request: 'discover/movie?primary_release_year=' + currentYear + '&sort_by=vote_average.desc&vote_count.gte=300&region=RU' },
+        { id: 'best_last_year', label: 'Лучшие фильмы ' + lastYear, icon: '', request: 'discover/movie?primary_release_year=' + lastYear + '&sort_by=vote_average.desc&vote_count.gte=500&region=RU' },
+        { id: 'animation', label: 'Лучшие мультфильмы', icon: '', request: 'discover/movie?with_genres=16&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500' },
+        { id: 'documentary', label: 'Документальные фильмы', icon: '', request: 'discover/movie?with_genres=99&sort_by=popularity.desc&vote_count.gte=20&with_translations=ru&include_translations=ru' },
+        { id: 'russian_movies', label: 'Новинки русского кино', icon: '', request: 'discover/movie?with_original_language=ru&sort_by=primary_release_date.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&with_runtime.gte=40&without_genres=99&region=RU' },
+        { id: 'trending_tv', label: 'Топ сериалов недели', icon: '', request: 'trending/tv/week' },
+        { id: 'best_world_series', label: 'Хиты сериалов мира 2020+', icon: '', request: 'discover/tv?with_origin_country=US|CA|GB|AU|IE|DE|FR|NL|SE|NO|DK|FI|ES|IT|BE|CH|AT|KR|JP|MX|BR&sort_by=last_air_date.desc&vote_average.gte=7&vote_count.gte=500&first_air_date.gte=2020-01-01&first_air_date.lte=' + today + '&without_genres=16|99|10762|10763|10764|10766|10767|10768|10770&with_status=0|1|2|3' },
+        { id: 'netflix_best', label: 'Хиты сериалов Netflix', icon: '', request: 'discover/tv?with_networks=213&sort_by=last_air_date.desc&first_air_date.gte=2020-01-01&last_air_date.lte=' + today + '&vote_count.gte=500&vote_average.gte=7&without_genres=16|99|10751|10762|10763|10764|10766|10767|10768|10770' },
+        { id: 'miniseries_hits', label: 'Лучшие мини-сериалы', icon: '', request: 'discover/tv?with_type=2&sort_by=popularity.desc&vote_average.gte=7.0&vote_count.gte=200&without_genres=10764,10767' },
+        { id: 'russian_series', label: 'Русскоязычные сериалы 2020+', icon: '', request: 'discover/tv?with_original_language=ru&sort_by=last_air_date.desc&first_air_date.gte=2020-01-01&last_air_date.lte=' + today + '&vote_average.gte=6&vote_count.gte=5&without_genres=16|99|10751|10762|10763|10764|10766|10767|10768' },
+        { id: 'okko_platform', label: 'OKKO Originals', icon: '', request: 'discover/tv?language=ru&with_networks=3871&sort_by=first_air_date.desc' },
+        { id: 'premier_platform', label: 'Premier Originals', icon: '', request: 'discover/tv?language=ru&with_networks=2859&sort_by=first_air_date.desc' },
+        { id: 'start_platform', label: 'START Originals', icon: '', request: 'discover/tv?language=ru&with_networks=2493&sort_by=first_air_date.desc' },
+        { id: 'wink_platform', label: 'WINK Originals', icon: '', request: 'discover/tv?language=ru&with_networks=5806&sort_by=first_air_date.desc' },
+        { id: 'kion_platform', label: 'KION Originals', icon: '', request: 'discover/tv?language=ru&with_networks=4085&sort_by=first_air_date.desc' },
+        { id: 'kinopoisk_platform', label: 'Кинопоиск Originals', icon: '', request: 'discover/tv?language=ru&with_networks=3827&sort_by=first_air_date.desc' },
+        { id: 'cts_platform', label: 'СТС Originals', icon: '', request: 'discover/tv?language=ru&with_networks=806&sort_by=first_air_date.desc' },
+        { id: 'tnt_platform', label: 'ТНТ Originals', icon: '', request: 'discover/tv?language=ru&with_networks=1191&sort_by=first_air_date.desc' },
+        { id: 'ivi_platform', label: 'ИВИ Originals', icon: '', request: 'discover/tv?language=ru&with_networks=3923&sort_by=first_air_date.desc' }
+    ];
 
-    function mountAkira(cfg) {
-        var cssName = cfg.id.replace(/_/g, '-');
-        var attrTopbar = 'data-' + cssName + '-topbar';
-        var attrTopbarAlign = 'data-' + cssName + '-topbar-align';
-        var attrCards = 'data-' + cssName + '-cards';
-        var attrPerf = 'data-' + cssName + '-perf';
-        var attrCardSize = 'data-' + cssName + '-card-size';
-        var attrUiScale = 'data-' + cssName + '-ui-scale';
+    var started = false;
+    var settingsReady = false;
+    var topbarTimer = null;
+    var topbarObserver = null;
+    var scheduleTimer = null;
+    var scaleDebounce = null;
 
-        var KEY = {
-            enabled: cfg.prefix + 'enabled',
-            theme: cfg.prefix + 'theme',
-            brandName: cfg.prefix + 'brand_name',
-            topbar: cfg.prefix + 'topbar',
-            topbarAlign: cfg.prefix + 'topbar_align',
-            hero: cfg.prefix + 'hero',
-            heroLogo: cfg.prefix + 'hero_logo',
-            cards: cfg.prefix + 'cards',
-            cardLogo: cfg.prefix + 'card_logo',
-            fullLogo: cfg.prefix + 'full_logo',
-            splitButtons: cfg.prefix + 'split_buttons',
-            cardSize: cfg.prefix + 'card_size',
-            uiScale: cfg.prefix + 'ui_scale',
-            perf: cfg.prefix + 'perf',
-            tmdbRows: cfg.prefix + 'tmdb_rows',
-            tmdbPrefix: cfg.prefix + 'tmdb_collection_',
-            topnavItems: cfg.prefix + 'topnav_items',
-            logoLang: cfg.prefix + 'logo_lang'
-        };
+    function langCode() {
+        var raw = 'en';
+        try { raw = String(Lampa.Storage.get('language', 'en') || 'en').toLowerCase(); } catch (e) {}
+        if (raw.indexOf('ru') === 0 || raw === 'be') return 'ru';
+        if (raw.indexOf('uk') === 0 || raw === 'ua') return 'uk';
+        return 'en';
+    }
 
-        var TMDB_COLLECTIONS = makeCollections();
-        var TOPBAR_FALLBACK = [
-            { action: 'main', labelKey: 'menu_main', fallback: { ru: 'Главная', en: 'Home', uk: 'Головна' } },
-            { action: 'movie', labelKey: 'menu_movies', fallback: { ru: 'Фильмы', en: 'Movies', uk: 'Фільми' } },
-            { action: 'tv', labelKey: 'menu_tv', fallback: { ru: 'Сериалы', en: 'TV', uk: 'Серіали' } },
-            { action: 'anime', labelKey: 'menu_anime', fallback: { ru: 'Аниме', en: 'Anime', uk: 'Аніме' } },
-            { action: 'cartoon', labelKey: 'menu_multmovie', fallback: { ru: 'Мультфильмы', en: 'Cartoons', uk: 'Мультфільми' } },
-            { action: 'release', labelKey: 'title_new', fallback: { ru: 'Новинки', en: 'New', uk: 'Новинки' } },
-            { action: 'collections', labelKey: 'menu_collections', fallback: { ru: 'Коллекции', en: 'Collections', uk: 'Колекції' } },
-            { action: 'favorite', labelKey: 'menu_bookmark', fallback: { ru: 'Закладки', en: 'Bookmarks', uk: 'Закладки' } }
-        ];
+    function text(key) {
+        var pack = TEXT[langCode()] || TEXT.en;
+        return pack[key] || TEXT.en[key] || key;
+    }
 
-        var GENRES = {
-            ru: {
-                12: 'приключения', 14: 'фэнтези', 16: 'анимация', 18: 'драма', 27: 'ужасы',
-                28: 'боевик', 35: 'комедия', 36: 'история', 53: 'триллер', 80: 'криминал',
-                99: 'документальное', 878: 'фантастика', 10749: 'мелодрама', 10751: 'семейное',
-                10752: 'военный', 10759: 'боевик', 10765: 'фантастика', 9648: 'детектив'
-            },
-            en: {
-                12: 'Adventure', 14: 'Fantasy', 16: 'Animation', 18: 'Drama', 27: 'Horror',
-                28: 'Action', 35: 'Comedy', 36: 'History', 53: 'Thriller', 80: 'Crime',
-                99: 'Documentary', 878: 'Sci-Fi', 10749: 'Romance', 10751: 'Family',
-                10752: 'War', 10759: 'Action', 10765: 'Sci-Fi', 9648: 'Mystery'
-            },
-            uk: {
-                12: 'пригоди', 14: 'фентезі', 16: 'анімація', 18: 'драма', 27: 'жахи',
-                28: 'бойовик', 35: 'комедія', 36: 'історія', 53: 'трилер', 80: 'кримінал',
-                99: 'документальне', 878: 'фантастика', 10749: 'мелодрама', 10751: 'сімейне',
-                10752: 'військове', 10759: 'бойовик', 10765: 'фантастика', 9648: 'детектив'
-            }
-        };
+    function localize(value, fallback) {
+        if (!value) return fallback || '';
+        if (typeof value === 'string') return value;
+        var lang = langCode();
+        return value[lang] || value.ru || value.en || fallback || '';
+    }
 
-        var logoCache = {};
-        var logoPending = {};
-        var logoResolveCache = {};
-        var logoResolvePending = {};
-        var detailsCache = {};
-        var detailsPending = {};
-        var domObserver = null;
-        var scheduled = false;
-        var listenersBound = false;
-        var settingsReady = false;
-        var tmdbReady = false;
-        var heroTimer = null;
-        var clockTimer = null;
+    function tr(key, fallback) {
+        try {
+            var value = Lampa.Lang && Lampa.Lang.translate ? Lampa.Lang.translate(key) : '';
+            if (value && value !== key) return value;
+        } catch (e) {}
+        return fallback || key;
+    }
 
-        var state = {
-            hero: null,
-            heroKey: '',
-            heroTargetKey: '',
-            heroReq: 0,
-            fullMovie: null,
-            fullMovieKey: '',
-            fullFogTick: false,
-            lastCard: null
-        };
-
-        function makeCollections() {
-            var today = new Date().toISOString().slice(0, 10);
-            var year = new Date().getFullYear();
-            var lastYear = year - 1;
-            return [
-                {
-                    id: 'hot_new',
-                    icon: '🎬',
-                    title: { ru: 'Свежие премьеры', en: 'Fresh premieres', uk: 'Свіжі прем’єри' },
-                    request: 'discover/movie?sort_by=primary_release_date.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&vote_count.gte=50&vote_average.gte=6&with_runtime.gte=40&without_genres=99&region=RU'
-                },
-                {
-                    id: 'trend_movies',
-                    icon: '🔥',
-                    title: { ru: 'Фильмы недели', en: 'Movies trending this week', uk: 'Фільми тижня' },
-                    request: 'trending/movie/week'
-                },
-                {
-                    id: 'watching_now',
-                    icon: '👀',
-                    title: { ru: 'Сейчас смотрят', en: 'Watching now', uk: 'Зараз дивляться' },
-                    request: 'discover/movie?sort_by=popularity.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&vote_count.gte=50&vote_average.gte=6&with_runtime.gte=40&without_genres=99&region=RU'
-                },
-                {
-                    id: 'best_year',
-                    icon: '🌟',
-                    title: { ru: 'Лучшее кино ' + year, en: 'Best movies of ' + year, uk: 'Найкраще кіно ' + year },
-                    request: 'discover/movie?primary_release_year=' + year + '&sort_by=vote_average.desc&vote_count.gte=300&region=RU'
-                },
-                {
-                    id: 'best_last_year',
-                    icon: '🏆',
-                    title: { ru: 'Лучшие фильмы ' + lastYear, en: 'Best movies of ' + lastYear, uk: 'Найкращі фільми ' + lastYear },
-                    request: 'discover/movie?primary_release_year=' + lastYear + '&sort_by=vote_average.desc&vote_count.gte=500&region=RU'
-                },
-                {
-                    id: 'animation',
-                    icon: '🎨',
-                    title: { ru: 'Анимация с высоким рейтингом', en: 'Top animation', uk: 'Анімація з високим рейтингом' },
-                    request: 'discover/movie?with_genres=16&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500'
-                },
-                {
-                    id: 'documentary',
-                    icon: '🔬',
-                    title: { ru: 'Документальные', en: 'Documentaries', uk: 'Документальні' },
-                    request: 'discover/movie?with_genres=99&sort_by=popularity.desc&vote_count.gte=20&with_translations=ru&include_translations=ru'
-                },
-                {
-                    id: 'russian_movies',
-                    icon: '🇷🇺',
-                    title: { ru: 'Новинки российского кино', en: 'New Russian movies', uk: 'Новинки російського кіно' },
-                    request: 'discover/movie?with_original_language=ru&sort_by=primary_release_date.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&with_runtime.gte=40&without_genres=99&region=RU'
-                },
-                {
-                    id: 'trend_tv',
-                    icon: '🔥',
-                    title: { ru: 'Сериалы недели', en: 'TV trending this week', uk: 'Серіали тижня' },
-                    request: 'trending/tv/week'
-                },
-                {
-                    id: 'world_series',
-                    icon: '🌍',
-                    title: { ru: 'Мировые сериалы 2020+', en: 'World TV hits 2020+', uk: 'Світові серіали 2020+' },
-                    request: 'discover/tv?with_origin_country=US|CA|GB|AU|IE|DE|FR|NL|SE|NO|DK|FI|ES|IT|KR|JP&sort_by=last_air_date.desc&vote_average.gte=7&vote_count.gte=500&first_air_date.gte=2020-01-01&first_air_date.lte=' + today + '&without_genres=16|99|10762|10763|10764|10766|10767|10768'
-                },
-                {
-                    id: 'netflix_tv',
-                    icon: 'N',
-                    title: { ru: 'Сериалы Netflix', en: 'Netflix TV hits', uk: 'Серіали Netflix' },
-                    request: 'discover/tv?with_networks=213&sort_by=last_air_date.desc&first_air_date.gte=2020-01-01&last_air_date.lte=' + today + '&vote_count.gte=500&vote_average.gte=7&without_genres=16|99|10751|10762|10763|10764|10766|10767|10768'
-                },
-                {
-                    id: 'mini_series',
-                    icon: '💎',
-                    title: { ru: 'Мини-сериалы', en: 'Mini-series hits', uk: 'Мінісеріали' },
-                    request: 'discover/tv?with_type=2&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=200&without_genres=10764,10767'
-                }
-            ];
-        }
-
-        function qs(selector, root) {
-            return (root || document).querySelector(selector);
-        }
-
-        function qsa(selector, root) {
-            return Array.prototype.slice.call((root || document).querySelectorAll(selector));
-        }
-
-        function langCode() {
-            var raw = 'en';
-            try {
-                raw = String(Lampa.Storage.get('language', 'en') || 'en').toLowerCase();
-            } catch (e) {}
-            if (raw.indexOf('ru') === 0 || raw === 'be') return 'ru';
-            if (raw.indexOf('uk') === 0 || raw === 'ua') return 'uk';
-            return 'en';
-        }
-
-        function localize(value, fallback) {
-            if (!value) return fallback || '';
-            if (typeof value === 'string') return value;
-            var lang = langCode();
-            return value[lang] || value.ru || value.en || fallback || '';
-        }
-
-        function text(key) {
-            var pack = cfg.copy[langCode()] || cfg.copy.en;
-            return pack[key] || cfg.copy.en[key] || key;
-        }
-
-        function tr(key, fallback) {
-            try {
-                if (Lampa.Lang && typeof Lampa.Lang.translate === 'function') {
-                    var value = Lampa.Lang.translate(key);
-                    if (value && value !== key) return value;
-                }
-            } catch (e) {}
-            return fallback || key;
-        }
-
-        function get(name, fallback) {
-            try {
-                if (!Lampa.Storage || typeof Lampa.Storage.get !== 'function') return fallback;
+    function get(name, fallback) {
+        try {
+            if (Lampa.Storage && typeof Lampa.Storage.get === 'function') {
                 var value = Lampa.Storage.get(name, fallback);
                 return typeof value === 'undefined' ? fallback : value;
-            } catch (e) {
-                return fallback;
             }
-        }
+        } catch (e) {}
+        try {
+            var raw = localStorage.getItem(name);
+            return raw === null ? fallback : raw;
+        } catch (e2) {}
+        return fallback;
+    }
 
-        function set(name, value) {
-            try {
-                if (Lampa.Storage && typeof Lampa.Storage.set === 'function') Lampa.Storage.set(name, value);
-            } catch (e) {}
-        }
-
-        function isOn(name, fallbackOn) {
-            var fallback = fallbackOn ? 'on' : 'off';
-            var value = get(name, fallback);
-            if (typeof value === 'boolean') return value;
-            value = String(value);
-            return value !== 'off' && value !== 'false' && value !== '0';
-        }
-
-        function normalizeOnOff(value, fallbackOn) {
-            if (typeof value === 'undefined' || value === null || value === '') return fallbackOn ? 'on' : 'off';
-            if (value === true) return 'on';
-            if (value === false) return 'off';
-            value = String(value).toLowerCase();
-            if (value === 'undefined' || value === 'null') return fallbackOn ? 'on' : 'off';
-            if (value === 'off' || value === 'false' || value === '0') return 'off';
-            return 'on';
-        }
-
-        function ensureValue(name, fallback, allowed) {
-            var value = get(name, undefined);
-            var next = typeof value === 'undefined' || value === null || value === '' ? fallback : String(value);
-            if (next === 'undefined' || next === 'null') next = fallback;
-            if (allowed && allowed.indexOf(next) === -1) next = fallback;
-            if (value !== next) set(name, next);
-            return next;
-        }
-
-        function ensureOnOff(name, fallbackOn) {
-            var value = get(name, undefined);
-            var next = normalizeOnOff(value, fallbackOn);
-            if (value !== next) set(name, next);
-            return next;
-        }
-
-        function notify(message) {
-            try {
-                if (Lampa.Noty && typeof Lampa.Noty.show === 'function') Lampa.Noty.show(message);
-            } catch (e) {}
-        }
-
-        function escapeHtml(value) {
-            var div = document.createElement('div');
-            div.appendChild(document.createTextNode(String(value || '')));
-            return div.innerHTML;
-        }
-
-        function clean(value) {
-            return String(value || '').replace(/\s+/g, ' ').trim();
-        }
-
-        function pluginEnabled() {
-            return isOn(KEY.enabled, true);
-        }
-
-        function currentThemeName() {
-            var name = String(get(KEY.theme, cfg.defaultTheme) || cfg.defaultTheme);
-            return cfg.themes[name] ? name : cfg.defaultTheme;
-        }
-
-        function theme() {
-            return cfg.themes[currentThemeName()] || cfg.themes[cfg.defaultTheme];
-        }
-
-        function perfMode() {
-            var value = String(get(KEY.perf, 'balanced') || 'balanced');
-            if (value === 'quality' || value === 'balanced' || value === 'economy') return value;
-            return 'balanced';
-        }
-
-        function cardSize() {
-            var value = String(get(KEY.cardSize, cfg.defaultCardSize) || cfg.defaultCardSize);
-            if (value === 'sm' || value === 'md' || value === 'lg') return value;
-            return cfg.defaultCardSize;
-        }
-
-        function uiScaleValue() {
-            var value = String(get(KEY.uiScale, 'auto') || 'auto');
-            if (value === 'off' || value === 'auto') return value;
-            if (/^(12|14|16|18|20|22|24|28|32)$/.test(value)) return value;
-            return 'auto';
-        }
-
-        function viewportWidth() {
-            try {
-                if (window.visualViewport && window.visualViewport.width) return window.visualViewport.width;
-            } catch (e) {}
-            return window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || 1920;
-        }
-
-        function autoUiScale() {
-            var width = viewportWidth();
-            if (width < 1160) return '12';
-            if (width < 1360) return '14';
-            if (width < 1600) return '16';
-            if (width < 1920) return '18';
-            if (width < 2560) return '20';
-            if (width < 3200) return '22';
-            if (width < 3840) return '24';
-            if (width < 4480) return '28';
-            return '32';
-        }
-
-        function appliedUiScale() {
-            var value = uiScaleValue();
-            if (value === 'off') return '';
-            return value === 'auto' ? autoUiScale() : value;
-        }
-
-        function topbarAlign() {
-            var value = String(get(KEY.topbarAlign, 'start') || 'start');
-            return value === 'center' ? 'center' : 'start';
-        }
-
-        function brandName() {
-            var value = clean(get(KEY.brandName, cfg.brand) || cfg.brand);
-            return value || cfg.brand;
-        }
-
-        function setBrandNameValue(value) {
-            value = clean(value);
-            if (!value) value = cfg.brand;
-            set(KEY.brandName, value);
-            schedulePatch(true);
-        }
-
-        function openBrandNameInput() {
-            var current = brandName();
-            var title = brandNameSettingName();
-            var result;
-            try {
-                result = window.prompt(title, current);
-            } catch (e) {
-                result = null;
+    function set(name, value) {
+        try {
+            if (Lampa.Storage && typeof Lampa.Storage.set === 'function') {
+                Lampa.Storage.set(name, value);
+                return;
             }
-            if (result !== null && typeof result !== 'undefined') setBrandNameValue(result);
-        }
+        } catch (e) {}
+        try { localStorage.setItem(name, typeof value === 'string' ? value : JSON.stringify(value)); } catch (e2) {}
+    }
 
-        function tmdbKey() {
-            try {
-                if (Lampa.TMDB && typeof Lampa.TMDB.key === 'function') return Lampa.TMDB.key();
-            } catch (e) {}
-            return cfg.tmdbKey;
-        }
-
-        function tmdbImage(path, size) {
-            if (!path) return '';
-            if (/^https?:\/\//i.test(String(path))) return String(path);
-            var normalized = String(path).charAt(0) === '/' ? String(path) : '/' + String(path);
-            normalized = normalized.replace(/\.svg$/i, '.png');
-            var target = size || 'w780';
-            try {
-                if (Lampa.TMDB && typeof Lampa.TMDB.image === 'function') {
-                    return Lampa.TMDB.image('/t/p/' + target + normalized);
-                }
-            } catch (e) {}
-            return 'https://image.tmdb.org/t/p/' + target + normalized;
-        }
-
-        function tmdbApi(path) {
-            try {
-                if (Lampa.TMDB && typeof Lampa.TMDB.api === 'function') return Lampa.TMDB.api(path);
-            } catch (e) {}
-            var cleanPath = String(path || '').replace(/^\/+/, '');
-            return 'https://api.themoviedb.org/3/' + cleanPath;
-        }
-
-        function movieType(item) {
-            if (!item) return 'movie';
-            if (item.media_type === 'tv' || item.name || item.first_air_date) return 'tv';
-            return 'movie';
-        }
-
-        function movieTitle(item, fallback) {
-            return clean((item && (item.title || item.name || item.original_title || item.original_name)) || fallback || '');
-        }
-
-        function movieYear(item) {
-            var date = item && (item.release_date || item.first_air_date);
-            return date ? String(date).slice(0, 4) : '';
-        }
-
-        function movieKey(item) {
-            if (!item) return '';
-            return movieType(item) + ':' + (item.id || movieTitle(item, ''));
-        }
-
-        function mediaBadge(item) {
-            var type = movieType(item);
-            var lang = langCode();
-            if (type === 'tv') {
-                if (lang === 'en') return 'Series';
-                if (lang === 'uk') return '\u0421\u0435\u0440\u0456\u0430\u043b';
-                return '\u0421\u0435\u0440\u0438\u0430\u043b';
+    function storageField(name, fallback) {
+        try {
+            if (Lampa.Storage && typeof Lampa.Storage.field === 'function') {
+                var value = Lampa.Storage.field(name);
+                return typeof value === 'undefined' || value === null || value === '' ? fallback : value;
             }
-            if (lang === 'en') return 'Movie';
-            if (lang === 'uk') return '\u0424\u0456\u043b\u044c\u043c';
-            return '\u0424\u0438\u043b\u044c\u043c';
-        }
+        } catch (e) {}
+        return get(name, fallback);
+    }
 
-        function genreNames(item) {
-            var out = [];
-            if (!item) return out;
-            if (item.genres && item.genres.length) {
-                item.genres.forEach(function (genre) {
-                    if (genre && genre.name) out.push(genre.name);
-                });
-                return out;
-            }
-            var map = GENRES[langCode()] || GENRES.en;
-            if (item.genre_ids && item.genre_ids.length) {
-                item.genre_ids.slice(0, 3).forEach(function (id) {
-                    if (map[id]) out.push(map[id]);
-                });
-            }
-            return out;
-        }
+    function getBool(name, fallback) {
+        var value = get(name, fallback ? 'on' : 'off');
+        if (typeof value === 'boolean') return value;
+        value = String(value);
+        return value !== 'off' && value !== 'false' && value !== '0' && value !== 'null';
+    }
 
-        function bulletJoin(items) {
-            return (items || []).filter(Boolean).join(' \u2022 ');
-        }
+    function getOnOff(name, fallback) {
+        return getBool(name, fallback) ? 'on' : 'off';
+    }
 
-        function mergeMovieData(item, details) {
-            var merged = {};
-            try { Object.assign(merged, item || {}, details || {}); } catch (e) {}
-            return merged;
-        }
+    function ensure(name, value) {
+        var current = get(name, undefined);
+        if (typeof current === 'undefined' || current === null || current === '') set(name, value);
+    }
 
-        function countryLabel(code) {
-            code = String(code || '').toUpperCase();
-            var ru = {
-                US: '\u0421\u0428\u0410',
-                RU: '\u0420\u043e\u0441\u0441\u0438\u044f',
-                GB: '\u0412\u0435\u043b\u0438\u043a\u043e\u0431\u0440\u0438\u0442\u0430\u043d\u0438\u044f',
-                FR: '\u0424\u0440\u0430\u043d\u0446\u0438\u044f',
-                DE: '\u0413\u0435\u0440\u043c\u0430\u043d\u0438\u044f',
-                KR: '\u042e\u0436\u043d\u0430\u044f \u041a\u043e\u0440\u0435\u044f',
-                JP: '\u042f\u043f\u043e\u043d\u0438\u044f',
-                CN: '\u041a\u0438\u0442\u0430\u0439',
-                CA: '\u041a\u0430\u043d\u0430\u0434\u0430',
-                AU: '\u0410\u0432\u0441\u0442\u0440\u0430\u043b\u0438\u044f',
-                ES: '\u0418\u0441\u043f\u0430\u043d\u0438\u044f',
-                IT: '\u0418\u0442\u0430\u043b\u0438\u044f',
-                IN: '\u0418\u043d\u0434\u0438\u044f',
-                TR: '\u0422\u0443\u0440\u0446\u0438\u044f',
-                UA: '\u0423\u043a\u0440\u0430\u0438\u043d\u0430'
-            };
-            if (langCode() === 'ru' && ru[code]) return ru[code];
-            return code;
-        }
+    function clean(value) {
+        return String(value || '').replace(/\s+/g, ' ').trim();
+    }
 
-        function movieCountries(item) {
-            var out = [];
-            function push(code, name) {
-                var value = (langCode() === 'ru' && code) ? countryLabel(code) : (name || countryLabel(code));
-                if (value && out.indexOf(value) === -1) out.push(value);
-            }
-            if (!item) return out;
-            if (item.production_countries && item.production_countries.length) {
-                item.production_countries.forEach(function (country) {
-                    if (country) push(country.iso_3166_1, country.name);
-                });
-            }
-            if (!out.length && item.origin_country && item.origin_country.length) {
-                item.origin_country.forEach(function (country) { push(country); });
-            }
-            if (!out.length && item.production_country) push(item.production_country);
-            return out;
-        }
+    function escapeHtml(value) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(String(value || '')));
+        return div.innerHTML;
+    }
 
-        function movieRuntime(item) {
-            if (!item) return '';
-            var value = item.runtime || item.duration || item.time || '';
-            if (!value && item.episode_run_time && item.episode_run_time.length) value = item.episode_run_time[0];
-            if (!value) return '';
-            if (typeof value === 'string' && value.indexOf(':') > -1) return value;
-            value = parseInt(value, 10);
-            if (!value || value < 1) return '';
-            var hours = Math.floor(value / 60);
-            var minutes = value % 60;
-            return (hours ? String(hours).padStart(2, '0') + ':' : '00:') + String(minutes).padStart(2, '0');
-        }
+    function qs(selector, root) {
+        return (root || document).querySelector(selector);
+    }
 
-        function movieQuality(item, card) {
-            var candidates = [
-                item && item.quality,
-                item && item.video_quality,
-                item && item.source_quality,
-                item && item.release_quality
-            ];
-            if (card) {
-                var node = qs('.card__quality, .quality, .card__type', card);
-                if (node) candidates.push(node.textContent);
-            }
-            for (var i = 0; i < candidates.length; i++) {
-                var value = clean(candidates[i]);
-                if (value && value.length < 18) return value.toUpperCase();
-            }
-            return '';
-        }
+    function qsa(selector, root) {
+        return Array.prototype.slice.call((root || document).querySelectorAll(selector));
+    }
 
-        function certificationFromDetails(details, type) {
-            if (!details) return '';
-            var wanted = ['RU', 'US'];
-            if (type === 'tv' && details.content_ratings && details.content_ratings.results) {
-                for (var w = 0; w < wanted.length; w++) {
-                    for (var i = 0; i < details.content_ratings.results.length; i++) {
-                        var item = details.content_ratings.results[i];
-                        if (item && item.iso_3166_1 === wanted[w] && item.rating) return item.rating;
-                    }
-                }
-            }
-            if (details.release_dates && details.release_dates.results) {
-                for (var rw = 0; rw < wanted.length; rw++) {
-                    for (var r = 0; r < details.release_dates.results.length; r++) {
-                        var group = details.release_dates.results[r];
-                        if (!group || group.iso_3166_1 !== wanted[rw] || !group.release_dates) continue;
-                        for (var d = 0; d < group.release_dates.length; d++) {
-                            if (group.release_dates[d].certification) return group.release_dates[d].certification;
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function notify(message) {
+        try {
+            if (Lampa.Noty && Lampa.Noty.show) Lampa.Noty.show(message);
+        } catch (e) {}
+    }
+
+    function pluginOn() {
+        return getBool(K.enabled, true);
+    }
+
+    function palette() {
+        var name = String(get(K.accent, 'netflix') || 'netflix');
+        return PALETTES[name] || PALETTES.netflix;
+    }
+
+    function brandName() {
+        return clean(get(K.brandName, CFG.brand) || CFG.brand) || CFG.brand;
+    }
+
+    function setBodyState() {
+        if (!document.body) return;
+        document.body.classList.toggle(CFG.bodyClass, pluginOn());
+        document.body.setAttribute('data-akira-theme', pluginOn() && getBool(K.themeEnabled, true) ? 'on' : 'off');
+        document.body.setAttribute('data-akira-topbar', pluginOn() && getBool(K.topbar, true) ? 'on' : 'off');
+        document.body.setAttribute('data-akira-topbar-align', String(get(K.topbarAlign, 'start')) === 'center' ? 'center' : 'start');
+        document.body.setAttribute('data-akira-detail', pluginOn() && getBool(K.detailEnabled, true) ? 'on' : 'off');
+        document.body.setAttribute('data-akira-cards', pluginOn() && getBool(K.cardDesign, true) ? 'on' : 'off');
+        document.body.setAttribute('data-akira-buttons-big', getBool(K.buttonsBig, false) ? 'on' : 'off');
+        document.body.setAttribute('data-akira-scale', pluginOn() && getBool(K.scale, true) ? 'on' : 'off');
+    }
+
+    function initDefaults() {
+        ensure(K.enabled, 'on');
+        ensure(K.themeEnabled, 'on');
+        ensure(K.accent, 'netflix');
+        ensure(K.topbar, 'on');
+        ensure(K.topbarAlign, 'start');
+        ensure(K.brandName, CFG.brand);
+        ensure(K.interfaceEnabled, 'on');
+        ensure(K.detailEnabled, 'on');
+        ensure(K.cardDesign, 'on');
+        ensure(K.buttonsSeparate, 'on');
+        ensure(K.buttonsBig, 'off');
+        ensure(K.translateTv, 'on');
+        ensure(K.animations, 'on');
+        ensure(K.logos, 'on');
+        ensure(K.logoLang, 'auto');
+        ensure(K.logoSize, 'original');
+        ensure(K.logoHideHead, 'on');
+        ensure(K.scale, 'on');
+        ensure(K.tmdb, 'on');
+        ensure(K.topnavItems, ['main', 'movie', 'tv', 'anime', 'release', 'favorite']);
+        for (var i = 0; i < COLLECTIONS.length; i++) ensure(collectionKey(COLLECTIONS[i].id), 'on');
+    }
+
+    function addParam(component, param, field, onChange) {
+        try {
+            Lampa.SettingsApi.addParam({ component: component, param: param, field: field, onChange: onChange });
+        } catch (e) {}
+    }
+
+    function addButton(component, key, label, description, action) {
+        addParam(component, { name: CFG.prefix + key, type: 'button' }, { name: label, description: description || '' }, action);
+    }
+
+    function onOffValues() {
+        return { on: text('on'), off: text('off') };
+    }
+
+    function openSection(component) {
+        try {
+            if (!Lampa.Settings || !Lampa.Settings.create) return false;
+            setTimeout(function () {
+                try {
+                    Lampa.Settings.create(component, {
+                        onBack: function () {
+                            Lampa.Settings.create(C.root);
+                            scheduleApply(true);
                         }
-                    }
-                }
+                    });
+                } catch (e) {}
+            }, 0);
+            return true;
+        } catch (e2) {}
+        return false;
+    }
+
+    function openBrandPrompt() {
+        var value = null;
+        try { value = window.prompt(text('brand'), brandName()); } catch (e) {}
+        if (value !== null && typeof value !== 'undefined') {
+            set(K.brandName, clean(value) || CFG.brand);
+            scheduleApply(true);
+        }
+    }
+
+    function resetSettings() {
+        set(K.enabled, 'on');
+        set(K.themeEnabled, 'on');
+        set(K.accent, 'netflix');
+        set(K.topbar, 'on');
+        set(K.topbarAlign, 'start');
+        set(K.brandName, CFG.brand);
+        set(K.interfaceEnabled, 'on');
+        set(K.detailEnabled, 'on');
+        set(K.cardDesign, 'on');
+        set(K.buttonsSeparate, 'on');
+        set(K.buttonsBig, 'off');
+        set(K.translateTv, 'on');
+        set(K.animations, 'on');
+        set(K.logos, 'on');
+        set(K.logoLang, 'auto');
+        set(K.logoSize, 'original');
+        set(K.logoHideHead, 'on');
+        set(K.scale, 'on');
+        set(K.tmdb, 'on');
+        set(K.topnavItems, ['main', 'movie', 'tv', 'anime', 'release', 'favorite']);
+        for (var i = 0; i < COLLECTIONS.length; i++) set(collectionKey(COLLECTIONS[i].id), 'on');
+        scheduleApply(true);
+        notify(text('ok'));
+    }
+
+    function clearLogoCache() {
+        var keys = [];
+        try {
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.indexOf(AkiraLogo.prefix) === 0) keys.push(key);
             }
-            return '';
-        }
-
-        function ratingValue(item, keys) {
-            for (var i = 0; i < keys.length; i++) {
-                var value = parseFloat(item && item[keys[i]]);
-                if (value > 0) return value.toFixed(1);
+            for (var j = 0; j < keys.length; j++) localStorage.removeItem(keys[j]);
+        } catch (e) {}
+        try {
+            if (Lampa.Storage && Lampa.Storage.cache) {
+                for (var k = 0; k < keys.length; k++) Lampa.Storage.set(keys[k], '');
             }
-            return '';
-        }
+        } catch (e2) {}
+        notify(text('ok'));
+    }
 
-        function detailInfo(item, details, card) {
-            var data = mergeMovieData(item, details);
-            var year = movieYear(data);
-            var countries = movieCountries(data).slice(0, 2);
-            var head = [year, countries.join(', ')].filter(Boolean).join(', ');
-            var ratings = [];
-            var tmdb = ratingValue(data, ['vote_average', 'tmdb_rating']);
-            var imdb = ratingValue(data, ['imdb_rating', 'imdb', 'imdb_vote_average']);
-            var kp = ratingValue(data, ['kp_rating', 'kinopoisk_rating', 'kinopoisk', 'rating_kp']);
-            if (tmdb) ratings.push({ label: 'TMDB', value: tmdb });
-            if (imdb) ratings.push({ label: 'IMDB', value: imdb });
-            if (kp) ratings.push({ label: 'KP', value: kp });
+    function addSettings() {
+        if (settingsReady || !Lampa.SettingsApi || !Lampa.SettingsApi.addParam) return;
+        settingsReady = true;
 
-            var facts = [];
-            var runtime = movieRuntime(data);
-            var genres = genreNames(data).slice(0, 3).join(' | ');
-            var quality = movieQuality(data, card);
-            var age = certificationFromDetails(details, movieType(data));
-            if (runtime) facts.push(runtime);
-            if (genres) facts.push(genres);
-            if (age) facts.push({ age: age });
-            if (quality) facts.push((langCode() === 'en' ? 'Quality: ' : '\u041a\u0430\u0447\u0435\u0441\u0442\u0432\u043e: ') + quality);
-            return {
-                head: head,
-                ratings: ratings,
-                facts: facts,
-                tagline: clean(data.tagline || data.slogan || ''),
-                description: clean(data.overview || item && item.overview || '') || tr('full_notext', 'Description is missing')
-            };
-        }
-
-        function normalizeLogoCandidate(value) {
-            if (!value) return '';
-            if (typeof value === 'object') value = value.url || value.file_path || value.logo || value.path || '';
-            value = String(value || '');
-            if (!value || value === 'null' || value === 'none') return '';
-            if (/^https?:\/\//i.test(value) || /^data:image\//i.test(value)) return value;
-            if (value.charAt(0) === '/') return tmdbImage(value.replace(/\.svg$/i, '.png'), 'w500');
-            return '';
-        }
-
-        function directLogo(item) {
-            if (!item) return '';
-            var direct = [item.logo, item.logo_path, item.clearlogo, item.clear_logo, item.img_logo, item.image_logo];
-            if (item.images) direct.push(item.images.logo, item.images.clearlogo, item.images.clear_logo);
-            if (item.logos && item.logos.length) direct.push(item.logos[0]);
-            for (var i = 0; i < direct.length; i++) {
-                var found = normalizeLogoCandidate(direct[i]);
-                if (found) return found;
+        try {
+            if (Lampa.Template && Lampa.Template.add) {
+                Lampa.Template.add('settings_' + C.root, '<div></div>');
+                Lampa.Template.add('settings_' + C.topbar, '<div></div>');
+                Lampa.Template.add('settings_' + C.topnav, '<div></div>');
+                Lampa.Template.add('settings_' + C.interface, '<div></div>');
+                Lampa.Template.add('settings_' + C.detail, '<div></div>');
+                Lampa.Template.add('settings_' + C.buttons, '<div></div>');
+                Lampa.Template.add('settings_' + C.logos, '<div></div>');
+                Lampa.Template.add('settings_' + C.tmdb, '<div></div>');
+                Lampa.Template.add('settings_' + C.scale, '<div></div>');
             }
-            return '';
+        } catch (e) {}
+
+        try {
+            Lampa.SettingsApi.addComponent({
+                component: C.root,
+                name: text('title'),
+                icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16v3H4V5Zm0 5h11v3H4v-3Zm0 5h16v4H4v-4Z"></path></svg>'
+            });
+        } catch (e2) {}
+
+        addParam(C.root, { name: CFG.prefix + 'about', type: 'static' }, { name: text('title'), description: text('about') });
+        addParam(C.root, { name: K.enabled, type: 'select', values: onOffValues(), default: 'on' }, { name: text('enabled') }, function () { scheduleApply(true); });
+        addButton(C.root, 'open_topbar', text('openTopbar'), '', function () { openSection(C.topbar); });
+        addButton(C.root, 'open_interface', text('openInterface'), '', function () { openSection(C.interface); });
+        addButton(C.root, 'open_detail', text('openDetail'), '', function () { openSection(C.detail); });
+        addButton(C.root, 'open_buttons', text('openButtons'), '', function () { openSection(C.buttons); });
+        addButton(C.root, 'open_logos', text('openLogos'), '', function () { openSection(C.logos); });
+        addButton(C.root, 'open_tmdb', text('openTmdb'), '', function () { openSection(C.tmdb); });
+        addButton(C.root, 'open_scale', text('openScale'), '', function () { openSection(C.scale); });
+        addButton(C.root, 'reset', text('reset'), '', resetSettings);
+
+        addParam(C.topbar, { name: K.topbar, type: 'select', values: onOffValues(), default: 'on' }, { name: text('enableTopbar') }, function () { scheduleApply(true); });
+        addParam(C.topbar, { name: CFG.prefix + 'brand_edit', type: 'button' }, { name: text('brand'), description: brandName() }, openBrandPrompt);
+        addParam(C.topbar, { name: K.topbarAlign, type: 'select', values: { start: text('alignStart'), center: text('alignCenter') }, default: 'start' }, { name: text('align') }, function () { scheduleApply(true); });
+        addButton(C.topbar, 'open_topnav', text('configureTopnav'), text('topnavTitle'), function () { openSection(C.topnav); });
+        addTopnavSettings();
+
+        var accentValues = {};
+        for (var p in PALETTES) if (Object.prototype.hasOwnProperty.call(PALETTES, p)) accentValues[p] = PALETTES[p].label;
+        addParam(C.interface, { name: K.interfaceEnabled, type: 'select', values: onOffValues(), default: 'on' }, { name: text('enableInterface') }, function () { scheduleApply(true); });
+        addParam(C.interface, { name: K.themeEnabled, type: 'select', values: onOffValues(), default: 'on' }, { name: text('enableTheme') }, function () { scheduleApply(true); });
+        addParam(C.interface, { name: K.accent, type: 'select', values: accentValues, default: 'netflix' }, { name: text('accent') }, function () { scheduleApply(true); });
+        addParam(C.interface, { name: K.cardDesign, type: 'select', values: onOffValues(), default: 'on' }, { name: text('cardDesign') }, function () { scheduleApply(true); });
+        addParam(C.interface, { name: K.translateTv, type: 'select', values: onOffValues(), default: 'on' }, { name: text('translateTv') }, function () { scheduleApply(true); });
+        addParam(C.interface, { name: K.animations, type: 'select', values: onOffValues(), default: 'on' }, { name: text('animations') }, function () { scheduleApply(true); });
+
+        addParam(C.detail, { name: K.detailEnabled, type: 'select', values: onOffValues(), default: 'on' }, { name: text('enableDetail') }, function () { scheduleApply(true); });
+        addParam(C.buttons, { name: K.buttonsSeparate, type: 'select', values: onOffValues(), default: 'on' }, { name: text('buttonsSeparate'), description: text('reload') }, function () { applyFullTemplate(); scheduleApply(true); notify(text('reload')); });
+        addParam(C.buttons, { name: K.buttonsBig, type: 'select', values: onOffValues(), default: 'off' }, { name: text('buttonsBig') }, function () { scheduleApply(true); });
+
+        addParam(C.logos, { name: K.logos, type: 'select', values: onOffValues(), default: 'on' }, { name: text('enableLogos') }, function () { scheduleApply(true); });
+        addParam(C.logos, { name: K.logoLang, type: 'select', values: { auto: text('auto'), ru: 'Русский', en: 'English', uk: 'Українська', de: 'Deutsch', fr: 'Français', es: 'Español' }, default: 'auto' }, { name: text('logoLang') });
+        addParam(C.logos, { name: K.logoSize, type: 'select', values: { w300: 'w300', w500: 'w500', w780: 'w780', original: 'original' }, default: 'original' }, { name: text('logoSize') });
+        addParam(C.logos, { name: K.logoHideHead, type: 'select', values: onOffValues(), default: 'on' }, { name: text('logoHideHead') }, function () { scheduleApply(true); });
+        addParam(C.logos, { name: CFG.prefix + 'logo_clear_cache', type: 'button' }, { name: text('clearLogoCache') }, clearLogoCache);
+
+        addParam(C.scale, { name: K.scale, type: 'select', values: onOffValues(), default: 'on' }, { name: text('enableScale') }, function () { updateScale(); scheduleApply(true); });
+
+        addParam(C.tmdb, { name: K.tmdb, type: 'select', values: onOffValues(), default: 'on' }, { name: text('enableTmdb'), description: 'Akira TMDB' }, function () { scheduleApply(true); notify(text('reload')); });
+        for (var i = 0; i < COLLECTIONS.length; i++) {
+            (function (item) {
+                addParam(C.tmdb, { name: collectionKey(item.id), type: 'select', values: onOffValues(), default: 'on' }, { name: item.label }, function () { notify(text('reload')); });
+            })(COLLECTIONS[i]);
+        }
+    }
+
+    function collectionKey(id) {
+        return CFG.prefix + 'tmdb_collection_' + id;
+    }
+
+    function normalizeAction(action) {
+        var value = String(action || '').trim().toLowerCase();
+        if (value === 'release' || value === 'releases') return 'relise';
+        if (value === 'collections' || value === 'collection') return 'catalog';
+        if (value === 'bookmarks') return 'favorite';
+        return value;
+    }
+
+    function menuItem(action) {
+        return qs('.menu .menu__item.selector[data-action="' + normalizeAction(action) + '"]');
+    }
+
+    function triggerEvent(node, name) {
+        try {
+            if (window.$ && node) {
+                $(node).trigger(name);
+                return true;
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    function clickNode(node) {
+        try {
+            if (!node) return false;
+            if (typeof node.click === 'function') node.click();
+            else node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            return true;
+        } catch (e) {}
+        return false;
+    }
+
+    function selectorEnter(node) {
+        if (!node) return false;
+        var ok = false;
+        ok = triggerEvent(node, 'hover:focus') || ok;
+        ok = triggerEvent(node, 'hover:enter') || ok;
+        return ok || clickNode(node);
+    }
+
+    function bindAction(node, handler) {
+        if (!node || node.getAttribute('data-akira-bound') === '1') return;
+        node.setAttribute('data-akira-bound', '1');
+        node.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            handler();
+        });
+        node.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handler();
+            }
+        });
+        try {
+            if (window.$) {
+                $(node).on('hover:enter.akira', handler);
+                $(node).on('hover:focus.akira hover:hover.akira', function () { node.classList.add('focus'); });
+                $(node).on('hover:blur.akira hover:out.akira', function () { node.classList.remove('focus'); });
+            }
+        } catch (e) {}
+    }
+
+    function labelForAction(item) {
+        var value = tr(item.lang, '');
+        return value && value !== item.lang ? value : localize(item.label, item.action);
+    }
+
+    function availableTopbarItems() {
+        var list = [];
+        var seen = {};
+        qsa('.menu .menu__item.selector[data-action]').forEach(function (item) {
+            var action = item.getAttribute('data-action');
+            if (!action || action === 'search' || action === 'settings' || seen[action]) return;
+            var labelNode = qs('.menu__text, .menu__item-name, .menu__item-text, .menu__item-title', item);
+            var label = clean(labelNode ? labelNode.textContent : item.textContent) || action;
+            seen[action] = true;
+            list.push({ action: action, label: label });
+        });
+        for (var i = 0; i < TOPBAR_FALLBACK.length; i++) {
+            var fb = TOPBAR_FALLBACK[i];
+            if (seen[normalizeAction(fb.action)]) continue;
+            seen[normalizeAction(fb.action)] = true;
+            list.push({ action: fb.action, label: labelForAction(fb) });
+        }
+        return list;
+    }
+
+    function storedTopbarActions() {
+        var value = get(K.topnavItems, null);
+        if (!value || value === 'undefined' || value === 'null') return ['main', 'movie', 'tv', 'anime', 'release', 'favorite'];
+        if (typeof value === 'string') {
+            try { value = JSON.parse(value); }
+            catch (e) { value = value.split(',').map(clean).filter(Boolean); }
+        }
+        return Array.isArray(value) && value.length ? value : ['main', 'movie', 'tv', 'anime', 'release', 'favorite'];
+    }
+
+    function setTopbarAction(action, enabled) {
+        var selected = storedTopbarActions();
+        var exists = selected.indexOf(action) > -1;
+        if (enabled && !exists) selected.push(action);
+        if (!enabled && exists) selected = selected.filter(function (item) { return item !== action; });
+        set(K.topnavItems, selected);
+    }
+
+    function topnavSettingKey(action) {
+        return CFG.prefix + 'topnav_item_' + String(action || '').replace(/[^a-z0-9_-]/gi, '_');
+    }
+
+    function addTopnavSettings() {
+        addParam(C.topnav, { type: 'title' }, { name: text('topnavTitle') });
+        var selected = storedTopbarActions();
+        var items = availableTopbarItems();
+        for (var i = 0; i < items.length; i++) {
+            (function (item) {
+                var isSelected = selected.indexOf(item.action) > -1 ? 'on' : 'off';
+                var key = topnavSettingKey(item.action);
+                set(key, isSelected);
+                addParam(C.topnav, { name: key, type: 'select', values: { on: text('show'), off: text('hide') }, default: isSelected }, { name: item.label, description: item.action }, function (value) {
+                    setTopbarAction(item.action, value !== 'off' && value !== false);
+                    scheduleApply(true);
+                });
+            })(items[i]);
+        }
+    }
+
+    function selectedTopbarItems() {
+        var map = {};
+        availableTopbarItems().forEach(function (item) { map[item.action] = item; });
+        return storedTopbarActions().map(function (action) { return map[action]; }).filter(Boolean);
+    }
+
+    function openAction(action) {
+        var normalized = normalizeAction(action);
+        var nativeItem = menuItem(normalized);
+        if (nativeItem && selectorEnter(nativeItem)) return true;
+        try {
+            var source = storageField('source', 'tmdb');
+            if (normalized === 'main') {
+                Lampa.Activity.push({ url: '', title: tr('title_main', 'Main'), component: 'main', source: source });
+                return true;
+            }
+            if (normalized === 'movie' || normalized === 'tv' || normalized === 'anime') {
+                Lampa.Activity.push({
+                    url: normalized,
+                    title: (normalized === 'movie' ? tr('menu_movies', 'Movies') : normalized === 'anime' ? tr('menu_anime', 'Anime') : tr('menu_tv', 'TV')) + ' - ' + String(source || '').toUpperCase(),
+                    component: 'category',
+                    source: normalized === 'anime' ? 'cub' : source,
+                    page: 1
+                });
+                return true;
+            }
+            if (normalized === 'cartoon') {
+                Lampa.Activity.push({ url: 'movie', title: tr('menu_multmovie', 'Cartoons'), component: 'category', genres: 16, page: 1 });
+                return true;
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    function openSearch() {
+        var nativeItem = menuItem('search');
+        if (nativeItem && selectorEnter(nativeItem)) return true;
+        var nativeButton = qs('.open--search');
+        if (nativeButton && selectorEnter(nativeButton)) return true;
+        try {
+            if (Lampa.Search && Lampa.Search.open) {
+                Lampa.Search.open();
+                return true;
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    function openFavorite() {
+        var nativeItem = menuItem('favorite');
+        if (nativeItem && selectorEnter(nativeItem)) return true;
+        try {
+            Lampa.Activity.push({ component: 'bookmarks', title: tr('settings_input_links', 'Bookmarks') });
+            return true;
+        } catch (e) {}
+        return false;
+    }
+
+    function goBack() {
+        var back = qs('.head__backward');
+        return back ? clickNode(back) || selectorEnter(back) : false;
+    }
+
+    function openSettingsRoot() {
+        try {
+            if (Lampa.Settings && Lampa.Settings.create) {
+                Lampa.Settings.create(C.root);
+                return true;
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    function iconSearch() {
+        return '<svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>';
+    }
+
+    function iconSettings() {
+        return '<svg><use xlink:href="#sprite-settings"></use></svg>';
+    }
+
+    function iconBookmark() {
+        return '<svg viewBox="0 0 24 24" fill="none"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2h7A2.5 2.5 0 0 1 18 4.5V21l-6-3.5L6 21V4.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>';
+    }
+
+    function iconBackward() {
+        return '<svg viewBox="0 0 24 24" fill="none"><path d="M15 5 8 12l7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+    }
+
+    function updateClock() {
+        var node = qs('.akira-topbar__clock');
+        if (!node) return;
+        var date = new Date();
+        node.textContent = String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+    }
+
+    function stopClock() {
+        if (!topbarTimer) return;
+        clearInterval(topbarTimer);
+        topbarTimer = null;
+    }
+
+    function startClock() {
+        updateClock();
+        if (!topbarTimer) topbarTimer = setInterval(updateClock, 20000);
+    }
+
+    function patchBrand(head) {
+        var icon = qs('.head__menu-icon', head) || qs('.head__menu-icon');
+        if (!icon) return;
+        if (!icon.getAttribute('data-akira-original-html')) icon.setAttribute('data-akira-original-html', icon.innerHTML || '');
+        try { if (window.$) $(icon).off('.akira'); } catch (e) {}
+        icon.classList.add('akira-head-brand', 'selector');
+        icon.setAttribute('data-selector', 'true');
+        icon.setAttribute('tabindex', '0');
+        icon.innerHTML = '<span>' + escapeHtml(brandName()) + '</span>';
+        bindAction(icon, function () { openAction('main'); });
+        requestAnimationFrame(function () {
+            try {
+                var width = Math.ceil(icon.getBoundingClientRect().width || 0);
+                if (width) document.documentElement.style.setProperty('--akira-brand-w', width + 'px');
+            } catch (e2) {}
+        });
+    }
+
+    function restoreBrand() {
+        var icon = qs('.head__menu-icon.akira-head-brand');
+        if (!icon) return;
+        var original = icon.getAttribute('data-akira-original-html');
+        if (original !== null) icon.innerHTML = original;
+        icon.classList.remove('akira-head-brand', 'focus');
+        icon.removeAttribute('data-akira-original-html');
+        icon.removeAttribute('data-akira-bound');
+        try { document.documentElement.style.removeProperty('--akira-brand-w'); } catch (e) {}
+    }
+
+    function patchTopbar() {
+        var old = qs('.akira-topbar');
+        if (!pluginOn() || !getBool(K.topbar, true)) {
+            if (old) old.remove();
+            restoreBrand();
+            stopClock();
+            return;
+        }
+        var head = qs('.head__body') || qs('.head');
+        if (!head) return;
+        patchBrand(head);
+        var bar = qs('.akira-topbar', head);
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.className = 'akira-topbar';
+            bar.innerHTML = '<div class="akira-topbar__inner"><div class="akira-topbar__items"></div><div class="akira-topbar__right"></div></div>';
+            head.appendChild(bar);
+        }
+        var itemsNode = qs('.akira-topbar__items', bar);
+        var rightNode = qs('.akira-topbar__right', bar);
+        itemsNode.innerHTML = '';
+        rightNode.innerHTML = '';
+
+        if (qs('.head__backward')) {
+            var backButton = document.createElement('div');
+            backButton.className = 'akira-topbar__item akira-topbar__icon selector';
+            backButton.setAttribute('data-selector', 'true');
+            backButton.setAttribute('tabindex', '0');
+            backButton.innerHTML = iconBackward();
+            bindAction(backButton, goBack);
+            itemsNode.appendChild(backButton);
         }
 
-        function pickLogo(logos, lang) {
-            if (!logos || !logos.length) return '';
+        selectedTopbarItems().forEach(function (item) {
+            var btn = document.createElement('div');
+            btn.className = 'akira-topbar__item selector';
+            btn.setAttribute('data-selector', 'true');
+            btn.setAttribute('data-action', item.action);
+            btn.setAttribute('tabindex', '0');
+            btn.textContent = item.label;
+            bindAction(btn, function () { openAction(item.action); });
+            itemsNode.appendChild(btn);
+        });
+
+        [
+            { role: 'search', icon: iconSearch(), handler: openSearch },
+            { role: 'favorite', icon: iconBookmark(), handler: openFavorite },
+            { role: 'settings', icon: iconSettings(), handler: openSettingsRoot }
+        ].forEach(function (item) {
+            var btn = document.createElement('div');
+            btn.className = 'akira-topbar__item akira-topbar__icon selector';
+            btn.setAttribute('data-selector', 'true');
+            btn.setAttribute('data-role', item.role);
+            btn.setAttribute('tabindex', '0');
+            btn.innerHTML = item.icon;
+            bindAction(btn, item.handler);
+            rightNode.appendChild(btn);
+        });
+
+        var clock = document.createElement('div');
+        clock.className = 'akira-topbar__clock selector';
+        clock.setAttribute('data-selector', 'true');
+        clock.setAttribute('tabindex', '0');
+        bindAction(clock, openSettingsRoot);
+        rightNode.appendChild(clock);
+        startClock();
+    }
+
+    var AkiraLogo = {
+        prefix: 'akira_logo_v1_',
+        pending: {},
+        enabled: function () {
+            return pluginOn() && getBool(K.logos, true);
+        },
+        lang: function () {
+            var forced = String(get(K.logoLang, 'auto') || 'auto');
+            if (forced && forced !== 'auto') return forced;
+            var lang = String(get('logo_lang', '') || get('language', 'en') || 'en');
+            return (lang.split('-')[0] || 'en').toLowerCase();
+        },
+        size: function () {
+            return String(get(K.logoSize, 'original') || 'original');
+        },
+        key: function (type, id, lang) {
+            return this.prefix + type + '_' + id + '_' + lang;
+        },
+        getCached: function (key) {
+            try {
+                var sessionValue = sessionStorage.getItem(key);
+                if (sessionValue) return sessionValue;
+            } catch (e) {}
+            try {
+                var localValue = localStorage.getItem(key);
+                if (localValue) return localValue;
+            } catch (e2) {}
+            return get(key, null);
+        },
+        setCached: function (key, value) {
+            var stored = value || 'none';
+            try { sessionStorage.setItem(key, stored); } catch (e) {}
+            try { localStorage.setItem(key, stored); } catch (e2) {}
+            try { set(key, stored); } catch (e3) {}
+        },
+        pickBest: function (logos, lang) {
+            if (!logos || !logos.length) return null;
             var sorted = logos.slice().sort(function (a, b) {
-                var ap = String((a && a.file_path) || '').toLowerCase();
-                var bp = String((b && b.file_path) || '').toLowerCase();
-                var as = ap.indexOf('.svg') > -1;
-                var bs = bp.indexOf('.svg') > -1;
+                var as = String(a && a.file_path || '').toLowerCase().indexOf('.svg') > -1;
+                var bs = String(b && b.file_path || '').toLowerCase().indexOf('.svg') > -1;
                 return as === bs ? 0 : (as ? 1 : -1);
             });
-            var wanted = [lang];
-            if (lang === 'uk' || lang === 'ua') wanted.push('ru');
-            if (lang !== 'en') wanted.push('en');
-            wanted.push(null);
-            for (var w = 0; w < wanted.length; w++) {
+            var order = [lang];
+            if (lang === 'uk' || lang === 'ua') order.push('ru');
+            if (lang !== 'en') order.push('en');
+            order.push(null);
+            for (var o = 0; o < order.length; o++) {
                 for (var i = 0; i < sorted.length; i++) {
                     if (!sorted[i] || !sorted[i].file_path) continue;
-                    if (sorted[i].iso_639_1 === wanted[w]) return sorted[i].file_path;
+                    if (order[o] === null || sorted[i].iso_639_1 === order[o]) return sorted[i].file_path;
                 }
             }
-            return sorted[0] && sorted[0].file_path ? sorted[0].file_path : '';
-        }
-
-        function textLogo(title) {
-            title = clean(title || cfg.brand || 'AKIRA');
-            var shortTitle = title.length > 34 ? title.slice(0, 32) + '..' : title;
-            var size = shortTitle.length > 18 ? 68 : 86;
-            var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="260" viewBox="0 0 900 260">' +
-                '<defs><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000" flood-opacity=".55"/></filter></defs>' +
-                '<rect width="900" height="260" fill="none"/>' +
-                '<text x="22" y="156" fill="#fff" font-family="Arial Black, Arial, sans-serif" font-size="' + size + '" font-weight="900" letter-spacing="0" filter="url(#s)">' +
-                escapeHtml(shortTitle).replace(/&nbsp;/g, ' ') +
-                '</text></svg>';
-            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-        }
-
-        function logoLang() {
-            var forced = String(get(KEY.logoLang, 'auto') || 'auto').toLowerCase();
-            if (forced === 'ru' || forced === 'en' || forced === 'uk') return forced;
-            return langCode();
-        }
-
-        function tmdbLanguage() {
-            return langCode() === 'en' ? 'en-US' : (langCode() === 'uk' ? 'uk-UA' : 'ru-RU');
-        }
-
-        function resolveLogoItem(item, done) {
-            if (!item) {
+            return sorted[0] && sorted[0].file_path ? sorted[0].file_path : null;
+        },
+        imageUrl: function (path) {
+            if (!path) return null;
+            var normalized = String(path).replace(/\.svg$/i, '.png');
+            return Lampa.TMDB.image('/t/p/' + this.size() + normalized);
+        },
+        request: function (type, id, lang, mode, done) {
+            if (!Lampa.TMDB || !Lampa.TMDB.api || !Lampa.TMDB.key || !window.$) {
                 done(null);
                 return;
             }
-            if (item.id) {
-                done(item);
-                return;
-            }
-
-            var title = movieTitle(item, '');
-            if (!title) {
+            var query = mode === 'netflix'
+                ? type + '/' + id + '/images?api_key=' + Lampa.TMDB.key() + '&language=' + lang
+                : type + '/' + id + '/images?api_key=' + Lampa.TMDB.key() + '&include_image_language=' + lang + ',ru,en,null';
+            $.get(Lampa.TMDB.api(query), function (res) {
+                var path = AkiraLogo.pickBest(res && res.logos, lang);
+                done(AkiraLogo.imageUrl(path));
+            }).fail(function () {
                 done(null);
-                return;
-            }
-
-            var type = movieType(item);
-            var year = movieYear(item);
-            var lang = tmdbLanguage();
-            var cacheKey = type + ':' + title.toLowerCase() + ':' + year + ':' + lang;
-            if (Object.prototype.hasOwnProperty.call(logoResolveCache, cacheKey)) {
-                done(logoResolveCache[cacheKey]);
-                return;
-            }
-            if (logoResolvePending[cacheKey]) {
-                logoResolvePending[cacheKey].push(done);
-                return;
-            }
-            logoResolvePending[cacheKey] = [done];
-
-            function flush(found) {
-                logoResolveCache[cacheKey] = found || null;
-                var queue = logoResolvePending[cacheKey] || [];
-                delete logoResolvePending[cacheKey];
-                queue.forEach(function (cb) {
-                    try { cb(logoResolveCache[cacheKey]); } catch (e) {}
-                });
-            }
-
-            function query(kind, callback) {
-                var params = 'api_key=' + encodeURIComponent(tmdbKey()) +
-                    '&query=' + encodeURIComponent(title) +
-                    '&language=' + encodeURIComponent(lang) +
-                    '&include_adult=false';
-                if (year) params += kind === 'tv' ? '&first_air_date_year=' + encodeURIComponent(year) : '&year=' + encodeURIComponent(year);
-                var url = tmdbApi('search/' + kind + '?' + params);
-
-                function success(json) {
-                    var list = json && json.results ? json.results : [];
-                    var picked = list && list.length ? list[0] : null;
-                    if (picked) picked.media_type = kind;
-                    callback(picked || null);
+            });
+        },
+        resolve: function (item, done) {
+            try {
+                if (!this.enabled() || !item || !item.id) {
+                    done(null);
+                    return;
                 }
-
-                function fail() {
-                    callback(null);
+                var source = item.source || 'tmdb';
+                if (source !== 'tmdb' && source !== 'cub') {
+                    done(null);
+                    return;
                 }
-
-                try {
-                    if (window.$ && typeof $.get === 'function') {
-                        $.get(url, success).fail(fail);
+                var type = item.media_type === 'tv' || item.name ? 'tv' : 'movie';
+                var lang = this.lang();
+                var key = this.key(type, item.id, lang);
+                var cached = this.getCached(key);
+                if (cached) {
+                    done(cached === 'none' ? null : cached);
+                    return;
+                }
+                if (this.pending[key]) {
+                    this.pending[key].push(done);
+                    return;
+                }
+                this.pending[key] = [done];
+                this.request(type, item.id, lang, 'interface', function (first) {
+                    if (first) {
+                        AkiraLogo.finish(key, first);
                         return;
                     }
-                } catch (e) {}
-
-                if (typeof fetch === 'function') {
-                    fetch(url).then(function (response) {
-                        return response.json();
-                    }).then(success).catch(fail);
-                } else {
-                    fail();
-                }
-            }
-
-            query(type, function (found) {
-                if (found) {
-                    flush(found);
-                    return;
-                }
-                query(type === 'tv' ? 'movie' : 'tv', flush);
-            });
-        }
-
-        function fetchLogo(item, done) {
-            var direct = directLogo(item);
-            if (direct) {
-                done(direct);
-                return;
-            }
-            if (!item || !item.id) {
-                resolveLogoItem(item, function (resolved) {
-                    if (resolved && resolved.id) fetchLogo(resolved, done);
-                    else done('');
+                    AkiraLogo.request(type, item.id, lang, 'netflix', function (second) {
+                        AkiraLogo.finish(key, second || null);
+                    });
                 });
-                return;
-            }
-
-            var type = movieType(item);
-            var lang = logoLang();
-            var cacheKey = type + ':' + item.id + ':' + lang;
-            if (Object.prototype.hasOwnProperty.call(logoCache, cacheKey)) {
-                done(logoCache[cacheKey]);
-                return;
-            }
-            if (logoPending[cacheKey]) {
-                logoPending[cacheKey].push(done);
-                return;
-            }
-            logoPending[cacheKey] = [done];
-
-            var langs = [lang];
-            if (lang === 'uk' || lang === 'ua') langs.push('ru');
-            if (lang !== 'en') langs.push('en');
-            langs.push('null');
-
-            var path = type + '/' + item.id + '/images?api_key=' + encodeURIComponent(tmdbKey()) + '&include_image_language=' + langs.join(',');
-            var url = tmdbApi(path);
-
-            function success(json) {
-                var logo = '';
-                var picked = json && json.logos ? pickLogo(json.logos, lang) : '';
-                if (picked) logo = tmdbImage(picked, 'w500');
-                logoCache[cacheKey] = logo;
-                flushLogo(cacheKey, logo);
-            }
-
-            function fail() {
-                logoCache[cacheKey] = '';
-                flushLogo(cacheKey, '');
-            }
-
-            try {
-                if (window.$ && typeof $.get === 'function') {
-                    $.get(url, success).fail(fail);
-                    return;
-                }
-            } catch (e) {}
-
-            if (typeof fetch === 'function') {
-                fetch(url).then(function (response) {
-                    return response.json();
-                }).then(success).catch(fail);
-            } else {
-                fail();
-            }
-        }
-
-        function flushLogo(cacheKey, logo) {
-            var queue = logoPending[cacheKey] || [];
-            delete logoPending[cacheKey];
-            queue.forEach(function (cb) {
-                try { cb(logo); } catch (e) {}
-            });
-        }
-
-        function fetchDetails(item, done) {
-            if (!item || !item.id) {
+            } catch (e) {
                 done(null);
-                return;
             }
-            var type = movieType(item);
-            var lang = tmdbLanguage();
-            var cacheKey = type + ':' + item.id + ':' + lang;
-            if (Object.prototype.hasOwnProperty.call(detailsCache, cacheKey)) {
-                done(detailsCache[cacheKey]);
-                return;
+        },
+        finish: function (key, value) {
+            this.setCached(key, value);
+            var list = this.pending[key] || [];
+            delete this.pending[key];
+            for (var i = 0; i < list.length; i++) {
+                try { list[i](value); } catch (e) {}
             }
-            if (detailsPending[cacheKey]) {
-                detailsPending[cacheKey].push(done);
-                return;
-            }
-            detailsPending[cacheKey] = [done];
-
-            var append = type === 'tv' ? 'content_ratings' : 'release_dates';
-            var path = type + '/' + item.id + '?api_key=' + encodeURIComponent(tmdbKey()) + '&language=' + encodeURIComponent(lang) + '&append_to_response=' + append;
-            var url = tmdbApi(path);
-
-            function success(json) {
-                detailsCache[cacheKey] = json || null;
-                flushDetails(cacheKey, detailsCache[cacheKey]);
-            }
-
-            function fail() {
-                detailsCache[cacheKey] = null;
-                flushDetails(cacheKey, null);
-            }
-
-            try {
-                if (window.$ && typeof $.get === 'function') {
-                    $.get(url, success).fail(fail);
-                    return;
-                }
-            } catch (e) {}
-
-            fetch(url).then(function (response) {
-                return response.json();
-            }).then(success).catch(fail);
-        }
-
-        function flushDetails(cacheKey, details) {
-            var queue = detailsPending[cacheKey] || [];
-            delete detailsPending[cacheKey];
-            queue.forEach(function (cb) {
-                try { cb(details); } catch (e) {}
-            });
-        }
-
-        function extractCardData(card) {
-            if (!card) return null;
-            try { if (card.card_data) return card.card_data; } catch (e) {}
-            try { if (card.data) return card.data; } catch (e) {}
-            try { if (card.movie) return card.movie; } catch (e) {}
-            try { if (card._data) return card._data; } catch (e) {}
-            try {
-                if (window.$) {
-                    var data = $(card).data('card') || $(card).data('json') || $(card).data('item');
-                    if (data) return data;
-                }
-            } catch (e) {}
-            return null;
-        }
-
-        function backdrop(item, size) {
-            if (!item) return '';
-            if (item.backdrop_path) return tmdbImage(item.backdrop_path, size || 'w1280');
-            if (item.poster_path) return tmdbImage(item.poster_path, size || 'w780');
-            return '';
-        }
-
-        function setImage(img, url) {
-            if (!img || !url) return;
-            if (img.tagName === 'IMG') {
-                if (!img.hasAttribute('data-akira-original-src')) img.setAttribute('data-akira-original-src', img.getAttribute('src') || '');
-                img.src = url;
-                img.style.objectFit = 'cover';
-                img.style.objectPosition = 'center';
-            } else {
-                if (!img.hasAttribute('data-akira-original-bg')) img.setAttribute('data-akira-original-bg', img.style.backgroundImage || '');
-                img.style.backgroundImage = 'url(' + url + ')';
-                img.style.backgroundSize = 'cover';
-                img.style.backgroundPosition = 'center';
-            }
-        }
-
-        function preloadImage(url, done) {
-            if (!url) {
-                done('');
-                return;
-            }
-            var img = new Image();
-            img.onload = function () { done(url); };
-            img.onerror = function () { done(''); };
-            img.src = url;
-        }
-
-        function restoreCard(card) {
-            if (!card) return;
-            var img = qs('.card__img', card);
-            if (img) {
-                var originalSrc = img.getAttribute('data-akira-original-src');
-                var originalBg = img.getAttribute('data-akira-original-bg');
-                if (originalSrc !== null && img.tagName === 'IMG') img.src = originalSrc;
-                if (originalBg !== null) img.style.backgroundImage = originalBg;
-                img.style.objectFit = '';
-                img.style.objectPosition = '';
-                img.style.backgroundSize = '';
-                img.style.backgroundPosition = '';
-                img.removeAttribute('data-akira-original-src');
-                img.removeAttribute('data-akira-original-bg');
-            }
-            qsa('.akira-card-overlay, .akira-card-badge, .akira-card-rating', card).forEach(function (node) { node.remove(); });
-            card.removeAttribute('data-akira-card-key');
-        }
-
-        function processCard(card) {
-            if (!card || !isOn(KEY.cards, true)) return;
-            var item = extractCardData(card);
-            if (!item) return;
-            var key = movieKey(item);
-            if (key && card.getAttribute('data-akira-card-key') === key) return;
-            restoreCard(card);
-            if (key) card.setAttribute('data-akira-card-key', key);
-
-            var img = qs('.card__img', card);
-            var bg = backdrop(item, 'w780');
-            if (img && bg) setImage(img, bg);
-
-            var view = qs('.card__view', card);
-            if (!view) return;
-
-            var title = movieTitle(item, qs('.card__title', card) ? qs('.card__title', card).textContent : '');
-            var meta = [];
-            var year = movieYear(item);
-            var vote = parseFloat(item.vote_average || 0);
-            if (year) meta.push(year);
-            genreNames(item).slice(0, 2).forEach(function (name) { meta.push(name); });
-
-            var overlay = document.createElement('div');
-            overlay.className = 'akira-card-overlay';
-            overlay.innerHTML =
-                '<div class="akira-card-overlay__title">' + escapeHtml(title || '') + '</div>' +
-                (meta.length ? '<div class="akira-card-overlay__meta">' + escapeHtml(meta.join(' • ')) + '</div>' : '');
-            view.appendChild(overlay);
-
-            if (isOn(KEY.cardLogo, true)) {
-                var requestKey = key;
-                fetchLogo(item, function (url) {
-                    if (card.getAttribute('data-akira-card-key') !== requestKey) return;
-                    var titleNode = qs('.akira-card-overlay__title', overlay);
-                    if (!titleNode) return;
-                    url = url || textLogo(title);
-                    var logo = document.createElement('img');
-                    logo.className = 'akira-card-overlay__logo';
-                    logo.alt = title || '';
-                    logo.loading = 'lazy';
-                    logo.onload = function () {
-                        if (card.getAttribute('data-akira-card-key') !== requestKey) return;
-                        titleNode.style.transition = 'opacity 0.18s ease';
-                        titleNode.style.opacity = '0';
-                        setTimeout(function () {
-                            if (card.getAttribute('data-akira-card-key') !== requestKey) return;
-                            titleNode.replaceWith(logo);
-                            logo.style.opacity = '0';
-                            logo.style.transition = 'opacity 0.28s ease';
-                            requestAnimationFrame(function () {
-                                requestAnimationFrame(function () { logo.style.opacity = '1'; });
-                            });
-                        }, 180);
-                    };
-                    logo.onerror = function () {
-                        titleNode.style.opacity = '';
-                        titleNode.style.transition = '';
-                    };
-                    logo.src = url;
-                });
-            }
-
-            var badge = document.createElement('div');
-            badge.className = 'akira-card-badge';
-            badge.textContent = mediaBadge(item);
-            view.appendChild(badge);
-
-            if (vote > 0) {
-                var rating = document.createElement('div');
-                rating.className = 'akira-card-rating';
-                rating.textContent = vote.toFixed(1);
-                view.appendChild(rating);
-            }
-        }
-
-        function extractEpisodeShowInfo(card, data) {
-            if (data) {
-                if (data.serial && data.serial.id) return { id: data.serial.id, name: data.serial.name || data.serial.original_name || '', media_type: 'tv' };
-                if (data.show && data.show.id) return { id: data.show.id, name: data.show.name || data.show.original_name || '', media_type: 'tv' };
-                if (data.tv && data.tv.id) return { id: data.tv.id, name: data.tv.name || data.tv.original_name || '', media_type: 'tv' };
-                if (data.tv_id) return { id: data.tv_id, name: data.tv_name || data.name || '', media_type: 'tv' };
-                if (data.source_id) return { id: data.source_id, name: data.source_name || '', media_type: 'tv' };
-                if (data.id && (data.name || data.original_name) && (data.first_air_date || data.episode_run_time || data.number_of_seasons)) {
-                    return { id: data.id, name: data.name || data.original_name, media_type: 'tv' };
-                }
-            }
-            var title = qs('.card-episode__footer .card__title, .full-episode__footer .card__title, .card__title', card);
-            return title ? { id: null, name: clean(title.textContent), media_type: 'tv' } : null;
-        }
-
-        function processEpisodeCard(card) {
-            if (!card || !isOn(KEY.cards, true)) return;
-            if (card.getAttribute('data-akira-episode') === '1') return;
-            var data = extractCardData(card) || {};
-            var body = qs('.full-episode__body', card);
-            if (!body) return;
-            card.setAttribute('data-akira-episode', '1');
-
-            var image = qs('.full-episode__img, .card__img', card);
-            var imageUrl = '';
-            if (data.backdrop_path) imageUrl = tmdbImage(data.backdrop_path, 'w780');
-            else if (data.still_path) imageUrl = tmdbImage(data.still_path, 'w780');
-            if (image && imageUrl) setImage(image, imageUrl);
-
-            var fullEpisode = qs('.full-episode', card);
-            var numberNode = qs('.full-episode__num', card);
-            if (fullEpisode && numberNode && numberNode.parentNode !== fullEpisode) fullEpisode.appendChild(numberNode);
-
-            var show = extractEpisodeShowInfo(card, data);
-            if (!show || (!show.id && !show.name)) return;
-            if (qs('.akira-episode-logo, .akira-episode-title', body)) return;
-
-            var titleNode = document.createElement('div');
-            titleNode.className = 'akira-episode-title';
-            titleNode.textContent = show.name || '';
-            if (titleNode.textContent) body.insertBefore(titleNode, body.firstChild);
-
-            if (show.id && isOn(KEY.cardLogo, true)) {
-                fetchLogo(show, function (url) {
-                    var host = qs('.full-episode__body', card);
-                    if (!host) return;
-                    var existing = qs('.akira-episode-title', host);
-                    url = url || textLogo(show.name || '');
-                    var logo = document.createElement('img');
-                    logo.className = 'akira-episode-logo';
-                    logo.alt = show.name || '';
-                    logo.loading = 'lazy';
-                    logo.onload = function () {
-                        if (existing && existing.parentNode) existing.replaceWith(logo);
-                        else host.insertBefore(logo, host.firstChild);
-                    };
-                    logo.onerror = function () { if (existing) existing.style.display = ''; };
-                    logo.src = url;
-                });
-            }
-        }
-
-        function processCards(root) {
-            if (!root || !pluginEnabled()) return;
-            qsa('.card', root).forEach(processCard);
-            qsa('.card-episode', root).forEach(processEpisodeCard);
-        }
-
-        function activeContentHost() {
-            return qs('.activity--active .activity__body') ||
-                qs('.activity--active .scroll__content') ||
-                qs('.activity--active .scroll__body') ||
-                qs('.activity--active');
-        }
-
-        function activeCard() {
-            return qs('.activity--active .card.focus') ||
-                qs('.activity--active .card.hover') ||
-                qs('.activity--active .card.traverse') ||
-                qs('.activity--active .items-cards .card') ||
-                qs('.activity--active .items-line .card');
-        }
-
-        function heroInsertPoint(host) {
-            if (!host) return null;
-            var children = host.children || [];
-            for (var i = 0; i < children.length; i++) {
-                var child = children[i];
-                if (!child || !child.classList) continue;
-                if (child.classList.contains('items-line') ||
-                    child.classList.contains('scroll__content') ||
-                    child.classList.contains('scroll__body') ||
-                    child.classList.contains('items-cards') ||
-                    child.classList.contains('mapping--grid')) {
-                    return child;
-                }
-            }
-            return host.firstElementChild || host.firstChild;
-        }
-
-        function ensureHero() {
-            if (!pluginEnabled() || !isOn(KEY.hero, true)) {
-                removeHero();
-                return null;
-            }
-            if (qs('.activity--active .full-start, .activity--active .full-start-new')) {
-                removeHero();
-                return null;
-            }
-            var host = activeContentHost();
-            if (!host || !qs('.card', host)) return null;
-            host.classList.add('akira-home-host');
-
-            if (!state.hero) {
-                var hero = document.createElement('div');
-                hero.className = 'akira-hero is-entering';
-                hero.innerHTML =
-                    '<img class="akira-hero__bg akira-hero__bg--current" alt="">' +
-                    '<img class="akira-hero__bg akira-hero__bg--next" alt="">' +
-                    '<div class="akira-hero__shade"></div>' +
-                    '<div class="akira-hero__content">' +
-                    '  <div class="akira-hero__head"></div>' +
-                    '  <img class="akira-hero__logo" alt="">' +
-                    '  <div class="akira-hero__title"></div>' +
-                    '  <div class="akira-hero__tagline"></div>' +
-                    '  <div class="akira-hero__ratings"></div>' +
-                    '  <div class="akira-hero__facts"></div>' +
-                    '  <div class="akira-hero__desc"><div class="akira-hero__desc-text"></div></div>' +
-                    '</div>';
-                state.hero = hero;
-                requestAnimationFrame(function () {
-                    requestAnimationFrame(function () {
-                        hero.classList.remove('is-entering');
-                    });
-                });
-            }
-
-            if (state.hero.parentNode !== host) {
-                host.insertBefore(state.hero, heroInsertPoint(host));
-            } else if (host.firstElementChild !== state.hero) {
-                host.insertBefore(state.hero, heroInsertPoint(host));
-            }
-            return state.hero;
-        }
-
-        function removeHero() {
-            if (state.heroDelay) {
-                clearTimeout(state.heroDelay);
-                state.heroDelay = null;
-            }
-            if (state.hero && state.hero.parentNode) state.hero.parentNode.removeChild(state.hero);
-            state.hero = null;
-            state.heroKey = '';
-            state.heroTargetKey = '';
-        }
-
-        function updateHero() {
-            var hero = ensureHero();
-            if (!hero) return;
-            var card = activeCard();
-            if (!card) return;
-            state.lastCard = card;
-            var item = extractCardData(card);
-            if (!item) return;
-            var key = movieKey(item);
-            if (!key || key === state.heroKey || key === state.heroTargetKey) return;
-            state.heroTargetKey = key;
-
-            var title = movieTitle(item, '');
-            var bg = backdrop(item, 'w1280');
-            var vote = parseFloat(item.vote_average || 0);
-            var meta = [];
-            var year = movieYear(item);
-            if (year) meta.push(year);
-            if (vote > 0) meta.push(vote.toFixed(1) + ' TMDB');
-            var genres = genreNames(item).slice(0, 3).join(' • ');
-            if (genres) meta.push(genres);
-
-            var currentBg = qs('.akira-hero__bg--current', hero) || qs('.akira-hero__bg', hero);
-            var nextBg = qs('.akira-hero__bg--next', hero);
-            var logoNode = qs('.akira-hero__logo', hero);
-            var titleNode = qs('.akira-hero__title', hero);
-            var headNode = qs('.akira-hero__head', hero);
-            var taglineNode = qs('.akira-hero__tagline', hero);
-            var ratingsNode = qs('.akira-hero__ratings', hero);
-            var factsNode = qs('.akira-hero__facts', hero);
-            var descNode = qs('.akira-hero__desc', hero);
-            var descTextNode = qs('.akira-hero__desc-text', hero) || descNode;
-            var metaNode = { textContent: '' };
-
-            var requestId = ++state.heroReq;
-            if (state.heroDelay) clearTimeout(state.heroDelay);
-            hero.classList.add('is-changing');
-
-            state.heroDelay = setTimeout(function () {
-                if (requestId !== state.heroReq || state.heroTargetKey !== key) return;
-
-                var ready = { bg: '', logo: '', details: null };
-                var wait = 3;
-
-                function done(part, value) {
-                    ready[part] = value || '';
-                    wait -= 1;
-                    if (wait > 0) return;
-                    if (requestId !== state.heroReq || state.heroTargetKey !== key) return;
-
-                    titleNode.textContent = title;
-                    titleNode.style.display = '';
-                    titleNode.style.opacity = '';
-                    titleNode.style.transition = '';
-                    metaNode.textContent = meta.join(' • ');
-                    descNode.textContent = clean(item.overview || '') || tr('full_notext', 'Description is missing');
-                    var info = detailInfo(item, ready.details, card);
-                    if (headNode) headNode.textContent = info.head || '';
-                    if (taglineNode) {
-                        taglineNode.textContent = info.tagline ? '\u00ab' + info.tagline + '\u00bb' : '';
-                        taglineNode.style.display = info.tagline ? '' : 'none';
-                    }
-                    if (ratingsNode) {
-                        ratingsNode.innerHTML = info.ratings.map(function (rating) {
-                            return '<span class="akira-hero__rating"><b>' + escapeHtml(rating.value) + '</b><span>' + escapeHtml(rating.label) + '</span></span>';
-                        }).join('');
-                    }
-                    if (factsNode) {
-                        factsNode.innerHTML = info.facts.map(function (fact) {
-                            if (fact && typeof fact === 'object' && fact.age) return '<span class="akira-hero__age">' + escapeHtml(fact.age) + '</span>';
-                            return '<span>' + escapeHtml(fact) + '</span>';
-                        }).join('<i></i>');
-                    }
-                    if (descNode) {
-                        descNode.classList.toggle('is-scrollable', info.description.length > 155);
-                        descNode.innerHTML = '<div class="akira-hero__desc-text"></div>';
-                        descTextNode = qs('.akira-hero__desc-text', hero) || descNode;
-                    }
-                    if (descTextNode) descTextNode.textContent = info.description;
-
-                    logoNode.style.display = 'none';
-                    logoNode.style.opacity = '0';
-                    logoNode.style.transition = '';
-                    logoNode.removeAttribute('src');
-                    if (ready.logo && isOn(KEY.heroLogo, true)) {
-                        logoNode.onload = function () {
-                            if (requestId !== state.heroReq || state.heroTargetKey !== key) return;
-                            titleNode.style.transition = 'opacity 0.2s ease';
-                            titleNode.style.opacity = '0';
-                            setTimeout(function () {
-                                if (requestId !== state.heroReq || state.heroTargetKey !== key) return;
-                                titleNode.style.display = 'none';
-                                logoNode.style.display = 'block';
-                                logoNode.style.transition = 'opacity 0.35s ease';
-                                requestAnimationFrame(function () {
-                                    requestAnimationFrame(function () { logoNode.style.opacity = '1'; });
-                                });
-                            }, 200);
-                        };
-                        logoNode.onerror = function () {
-                            logoNode.style.display = 'none';
-                            titleNode.style.display = '';
-                            titleNode.style.opacity = '';
-                            titleNode.style.transition = '';
-                        };
-                        logoNode.src = ready.logo;
-                    }
-
-                    if (currentBg && ready.bg) {
-                        if (nextBg) {
-                            nextBg.src = ready.bg;
-                            nextBg.classList.add('is-loaded');
-                            requestAnimationFrame(function () {
-                                if (requestId !== state.heroReq || state.heroTargetKey !== key) return;
-                                nextBg.classList.add('is-visible');
-                            });
-                            setTimeout(function () {
-                                if (requestId !== state.heroReq || state.heroKey !== key) return;
-                                nextBg.classList.remove('akira-hero__bg--next');
-                                nextBg.classList.add('akira-hero__bg--current');
-                                nextBg.classList.remove('is-visible');
-                                currentBg.classList.remove('akira-hero__bg--current');
-                                currentBg.classList.add('akira-hero__bg--next');
-                                currentBg.classList.remove('is-loaded');
-                                currentBg.removeAttribute('src');
-                                currentBg = nextBg;
-                                nextBg = qs('.akira-hero__bg--next', hero);
-                            }, perfMode() === 'economy' ? 120 : 520);
-                        } else {
-                            currentBg.src = ready.bg;
-                            currentBg.classList.add('is-loaded');
-                        }
-                    } else if (currentBg) {
-                        currentBg.removeAttribute('src');
-                        currentBg.classList.remove('is-loaded');
-                    }
-
-                    state.heroKey = key;
-                    state.heroTargetKey = '';
-                    hero.classList.remove('is-changing');
-                }
-
-                preloadImage(bg, function (url) { done('bg', url); });
-                if (isOn(KEY.heroLogo, true)) {
-                    fetchLogo(item, function (url) {
-                        preloadImage(url || textLogo(title), function (logoUrl) { done('logo', logoUrl); });
-                    });
-                } else {
-                    done('logo', '');
-                }
-                fetchDetails(item, function (details) { done('details', details); });
-            }, perfMode() === 'economy' ? 120 : 320);
-            return;
-
-            state.heroDelay = setTimeout(function () {
-                if (requestId !== state.heroReq || state.heroKey !== key) return;
-
-                if (bgNode && bg) {
-                    var probe = new Image();
-                    probe.onload = function () {
-                        if (requestId !== state.heroReq || state.heroKey !== key) return;
-                        bgNode.src = bg;
-                        bgNode.classList.add('is-loaded');
-                    };
-                    probe.onerror = function () {
-                        if (requestId !== state.heroReq || state.heroKey !== key) return;
-                        bgNode.src = bg || '';
-                    };
-                    probe.src = bg;
-                } else if (bgNode) {
-                    bgNode.removeAttribute('src');
-                    bgNode.classList.remove('is-loaded');
-                }
-            titleNode.textContent = title;
-            titleNode.style.display = 'block';
-            metaNode.textContent = meta.join(' • ');
-            descNode.textContent = clean(item.overview || '') || tr('full_notext', 'Description is missing');
-            logoNode.style.display = 'none';
-            logoNode.removeAttribute('src');
-            hero.classList.remove('is-changing');
-
-            if (isOn(KEY.heroLogo, true)) {
-                fetchLogo(item, function (url) {
-                    if (requestId !== state.heroReq || state.heroKey !== key) return;
-                    url = url || textLogo(title);
-                    logoNode.onload = function () {
-                        if (requestId !== state.heroReq || state.heroKey !== key) return;
-                        logoNode.style.display = 'block';
-                        titleNode.style.display = 'none';
-                    };
-                    logoNode.onerror = function () {
-                        logoNode.style.display = 'none';
-                        titleNode.style.display = 'block';
-                    };
-                    logoNode.src = url;
-                });
-            }
-            }, perfMode() === 'economy' ? 120 : 320);
-        }
-
-        function startHeroLoop() {
-            if (heroTimer) return;
-            heroTimer = setInterval(function () {
-                if (pluginEnabled() && isOn(KEY.hero, true)) updateHero();
-            }, 700);
-        }
-
-        function stopHeroLoop() {
-            if (!heroTimer) return;
-            clearInterval(heroTimer);
-            heroTimer = null;
-        }
-
-        function restoreFullTitle(node) {
-            if (!node || (!node.classList.contains('akira-full-title') && !node.classList.contains('akira-full-title-pending'))) return;
-            var original = node.getAttribute('data-akira-title') || node.textContent || '';
-            node.classList.remove('akira-full-title');
-            node.classList.remove('akira-full-title-pending');
-            node.classList.remove('is-ready');
-            node.classList.remove('is-swapping');
-            node.removeAttribute('data-akira-movie-key');
-            node.removeAttribute('data-akira-logo-src');
-            node.style.height = '';
-            node.style.overflow = '';
-            node.style.removeProperty('transition');
-            node.style.removeProperty('opacity');
-            node.textContent = original;
-        }
-
-        function activeFullRoot() {
-            return qs('.activity--active .full-start-new') || qs('.activity--active .full-start');
-        }
-
-        function syncFullBackdrop(movie) {
-            var root = activeFullRoot();
-            if (!root || !movie) return;
-            var bg = backdrop(movie, 'original') || backdrop(movie, 'w1280');
-            if (!bg) {
-                var fallback = qs('.full-start-new__left img, .full-start__left img, .full-start-new__poster img, .full-start__poster img', root);
-                if (fallback) bg = fallback.getAttribute('src') || '';
-            }
-            if (bg) root.style.setProperty('--akira-full-mobile-bg', 'url(' + bg + ')');
-        }
-
-        function updateFullFog(target) {
-            if (!pluginEnabled()) return;
-            var scroll = target && target.classList && target.classList.contains('scroll__body') ? target : null;
-            if (!scroll && target && target.closest) scroll = target.closest('.scroll__body');
-            var root = scroll && scroll.querySelector ? (scroll.querySelector('.full-start-new') || scroll.querySelector('.full-start')) : activeFullRoot();
-            if (!root) return;
-            var top = scroll ? scroll.scrollTop : 0;
-            var opacity = Math.min(0.94, 0.58 + Math.max(0, top) / 520);
-            root.style.setProperty('--akira-full-fog', String(opacity));
-        }
-
-        function prepareFullLogoImage(img) {
-            img.className = 'akira-full-logo';
-            img.style.opacity = '0';
-        }
-
-        function animateFullLogoSwap(node, img, key) {
-            if (!node || !img) return;
-            if (node.classList.contains('is-swapping')) return;
-            node.classList.add('is-swapping');
-
-            var FADE_OUT = 270;
-            var MORPH    = 440;
-            var FADE_IN  = 380;
-
-            var startH = 0;
-            try { startH = Math.ceil(node.getBoundingClientRect().height || 0); } catch (e) {}
-
-            img.className = 'akira-full-logo';
-            img.style.opacity = '0';
+        },
+        preload: function (item) {
+            this.resolve(item, function () {});
+        },
+        setLogoCss: function (img, mode) {
             img.style.display = 'block';
-
-            // 1. Fade out existing text
-            node.style.transition = 'opacity ' + (FADE_OUT / 1000) + 's ease';
+            img.style.maxWidth = '100%';
+            img.style.width = 'auto';
+            img.style.height = 'auto';
+            img.style.objectFit = 'contain';
+            img.style.objectPosition = 'left bottom';
+            img.style.maxHeight = mode === 'card' ? 'var(--akira-card-logo-h)' : 'var(--akira-logo-max-h)';
+        },
+        swap: function (node, content) {
+            if (!node) return;
+            if (node.__akiraLogoTimer) clearTimeout(node.__akiraLogoTimer);
+            node.style.transition = 'opacity .22s ease';
             node.style.opacity = '0';
-
-            setTimeout(function () {
-                if ((node.getAttribute('data-akira-movie-key') || '') !== key) {
-                    node.style.transition = '';
-                    node.style.opacity = '';
-                    node.classList.remove('is-swapping');
-                    return;
-                }
-
-                // 2. Swap content while invisible
-                node.innerHTML = '<div class="akira-full-logo-holder"></div>';
-                var holder = qs('.akira-full-logo-holder', node);
-                if (holder) holder.appendChild(img);
-                node.classList.remove('akira-full-title-pending');
-                node.classList.add('akira-full-title', 'is-ready');
-                node.setAttribute('data-akira-logo-src', img.src || '');
-                node.style.transition = 'none';
+            node.__akiraLogoTimer = setTimeout(function () {
+                node.__akiraLogoTimer = null;
+                node.innerHTML = '';
+                if (typeof content === 'string') node.textContent = content;
+                else node.appendChild(content);
                 node.style.opacity = '1';
-
-                // 3. Measure and morph height
-                node.style.overflow = 'hidden';
-                node.style.boxSizing = 'border-box';
-                if (startH) node.style.height = startH + 'px';
-                void node.offsetHeight;
-
-                var targetH = 0;
-                try { node.style.height = 'auto'; targetH = Math.ceil(node.getBoundingClientRect().height || 0); } catch (e) {}
-
-                if (startH && targetH && Math.abs(startH - targetH) > 4) {
-                    node.style.height = startH + 'px';
-                    void node.offsetHeight;
-                    node.style.transition = 'height ' + (MORPH / 1000) + 's cubic-bezier(.4,0,.2,1)';
-                    requestAnimationFrame(function () { node.style.height = targetH + 'px'; });
-                } else {
-                    node.style.height = '';
-                    node.style.overflow = '';
-                    node.style.boxSizing = '';
+            }, 120);
+        },
+        applyToInfo: function (ctx, item, titleText) {
+            if (!ctx || !ctx.title || !item) return;
+            var titleEl = ctx.title[0] || ctx.title;
+            if (!titleEl) return;
+            var requestId = (titleEl.__akiraLogoReq || 0) + 1;
+            titleEl.__akiraLogoReq = requestId;
+            if (!this.enabled()) {
+                titleEl.textContent = titleText || '';
+                if (ctx.head) (ctx.head[0] || ctx.head).style.display = '';
+                if (ctx.movedHead) {
+                    var movedOff = ctx.movedHead[0] || ctx.movedHead;
+                    movedOff.textContent = '';
+                    movedOff.style.display = 'none';
                 }
-
-                // 4. Fade in logo partway through morph
-                setTimeout(function () {
-                    if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
-                    img.style.transition = 'opacity ' + (FADE_IN / 1000) + 's ease';
-                    img.style.opacity = '1';
-                }, Math.max(0, MORPH - 140));
-
-                // 5. Cleanup
-                setTimeout(function () {
-                    if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
-                    node.style.height = '';
-                    node.style.overflow = '';
-                    node.style.boxSizing = '';
-                    node.style.transition = '';
-                    node.style.opacity = '';
-                    img.style.transition = '';
-                    img.style.opacity = '';
-                    node.classList.remove('is-swapping');
-                }, MORPH + FADE_IN + 80);
-
-            }, FADE_OUT);
-        }
-
-        function applyFullLogo(movie) {
-            var titles = qsa('.full-start-new__title, .full-start__title');
-            if (!titles.length) return;
-            if (!pluginEnabled() || !isOn(KEY.fullLogo, true)) {
-                titles.forEach(restoreFullTitle);
                 return;
             }
-            if (!movie) movie = state.fullMovie;
-            syncFullBackdrop(movie);
-            var fallbackTitle = titles[0].getAttribute('data-akira-title') || titles[0].textContent;
-            var title = movieTitle(movie, fallbackTitle);
-            var key = movieKey(movie) || title;
-            if (key) state.fullMovieKey = key;
-
-            titles.forEach(function (node) {
-                if (!node.getAttribute('data-akira-title')) node.setAttribute('data-akira-title', node.textContent || title);
-                if (node.getAttribute('data-akira-movie-key') === key && node.classList.contains('akira-full-title')) return;
-                node.classList.add('akira-full-title-pending');
-                node.setAttribute('data-akira-movie-key', key);
+            titleEl.textContent = titleText || '';
+            this.resolve(item, function (url) {
+                if (titleEl.__akiraLogoReq !== requestId || !titleEl.isConnected) return;
+                if (!url) {
+                    titleEl.textContent = titleText || '';
+                    return;
+                }
+                var img = new Image();
+                img.className = 'akira-info-logo';
+                img.alt = titleText || '';
+                AkiraLogo.setLogoCss(img, 'info');
+                img.onerror = function () { titleEl.textContent = titleText || ''; };
+                img.src = url;
+                if (getBool(K.logoHideHead, true) && ctx.head && ctx.movedHead) {
+                    var head = ctx.head[0] || ctx.head;
+                    var moved = ctx.movedHead[0] || ctx.movedHead;
+                    var textValue = ctx.headText || '';
+                    if (textValue) {
+                        head.style.display = 'none';
+                        moved.textContent = textValue;
+                        moved.style.display = '';
+                    }
+                }
+                AkiraLogo.swap(titleEl, img);
             });
-
-            fetchLogo(movie, function (url) {
-                url = url || textLogo(title);
-                if (state.fullMovieKey && key && state.fullMovieKey !== key) return;
-                qsa('.akira-full-title, .akira-full-title-pending').forEach(function (node) {
-                    if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
-                    if (node.classList.contains('akira-full-title') && qs('.akira-full-logo', node)) return;
+        },
+        applyToCard: function (card) {
+            if (!card || !card.data || !card.render) return;
+            var root = card.render(true);
+            if (root && root[0]) root = root[0];
+            if (!root) return;
+            var view = qs('.card__view', root) || root;
+            var label = qs('.akira-card-title', root) || qs('.new-interface-card-title', root);
+            var title = clean(card.data.title || card.data.name || card.data.original_title || card.data.original_name);
+            var req = (card.__akiraLogoReq || 0) + 1;
+            card.__akiraLogoReq = req;
+            function removeLogo() {
+                var old = qs('.akira-card-logo', view);
+                if (old && old.parentNode) old.parentNode.removeChild(old);
+                if (label) label.style.display = '';
+            }
+            if (!this.enabled()) {
+                removeLogo();
+                return;
+            }
+            var wrap = qs('.akira-card-logo', view);
+            if (!wrap) {
+                wrap = document.createElement('div');
+                wrap.className = 'akira-card-logo';
+                view.appendChild(wrap);
+            }
+            this.resolve(card.data, function (url) {
+                if (card.__akiraLogoReq !== req || !root.isConnected) return;
+                if (!url) {
+                    removeLogo();
+                    return;
+                }
+                var img = new Image();
+                img.alt = title;
+                AkiraLogo.setLogoCss(img, 'card');
+                img.onerror = removeLogo;
+                img.src = url;
+                wrap.innerHTML = '';
+                wrap.appendChild(img);
+                if (label) label.style.display = 'none';
+            });
+        },
+        applyToFull: function (activity, item) {
+            try {
+                if (!activity || !activity.render || !item) return;
+                var container = activity.render();
+                if (!container || !container.find) return;
+                var titleNode = container.find('.full-start-new__title, .full-start__title');
+                if (!titleNode || !titleNode.length) return;
+                var titleEl = titleNode[0];
+                var titleText = clean(item.title || item.name || item.original_title || item.original_name || titleNode.text());
+                if (!titleEl.__akiraFullTitleText) titleEl.__akiraFullTitleText = titleText;
+                var original = titleEl.__akiraFullTitleText || titleText;
+                var req = (titleEl.__akiraLogoReq || 0) + 1;
+                titleEl.__akiraLogoReq = req;
+                if (!this.enabled()) {
+                    titleNode.text(original);
+                    syncFullHead(container, false);
+                    return;
+                }
+                titleNode.text(original);
+                syncFullHead(container, false);
+                this.resolve(item, function (url) {
+                    if (titleEl.__akiraLogoReq !== req || !titleEl.isConnected) return;
+                    if (!url) {
+                        titleNode.text(original);
+                        syncFullHead(container, false);
+                        return;
+                    }
                     var img = new Image();
-                    img.alt = title || '';
-                    prepareFullLogoImage(img);
-                    img.onload = function () {
-                        if ((node.getAttribute('data-akira-movie-key') || '') !== key) return;
-                        if (node.getAttribute('data-akira-logo-src') === img.src && qs('.akira-full-logo', node)) return;
-                        animateFullLogoSwap(node, img, key);
-                    };
+                    img.className = 'akira-full-logo new-interface-full-logo';
+                    img.alt = original;
+                    AkiraLogo.setLogoCss(img, 'full');
                     img.onerror = function () {
-                        restoreFullTitle(node);
+                        titleNode.text(original);
+                        syncFullHead(container, false);
                     };
                     img.src = url;
+                    syncFullHead(container, getBool(K.logoHideHead, true));
+                    AkiraLogo.swap(titleEl, img);
                 });
-            });
-        }
-
-        function moveSplitButtons() {
-            if (!pluginEnabled() || !isOn(KEY.splitButtons, true)) return;
-            var root = qs('.activity--active .full-start-new') || qs('.activity--active .full-start');
-            if (!root) return;
-            var main = qs('.full-start-new__buttons, .full-start__buttons', root);
-            if (!main) return;
-            var container = qs('.buttons--container', root);
-
-            var moved = [];
-            var anchor = null;
-            var allSelectors = ['.button--play', '.view--online', '.view--torrent', '.view--trailer', '.button--book', '.button--reaction', '.button--subscribe', '.button--options'];
-
-            function doMove(button, isPrimary) {
-                if (moved.indexOf(button) > -1) return;
-                if (button.parentNode === main) { anchor = button; return; }
-                moved.push(button);
-                button.classList.remove('hide');
-                if (!button.classList.contains('selector')) button.classList.add('selector');
-                button.setAttribute('data-selector', 'true');
-                if (!isPrimary) button.classList.add('akira-moved-button');
-                if (anchor && anchor.parentNode === main && anchor.nextSibling) main.insertBefore(button, anchor.nextSibling);
-                else if (anchor && anchor.parentNode === main) main.appendChild(button);
-                else main.insertBefore(button, main.firstChild);
-                anchor = button;
-            }
-
-            if (container) {
-                allSelectors.forEach(function (sel) {
-                    qsa(sel, container).forEach(function (btn) {
-                        doMove(btn, sel === '.button--play' || sel === '.view--online');
-                    });
-                });
-                container.classList.add('hide');
-            }
-
-            qsa('.button--play', main).forEach(function (btn) {
-                if (btn.parentNode !== main) return;
-                var hasText = (btn.textContent || '').trim();
-                var hasIcon = qs('svg, img', btn);
-                if (!hasText && !hasIcon) btn.style.display = 'none';
-            });
-        }
-
-        function triggerEvent(node, name) {
-            if (!node || !name) return false;
-            try {
-                if (window.$) {
-                    $(node).trigger(name);
-                    return true;
-                }
-            } catch (e) {}
-            return false;
-        }
-
-        function clickNode(node) {
-            if (!node) return false;
-            try {
-                if (typeof node.click === 'function') node.click();
-                else node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-                return true;
-            } catch (e) {}
-            return false;
-        }
-
-        function selectorEnter(node) {
-            if (!node) return false;
-            var ok = false;
-            ok = triggerEvent(node, 'hover:focus') || ok;
-            ok = triggerEvent(node, 'hover:enter') || ok;
-            if (ok) return true;
-            return clickNode(node);
-        }
-
-        function bindAction(node, handler) {
-            if (!node || node.getAttribute('data-akira-bound') === '1') return;
-            node.setAttribute('data-akira-bound', '1');
-            node.addEventListener('click', function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                handler();
-            });
-            node.addEventListener('keydown', function (event) {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    handler();
-                }
-            });
-            try {
-                if (window.$) {
-                    $(node).on('hover:enter.akira', handler);
-                    $(node).on('hover:focus.akira hover:hover.akira', function () { node.classList.add('focus'); });
-                    $(node).on('hover:blur.akira hover:out.akira', function () { node.classList.remove('focus'); });
-                }
             } catch (e) {}
         }
+    };
 
-        function normalizeAction(action) {
-            var value = String(action || '').trim().toLowerCase();
-            if (!value) return '';
-            if (value === 'release' || value === 'releases') return 'relise';
-            if (value === 'bookmarks') return 'favorite';
-            if (value === 'schedule') return 'timetable';
-            if (value === 'collections' || value === 'collection') return 'catalog';
-            return value;
-        }
-
-        function menuItem(action) {
-            return qs('.menu .menu__item.selector[data-action="' + normalizeAction(action) + '"]');
-        }
-
-        function nativeBackButton() {
-            return qs('.head__backward');
-        }
-
-        function goBack() {
-            var nativeBack = nativeBackButton();
-            if (!nativeBack) return false;
-            if (clickNode(nativeBack)) return true;
-            return selectorEnter(nativeBack);
-        }
-
-        function openAction(action) {
-            var normalized = normalizeAction(action);
-            var nativeItem = menuItem(normalized);
-            if (nativeItem && selectorEnter(nativeItem)) return true;
-            try {
-                if (!Lampa.Activity || !Lampa.Storage || !Lampa.Lang) return false;
-                var source = Lampa.Storage.field('source');
-                if (normalized === 'main') {
-                    Lampa.Activity.push({ url: '', title: Lampa.Lang.translate('title_main'), component: 'main', source: source });
-                    return true;
-                }
-                if (normalized === 'movie' || normalized === 'tv' || normalized === 'anime') {
-                    Lampa.Activity.push({
-                        url: normalized,
-                        title: (normalized === 'movie' ? Lampa.Lang.translate('menu_movies') : normalized === 'anime' ? Lampa.Lang.translate('menu_anime') : Lampa.Lang.translate('menu_tv')) + ' - ' + String(source || '').toUpperCase(),
-                        component: 'category',
-                        source: normalized === 'anime' ? 'cub' : source,
-                        page: 1
-                    });
-                    return true;
-                }
-                if (normalized === 'cartoon') {
-                    Lampa.Activity.push({
-                        url: 'movie',
-                        title: Lampa.Lang.translate('menu_multmovie') + ' - ' + String(source || '').toUpperCase(),
-                        component: 'category',
-                        genres: 16,
-                        page: 1
-                    });
-                    return true;
-                }
-            } catch (e) {}
-            return false;
-        }
-
-        function openSearch() {
-            var nativeItem = menuItem('search');
-            if (nativeItem && selectorEnter(nativeItem)) return true;
-            var nativeButton = qs('.open--search');
-            if (nativeButton && selectorEnter(nativeButton)) return true;
-            try {
-                if (Lampa.Search && typeof Lampa.Search.open === 'function') {
-                    Lampa.Search.open();
-                    return true;
-                }
-            } catch (e) {}
-            return false;
-        }
-
-        function openSettings() {
-            var nativeItem = menuItem('settings');
-            if (nativeItem && selectorEnter(nativeItem)) return true;
-            try {
-                if (Lampa.Settings && typeof Lampa.Settings.create === 'function') {
-                    Lampa.Settings.create(cfg.settingsComponent);
-                    return true;
-                }
-            } catch (e) {}
-            return false;
-        }
-
-        function settingsSection(name) {
-            return cfg.settingsComponent + '_' + name;
-        }
-
-        function openSettingsSection(component) {
-            if (!component) return false;
-            try {
-                if (Lampa.Settings && typeof Lampa.Settings.create === 'function') {
-                    setTimeout(function () {
-                        try {
-                            Lampa.Settings.create(component, {
-                                onBack: function () {
-                                    Lampa.Settings.create(cfg.settingsComponent);
-                                    schedulePatch(true);
-                                }
-                            });
-                        } catch (e) {}
-                    }, 0);
-                    return true;
-                }
-            } catch (e) {}
-            return false;
-        }
-
-        function openFavorite() {
-            var nativeItem = menuItem('favorite');
-            if (nativeItem && selectorEnter(nativeItem)) return true;
-            try {
-                if (Lampa.Activity && Lampa.Lang) {
-                    Lampa.Activity.push({ component: 'bookmarks', title: Lampa.Lang.translate('settings_input_links') });
-                    return true;
-                }
-            } catch (e) {}
-            return false;
-        }
-
-        function iconSearch() {
-            return '<svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>';
-        }
-
-        function iconSettings() {
-            return '<svg><use xlink:href="#sprite-settings"></use></svg>';
-        }
-
-        function iconBookmark() {
-            return '<svg viewBox="0 0 24 24" fill="none"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2h7A2.5 2.5 0 0 1 18 4.5V21l-6-3.5L6 21V4.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>';
-        }
-
-        function iconBackward() {
-            return '<svg viewBox="0 0 24 24" fill="none"><path d="M15 5 8 12l7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
-        }
-
-        function translatedMenuLabel(item) {
-            var value = tr(item.labelKey, '');
-            if (value && value !== item.labelKey) return value;
-            return localize(item.fallback, item.action);
-        }
-
-        function availableTopbarItems() {
-            var found = [];
-            var seen = {};
-            qsa('.menu .menu__item.selector[data-action]').forEach(function (item) {
-                var action = item.getAttribute('data-action');
-                if (!action || seen[action] || action === 'search' || action === 'settings') return;
-                var labelNode = qs('.menu__text, .menu__item-name, .menu__item-text, .menu__item-title', item);
-                var label = clean(labelNode ? labelNode.textContent : item.textContent) || action;
-                seen[action] = true;
-                found.push({ action: action, label: label });
-            });
-            TOPBAR_FALLBACK.forEach(function (item) {
-                if (seen[item.action]) return;
-                seen[item.action] = true;
-                found.push({ action: item.action, label: translatedMenuLabel(item) });
-            });
-            return found;
-        }
-
-        function storedTopbarActions() {
-            var value = get(KEY.topnavItems, null);
-            if (value === null || typeof value === 'undefined') return cfg.defaultNav.slice();
-            if (value === 'undefined' || value === 'null') return cfg.defaultNav.slice();
-            if (typeof value === 'string') {
-                try {
-                    value = JSON.parse(value);
-                } catch (e) {
-                    value = value.split(',').map(function (item) { return clean(item); }).filter(Boolean);
-                }
-            }
-            return Array.isArray(value) && value.length ? value : cfg.defaultNav.slice();
-        }
-
-        function setTopbarAction(action, enabled) {
-            var order = availableTopbarItems().map(function (item) { return item.action; });
-            var selected = storedTopbarActions().filter(function (item, index, arr) {
-                return item && arr.indexOf(item) === index;
-            });
-            if (enabled && selected.indexOf(action) === -1) selected.push(action);
-            if (!enabled) selected = selected.filter(function (item) { return item !== action; });
-            selected.sort(function (a, b) {
-                var ai = order.indexOf(a);
-                var bi = order.indexOf(b);
-                if (ai === -1) ai = 999;
-                if (bi === -1) bi = 999;
-                return ai - bi;
-            });
-            set(KEY.topnavItems, selected);
-        }
-
-        function selectedTopbarItems() {
-            var map = {};
-            availableTopbarItems().forEach(function (item) { map[item.action] = item; });
-            return storedTopbarActions().map(function (action) { return map[action]; }).filter(Boolean);
-        }
-
-        function updateClock() {
-            var clock = qs('.akira-topbar__clock');
-            if (!clock) return;
-            var date = new Date();
-            clock.textContent = String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
-        }
-
-        function startClock() {
-            updateClock();
-            if (!clockTimer) clockTimer = setInterval(updateClock, 20000);
-        }
-
-        function stopClock() {
-            if (!clockTimer) return;
-            clearInterval(clockTimer);
-            clockTimer = null;
-        }
-
-        function openMenu() {
-            try {
-                if (Lampa.Controller && typeof Lampa.Controller.toggle === 'function') {
-                    Lampa.Controller.toggle('menu');
-                    return true;
-                }
-            } catch (e) {}
-            return false;
-        }
-
-        function syncBrandWidth(icon) {
-            if (!icon) return;
-            requestAnimationFrame(function () {
-                try {
-                    var width = Math.ceil(icon.getBoundingClientRect().width || 0);
-                    if (width > 0) document.documentElement.style.setProperty('--akira-brand-w', width + 'px');
-                } catch (e) {}
-            });
-        }
-
-        function patchMenuBrand(head) {
-            var icon = qs('.head__menu-icon', head) || qs('.head__menu-icon');
-            if (!icon) return;
-            if (!icon.getAttribute('data-akira-original-html')) {
-                icon.setAttribute('data-akira-original-html', icon.innerHTML || '');
-            }
-            try {
-                if (window.$) $(icon).off('.akira');
-            } catch (e) {}
-            icon.removeAttribute('data-akira-bound');
-            icon.classList.add('akira-head-brand');
-            icon.classList.add('selector');
-            icon.setAttribute('data-selector', 'true');
-            icon.setAttribute('tabindex', '0');
-            icon.innerHTML = '<span>' + escapeHtml(brandName()) + '</span>';
-            syncBrandWidth(icon);
-        }
-
-        function restoreMenuBrand() {
-            var icon = qs('.head__menu-icon.akira-head-brand');
-            if (!icon) return;
-            var original = icon.getAttribute('data-akira-original-html');
-            if (original !== null) icon.innerHTML = original;
-            icon.classList.remove('akira-head-brand');
-            icon.removeAttribute('data-akira-original-html');
-            icon.removeAttribute('data-akira-bound');
-            try { document.documentElement.style.removeProperty('--akira-brand-w'); } catch (e) {}
-            try {
-                if (window.$) $(icon).off('.akira');
-            } catch (e) {}
-        }
-
-        function patchTopbar() {
-            var old = qs('.akira-topbar');
-            if (!pluginEnabled() || !isOn(KEY.topbar, true)) {
-                if (old) old.remove();
-                restoreMenuBrand();
-                stopClock();
+    function syncFullHead(container, active) {
+        try {
+            if (!container || !container.find) return;
+            var headNode = container.find('.full-start-new__head');
+            var detailsNode = container.find('.full-start-new__details');
+            if (!headNode.length || !detailsNode.length) return;
+            var head = headNode[0];
+            var details = detailsNode[0];
+            var moved = qs('.akira-logo-moved-head', details);
+            var sep = qs('.akira-logo-moved-separator', details);
+            if (!active) {
+                if (moved && moved.parentNode) moved.parentNode.removeChild(moved);
+                if (sep && sep.parentNode) sep.parentNode.removeChild(sep);
+                head.style.display = '';
                 return;
             }
-            var head = qs('.head__body') || qs('.head');
-            if (!head) return;
-            patchMenuBrand(head);
-            var bar = qs('.akira-topbar', head);
-            if (!bar) {
-                bar = document.createElement('div');
-                bar.className = 'akira-topbar';
-                bar.innerHTML = '<div class="akira-topbar__inner"><div class="akira-topbar__items"></div><div class="akira-topbar__right"></div></div>';
-                head.appendChild(bar);
-            }
-
-            var itemsNode = qs('.akira-topbar__items', bar);
-            var rightNode = qs('.akira-topbar__right', bar);
-            itemsNode.innerHTML = '';
-            rightNode.innerHTML = '';
-
-            if (nativeBackButton()) {
-                var backButton = document.createElement('div');
-                backButton.className = 'akira-topbar__item akira-topbar__icon selector';
-                backButton.setAttribute('data-selector', 'true');
-                backButton.setAttribute('data-role', 'back');
-                backButton.setAttribute('tabindex', '0');
-                backButton.innerHTML = iconBackward();
-                bindAction(backButton, goBack);
-                itemsNode.appendChild(backButton);
-            }
-
-            selectedTopbarItems().forEach(function (item) {
-                var button = document.createElement('div');
-                button.className = 'akira-topbar__item selector';
-                button.setAttribute('data-selector', 'true');
-                button.setAttribute('data-action', item.action);
-                button.setAttribute('tabindex', '0');
-                button.textContent = item.label;
-                bindAction(button, function () { openAction(item.action); });
-                itemsNode.appendChild(button);
-            });
-
-            [
-                { role: 'search', icon: iconSearch(), handler: openSearch },
-                { role: 'favorite', icon: iconBookmark(), handler: openFavorite },
-                { role: 'settings', icon: iconSettings(), handler: openSettings }
-            ].forEach(function (item) {
-                var button = document.createElement('div');
-                button.className = 'akira-topbar__item akira-topbar__icon selector';
-                button.setAttribute('data-selector', 'true');
-                button.setAttribute('data-role', item.role);
-                button.setAttribute('tabindex', '0');
-                button.innerHTML = item.icon;
-                bindAction(button, item.handler);
-                rightNode.appendChild(button);
-            });
-
-            var clock = document.createElement('div');
-            clock.className = 'akira-topbar__clock selector';
-            clock.setAttribute('data-selector', 'true');
-            clock.setAttribute('tabindex', '0');
-            bindAction(clock, openSettings);
-            rightNode.appendChild(clock);
-            startClock();
-
-            qsa('.akira-topbar__item[data-action]', bar).forEach(function (button) {
-                var nativeItem = menuItem(button.getAttribute('data-action'));
-                button.classList.remove('is-active');
-                if (nativeItem && (nativeItem.classList.contains('active') || nativeItem.classList.contains('focus') || nativeItem.classList.contains('hover'))) {
-                    button.classList.add('is-active');
-                }
-            });
-        }
-
-        function cssCardHeight() {
-            var size = cardSize();
-            if (size === 'sm') return '10.4em';
-            if (size === 'lg') return '14.2em';
-            return '12.2em';
-        }
-
-        function injectStyle() {
-            var p = theme();
-            var style = document.getElementById(cfg.styleId) || document.createElement('style');
-            style.id = cfg.styleId;
-            var cardH = cssCardHeight();
-            var css = [
-                'body.' + cfg.bodyClass + ' { --akira-card-h: ' + cardH + '; --akira-card-w: calc(var(--akira-card-h) * 1.7778); color: #f7f7f7 !important; background: linear-gradient(180deg, ' + p.bg + ' 0%, ' + p.bg2 + ' 100%) !important; }',
-                'body.' + cfg.bodyClass + '[' + attrUiScale + '="auto"], body.' + cfg.bodyClass + '[' + attrUiScale + '="12"], body.' + cfg.bodyClass + '[' + attrUiScale + '="14"], body.' + cfg.bodyClass + '[' + attrUiScale + '="16"], body.' + cfg.bodyClass + '[' + attrUiScale + '="18"], body.' + cfg.bodyClass + '[' + attrUiScale + '="20"], body.' + cfg.bodyClass + '[' + attrUiScale + '="22"], body.' + cfg.bodyClass + '[' + attrUiScale + '="24"], body.' + cfg.bodyClass + '[' + attrUiScale + '="28"], body.' + cfg.bodyClass + '[' + attrUiScale + '="32"] { font-size: var(--akira-ui-font-size) !important; }',
-                'body.' + cfg.bodyClass + ' .card--category { width: 16em !important; }',
-                'body.' + cfg.bodyClass + ' .background__gradient { background: linear-gradient(90deg, rgba(0,0,0,.96) 0%, rgba(0,0,0,.72) 42%, rgba(0,0,0,.20) 100%) !important; }',
-                'body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__body, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__wrapper { background: transparent !important; box-shadow: none !important; overflow: visible !important; }',
-                'body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__title, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__time, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__split, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__logo, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .open--search, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__settings { display: none !important; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar { position: absolute; left: 1.1em; right: 1.1em; top: .54em; z-index: 40; pointer-events: none; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__inner { height: 2.8em; display: flex; align-items: center; gap: .46em; pointer-events: auto; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__brand { height: 2.42em; display: inline-flex; align-items: center; padding: 0 .95em; border-radius: 8px; background: linear-gradient(92deg, ' + p.accent + ', ' + p.accent2 + '); color: ' + p.focusText + '; font-size: .9em; font-weight: 900; letter-spacing: 0; box-shadow: 0 10px 28px ' + p.soft + '; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__items, body.' + cfg.bodyClass + ' .akira-topbar__right { display: inline-flex; align-items: center; gap: .18em; height: 2.62em; padding: .18em; border-radius: 8px; background: ' + p.panel + '; border: 1px solid ' + p.edge + '; backdrop-filter: blur(18px) saturate(130%); -webkit-backdrop-filter: blur(18px) saturate(130%); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 26px rgba(0,0,0,.22); }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__right { margin-left: auto; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__item { height: 2.18em; min-width: 2.18em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .88em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 700; white-space: nowrap; transition: background .18s ease, transform .18s ease, color .18s ease; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__icon { width: 2.18em; padding: 0; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__icon svg { width: 1.08em; height: 1.08em; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__clock { height: 2.18em; min-width: 4.1em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .72em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 800; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__item.focus, body.' + cfg.bodyClass + ' .akira-topbar__item.hover, body.' + cfg.bodyClass + ' .akira-topbar__item.is-active, body.' + cfg.bodyClass + ' .akira-topbar__clock.focus, body.' + cfg.bodyClass + ' .akira-topbar__clock.hover { background: rgba(255,255,255,.15); color: #fff; transform: translateY(-1px); }',
-                'body.' + cfg.bodyClass + ' .akira-hero { position: relative; height: clamp(300px, 42vh, 640px); margin: .6em 1.1em 1.05em; border-radius: 10px; overflow: hidden; background: #111; box-shadow: 0 18px 54px rgba(0,0,0,.38); isolation: isolate; }',
-                'body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .akira-hero { margin-top: 4.05em; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.01); opacity: .86; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.95) 0%, rgba(0,0,0,.72) 42%, rgba(0,0,0,.12) 100%), linear-gradient(0deg, rgba(0,0,0,.84) 0%, rgba(0,0,0,0) 48%); }',
-                'body.' + cfg.bodyClass + ' .akira-hero__content { position: relative; z-index: 2; height: 100%; width: min(56em, 64%); display: flex; flex-direction: column; justify-content: flex-end; padding: clamp(1.15em, 2.3vw, 2.4em); box-sizing: border-box; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__brand { display: none !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__logo { max-width: min(27em, 90%); max-height: 8.5em; width: auto; height: auto; object-fit: contain; object-position: left bottom; margin-bottom: .74em; filter: drop-shadow(0 8px 20px rgba(0,0,0,.75)); }',
-                'body.' + cfg.bodyClass + ' .akira-hero__title { color: #fff; font-size: clamp(2.05em, 4vw, 4.6em); line-height: .98; font-weight: 900; letter-spacing: 0; margin-bottom: .18em; text-shadow: 0 12px 28px rgba(0,0,0,.56); }',
-                'body.' + cfg.bodyClass + ' .akira-hero__meta { color: rgba(255,255,255,.82); font-size: clamp(.92em, 1.15vw, 1.12em); font-weight: 700; line-height: 1.35; margin-bottom: .65em; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__desc { color: rgba(255,255,255,.82); max-width: 44em; font-size: clamp(.92em, 1.12vw, 1.12em); line-height: 1.46; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__head { min-height: 1.2em; margin-bottom: .72em; color: rgba(255,255,255,.86); font-size: .9em; line-height: 1.2; font-weight: 800; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__tagline { margin: -.12em 0 .72em; color: rgba(255,255,255,.78); font-size: .9em; line-height: 1.25; font-weight: 700; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__ratings { display: flex; align-items: center; flex-wrap: wrap; gap: .9em; margin: .12em 0 .58em; color: rgba(255,255,255,.88); }',
-                'body.' + cfg.bodyClass + ' .akira-hero__rating { display: inline-flex; align-items: baseline; gap: .36em; line-height: 1; font-size: 1.02em; font-weight: 800; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__rating b { font-size: 1.18em; color: #fff; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__facts { display: flex; align-items: center; flex-wrap: wrap; gap: .42em .56em; margin-bottom: .66em; color: rgba(255,255,255,.82); font-size: .88em; line-height: 1.25; font-weight: 750; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__facts i { width: .24em; height: .24em; border-radius: 50%; background: rgba(255,255,255,.6); }',
-                'body.' + cfg.bodyClass + ' .akira-hero__age { min-width: 2.2em; height: 1.75em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .35em; border: 1px solid rgba(255,255,255,.62); color: #fff; box-sizing: border-box; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__desc-text { display: block; will-change: transform; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__desc.is-scrollable .akira-hero__desc-text { animation: akira-desc-scroll 18s linear 4s infinite alternate; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__actions { display: flex; gap: .5em; margin-top: 1.05em; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__button { min-height: 2.45em; display: inline-flex; align-items: center; justify-content: center; padding: 0 1.35em; border-radius: 7px; background: #fff; color: #050505; font-weight: 900; font-size: .96em; transition: transform .18s ease, box-shadow .18s ease; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__button.focus, body.' + cfg.bodyClass + ' .akira-hero__button.hover { transform: translateY(-1px); box-shadow: 0 0 0 2px ' + p.accent + ', 0 10px 24px ' + p.soft + '; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-cards, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line { gap: .72em !important; overflow: visible !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-cards .card, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line .card { width: var(--akira-card-w) !important; min-width: var(--akira-card-w) !important; height: var(--akira-card-h) !important; overflow: visible !important; border-radius: 8px !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__view { height: 100% !important; padding-bottom: 0 !important; border-radius: 8px !important; overflow: hidden !important; background: #151515 !important; border: 1px solid rgba(255,255,255,.08) !important; box-shadow: 0 8px 18px rgba(0,0,0,.35) !important; transition: transform .24s ease, border-color .24s ease, box-shadow .24s ease !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__img { width: 100% !important; height: 100% !important; object-fit: cover !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__title { display: none !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card.focus .card__view, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card.hover .card__view, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card:hover .card__view { transform: scale(1.06); border-color: ' + p.accent + ' !important; box-shadow: 0 18px 42px rgba(0,0,0,.58), 0 0 0 2px ' + p.accent + ' !important; }',
-                'body.' + cfg.bodyClass + ' .akira-card-overlay { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 3.8em .82em .82em; background: linear-gradient(0deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.58) 58%, rgba(0,0,0,0) 100%); pointer-events: none; box-sizing: border-box; }',
-                'body.' + cfg.bodyClass + ' .akira-card-overlay__title { color: #fff; font-size: .96em; line-height: 1.12; font-weight: 900; letter-spacing: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }',
-                'body.' + cfg.bodyClass + ' .akira-card-overlay__meta { margin-top: .25em; color: rgba(255,255,255,.74); font-size: .72em; line-height: 1.18; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
-                'body.' + cfg.bodyClass + ' .akira-card-overlay__logo { max-width: 78%; max-height: 2.65em; object-fit: contain; object-position: left bottom; display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,.7)); }',
-                'body.' + cfg.bodyClass + ' .akira-card-rating { position: absolute; right: .68em; top: .62em; z-index: 4; padding: .26em .52em; border-radius: 6px; background: rgba(0,0,0,.62); border: 1px solid rgba(255,255,255,.16); color: #fff; font-size: .72em; font-weight: 900; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }',
-                'body.' + cfg.bodyClass + ' .full-start, body.' + cfg.bodyClass + ' .full-start-new { background: transparent !important; }',
-                'body.' + cfg.bodyClass + ' .full-start__button, body.' + cfg.bodyClass + ' .simple-button, body.' + cfg.bodyClass + ' .full-descr__tag, body.' + cfg.bodyClass + ' .settings-param, body.' + cfg.bodyClass + ' .settings-folder, body.' + cfg.bodyClass + ' .selectbox-item { border-radius: 8px !important; border: 1px solid rgba(255,255,255,.10) !important; transition: transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease !important; }',
-                'body.' + cfg.bodyClass + ' .full-start__button.focus, body.' + cfg.bodyClass + ' .simple-button.focus, body.' + cfg.bodyClass + ' .full-descr__tag.focus, body.' + cfg.bodyClass + ' .settings-param.focus, body.' + cfg.bodyClass + ' .settings-folder.focus, body.' + cfg.bodyClass + ' .selectbox-item.focus, body.' + cfg.bodyClass + ' .menu__item.focus, body.' + cfg.bodyClass + ' .menu__item.hover { background: linear-gradient(92deg, ' + p.accent + ', ' + p.accent2 + ') !important; color: ' + p.focusText + ' !important; border-color: ' + p.accent + ' !important; box-shadow: 0 0 0 1px ' + p.accent + ', 0 12px 28px ' + p.soft + ' !important; transform: translateY(-1px); }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons, body.' + cfg.bodyClass + ' .full-start__buttons { display: flex !important; flex-wrap: wrap !important; gap: .55em !important; align-items: center !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button span { display: inline !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-title { min-height: clamp(92px, 12vw, 190px) !important; display: flex !important; align-items: flex-end !important; color: transparent !important; text-shadow: none !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-logo-holder { width: min(92vw, 980px); max-width: 100%; display: inline-flex; align-items: flex-end; }',
-                'body.' + cfg.bodyClass + ' .akira-full-logo { width: auto; max-width: 100%; max-height: clamp(86px, 13vw, 220px); object-fit: contain; filter: drop-shadow(0 8px 22px rgba(0,0,0,.76)); }',
-                'body.' + cfg.bodyClass + ' .settings__content, body.' + cfg.bodyClass + ' .selectbox__content, body.' + cfg.bodyClass + ' .settings-input__content { background: ' + p.panel2 + ' !important; border: 1px solid ' + p.edge + ' !important; backdrop-filter: blur(18px) saturate(130%); -webkit-backdrop-filter: blur(18px) saturate(130%); }',
-                'body.' + cfg.bodyClass + '[' + attrPerf + '="economy"] * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }',
-                'body.' + cfg.bodyClass + '[' + attrPerf + '="economy"] .card__view, body.' + cfg.bodyClass + '[' + attrPerf + '="economy"] .akira-topbar__items, body.' + cfg.bodyClass + '[' + attrPerf + '="economy"] .akira-topbar__right { transition-duration: .08s !important; box-shadow: none !important; }',
-                '@keyframes akira-desc-scroll { 0%, 28% { transform: translateY(0); } 100% { transform: translateY(calc(-100% + 3.05em)); } }',
-                '@media (max-width: 900px) { body.' + cfg.bodyClass + ' .akira-topbar__items { display: none !important; } body.' + cfg.bodyClass + ' .akira-hero { height: clamp(280px, 42vh, 460px); margin-left: .65em; margin-right: .65em; } body.' + cfg.bodyClass + ' .akira-hero__content { width: 100%; padding: 1.05em; } body.' + cfg.bodyClass + ' .akira-hero__desc { -webkit-line-clamp: 2; } }',
-                '@media (max-width: 560px) { body.' + cfg.bodyClass + ' .akira-topbar__brand { font-size: .78em; padding: 0 .7em; } body.' + cfg.bodyClass + ' .akira-topbar { left: .65em; right: .65em; } body.' + cfg.bodyClass + ' .akira-hero__title { font-size: 2em; } }',
-                '@media (min-width: 2000px) { body.' + cfg.bodyClass + ' .akira-hero { height: clamp(400px, 44vh, 760px); } body.' + cfg.bodyClass + ' .akira-hero__content { width: min(72em, 66%); } body.' + cfg.bodyClass + ' .akira-hero__logo { max-height: 11em; } body.' + cfg.bodyClass + ' .akira-hero__title { font-size: clamp(2.4em, 3.8vw, 5em); } }',
-                '@media (min-width: 2560px) { body.' + cfg.bodyClass + ' .akira-hero { height: clamp(480px, 46vh, 900px); } body.' + cfg.bodyClass + ' .akira-hero__logo { max-height: 13em; } body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid { grid-template-columns: repeat(auto-fill, minmax(22em, 1fr)) !important; } }'
-            ].join('\n');
-            css += '\n' + [
-                'body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__body { position: relative !important; z-index: 48 !important; min-height: 0 !important; height: 0 !important; padding: 0 !important; overflow: visible !important; }',
-                'body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__history, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__source, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__markers, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__backward, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .settings-icon-holder, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__action, body.' + cfg.bodyClass + '[' + attrTopbar + '="on"] .head__button { display: none !important; }',
-                'body.' + cfg.bodyClass + ' .head__menu-icon.akira-head-brand { position: absolute !important; left: 1.05em !important; top: .54em !important; z-index: 50 !important; width: auto !important; max-width: min(30vw, 22em) !important; min-width: 4.4em !important; height: 2.62em !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 0 .95em !important; margin: 0 !important; border-radius: 8px !important; background: linear-gradient(92deg, ' + p.accent + ', ' + p.accent2 + ') !important; color: ' + p.focusText + ' !important; border: 1px solid rgba(255,255,255,.12) !important; box-shadow: 0 10px 28px ' + p.soft + ' !important; transform: none !important; overflow: hidden !important; }',
-                'body.' + cfg.bodyClass + ' .head__menu-icon.akira-head-brand span { display: block !important; max-width: 100% !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: .88em !important; line-height: 1 !important; font-weight: 900 !important; letter-spacing: 0 !important; color: inherit !important; }',
-                'body.' + cfg.bodyClass + ' .head__menu-icon.akira-head-brand.focus, body.' + cfg.bodyClass + ' .head__menu-icon.akira-head-brand.hover { box-shadow: 0 0 0 2px rgba(255,255,255,.18), 0 12px 30px ' + p.soft + ' !important; transform: translateY(-1px) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar { left: calc(var(--akira-brand-w, 5.2em) + 1.55em) !important; top: .54em !important; right: 1.05em !important; z-index: 49 !important; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__inner { gap: .34em !important; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__items { max-width: calc(100vw - var(--akira-brand-w, 5.2em) - 17em) !important; overflow: hidden !important; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__brand { display: none !important; }',
-                'body.' + cfg.bodyClass + ' .akira-home-host { position: relative !important; overflow: visible !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero { display: block !important; width: calc(100% - 2.2em) !important; flex: 0 0 auto !important; clear: both !important; z-index: 6 !important; margin: 4.25em 1.1em 1.45em !important; }',
-                'body.' + cfg.bodyClass + '[' + attrTopbar + '="off"] .akira-hero { margin-top: .85em !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero.is-entering { max-height: 0 !important; opacity: 0 !important; margin-top: 0 !important; margin-bottom: 0 !important; overflow: hidden !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero { max-height: clamp(300px, 42vh, 640px) !important; transition: max-height .58s cubic-bezier(.22,.61,.36,1), margin .58s cubic-bezier(.22,.61,.36,1), opacity .38s ease .08s !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero + .items-line, body.' + cfg.bodyClass + ' .akira-hero + .scroll__body, body.' + cfg.bodyClass + ' .akira-hero ~ .items-line, body.' + cfg.bodyClass + ' .akira-hero ~ .scroll__body { position: relative !important; z-index: 1 !important; clear: both !important; }',
-                'body.' + cfg.bodyClass + ' .items-line__head, body.' + cfg.bodyClass + ' .items-line__body, body.' + cfg.bodyClass + ' .items-cards { position: relative !important; z-index: 1 !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(var(--akira-card-w), 1fr)) !important; gap: 1.05em .78em !important; align-items: start !important; padding-left: 1.1em !important; padding-right: 1.1em !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid .card { width: 100% !important; min-width: 0 !important; height: var(--akira-card-h) !important; margin: 0 !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card.card--small .card__view, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card--wide .card__view { padding-bottom: 0 !important; height: 100% !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new, body.' + cfg.bodyClass + ' .full-start { background: linear-gradient(90deg, rgba(5,5,6,.90), rgba(5,5,6,.44), rgba(5,5,6,.10)) !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__body { align-items: center !important; gap: 2.2em !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__right { max-width: min(58em, 66vw) !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__tagline, body.' + cfg.bodyClass + ' .full-start__title-original { color: rgba(255,255,255,.78) !important; text-shadow: 0 2px 10px rgba(0,0,0,.48) !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button { min-height: 2.72em !important; padding: 0 .96em !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: .48em !important; background: rgba(255,255,255,.10) !important; color: #fff !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button span, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button span { display: inline !important; max-width: 12em !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .button--play, body.' + cfg.bodyClass + ' .full-start__buttons .button--play { background: #fff !important; color: #050505 !important; border-color: #fff !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .button--play, body.' + cfg.bodyClass + ' .full-start__buttons .button--play, body.' + cfg.bodyClass + ' .full-start-new__buttons .view--online, body.' + cfg.bodyClass + ' .full-start__buttons .view--online { order: 0 !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .akira-moved-button, body.' + cfg.bodyClass + ' .full-start__buttons .akira-moved-button { order: 1 !important; position: relative !important; z-index: 3 !important; }',
-                'body.' + cfg.bodyClass + ' .buttons--container.hide { display: none !important; }',
-                'body.' + cfg.bodyClass + ' .buttons--container:not(.hide) { display: flex !important; flex-wrap: wrap !important; gap: .62em !important; align-items: center !important; margin-top: .42em !important; }',
-                'body.' + cfg.bodyClass + '[' + attrTopbarAlign + '="center"] .akira-topbar { left: 0 !important; right: 0 !important; top: .54em !important; z-index: 49 !important; pointer-events: none !important; }',
-                'body.' + cfg.bodyClass + '[' + attrTopbarAlign + '="center"] .akira-topbar__inner { position: relative !important; width: 100% !important; justify-content: center !important; pointer-events: none !important; }',
-                'body.' + cfg.bodyClass + '[' + attrTopbarAlign + '="center"] .akira-topbar__items { position: absolute !important; left: 50% !important; top: 0 !important; transform: translateX(-50%) !important; max-width: calc(100vw - 23em) !important; pointer-events: auto !important; }',
-                'body.' + cfg.bodyClass + '[' + attrTopbarAlign + '="center"] .akira-topbar__right { position: absolute !important; right: 1.05em !important; top: 0 !important; margin-left: 0 !important; pointer-events: auto !important; }',
-                'body.' + cfg.bodyClass + ' .akira-topbar__item svg { stroke-linecap: round !important; stroke-linejoin: round !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero { margin-bottom: 2.45em !important; box-shadow: 0 24px 70px rgba(0,0,0,.52) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__content { transition: opacity .28s ease, transform .36s cubic-bezier(.22,.61,.36,1) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero.is-changing .akira-hero__content { opacity: .48 !important; transform: translateX(.65em) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__bg { opacity: .9 !important; transform: scale(1.012) translateX(0) !important; transition: opacity .55s ease, transform .75s cubic-bezier(.22,.61,.36,1) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__bg--current { z-index: 0 !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__bg--next { z-index: 1 !important; opacity: 0 !important; transform: scale(1.035) translateX(1.2em) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__bg--next.is-visible { opacity: .9 !important; transform: scale(1.012) translateX(0) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__shade { z-index: 2 !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__content { z-index: 3 !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__actions, body.' + cfg.bodyClass + ' .akira-hero__button { display: none !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__title { max-width: min(11.5em, 100%) !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-size: clamp(1.85em, 3.2vw, 3.8em) !important; line-height: 1.05 !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__desc { max-width: min(44em, 100%) !important; -webkit-line-clamp: 2 !important; min-height: 2.9em !important; }',
-                'body.' + cfg.bodyClass + ' .akira-hero__desc { display: block !important; max-height: 3.05em !important; min-height: 3.05em !important; overflow: hidden !important; -webkit-line-clamp: unset !important; -webkit-box-orient: unset !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line { margin-bottom: 2.25em !important; overflow: visible !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line__body { overflow: visible !important; padding: .45em 0 1.1em !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line__body .card:not(.card-episode) { flex: 0 0 var(--akira-card-w) !important; width: var(--akira-card-w) !important; min-width: var(--akira-card-w) !important; height: var(--akira-card-h) !important; min-height: var(--akira-card-h) !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card--small:not(.card-episode) { width: var(--akira-card-w) !important; min-width: var(--akira-card-w) !important; height: var(--akira-card-h) !important; min-height: var(--akira-card-h) !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card-episode { flex: none !important; width: auto !important; min-width: 0 !important; height: auto !important; min-height: 0 !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__img img, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__img picture { width: 100% !important; height: 100% !important; object-fit: cover !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-cards { gap: 1.12em !important; padding: .2em 1.3em .9em !important; align-items: flex-start !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-cards .card, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .items-line .card { margin-right: .42em !important; margin-bottom: 1.45em !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card { --akira-card-r: 8px !important; border-radius: var(--akira-card-r) !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__view, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__img, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__view-shadow { border-radius: var(--akira-card-r) !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__view { overflow: hidden !important; box-shadow: 0 8px 18px rgba(0,0,0,.35) !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card.focus .card__view, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card.hover .card__view, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card:hover .card__view { border-color: ' + p.accent + ' !important; box-shadow: 0 18px 42px rgba(0,0,0,.58), inset 0 0 0 2px ' + p.accent + ' !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__view::before, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__view::after { border-radius: var(--akira-card-r) !important; inset: 0 !important; box-sizing: border-box !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card.focus .card__view::after, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card.hover .card__view::after, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card:hover .card__view::after { border-radius: var(--akira-card-r) !important; box-shadow: inset 0 0 0 2px ' + p.accent + ' !important; border-color: transparent !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__vote, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__quality, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__type, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__age, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__promo, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__promo-text, body.' + cfg.bodyClass + '[' + attrCards + '="on"] .card__promo-title { display: none !important; }',
-                'body.' + cfg.bodyClass + ' .akira-card-overlay { padding: 3.9em .95em .9em !important; background: linear-gradient(0deg, rgba(0,0,0,.91) 0%, rgba(0,0,0,.62) 43%, rgba(0,0,0,.18) 72%, rgba(0,0,0,0) 100%) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-card-overlay__title { font-size: .94em !important; line-height: 1.16 !important; white-space: normal !important; overflow-wrap: break-word !important; word-break: normal !important; hyphens: auto !important; }',
-                'body.' + cfg.bodyClass + ' .akira-card-overlay__meta { max-width: 100% !important; white-space: normal !important; display: -webkit-box !important; -webkit-line-clamp: 1 !important; -webkit-box-orient: vertical !important; }',
-                'body.' + cfg.bodyClass + ' .akira-card-overlay__logo { max-width: 82% !important; max-height: 3.05em !important; margin-bottom: .22em !important; }',
-                'body.' + cfg.bodyClass + ' .akira-card-badge { position: absolute !important; left: .78em !important; top: .68em !important; z-index: 4 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 1.75em !important; padding: 0 .72em !important; border-radius: 999px !important; background: rgba(0,0,0,.58) !important; border: 1px solid rgba(255,255,255,.14) !important; color: rgba(255,255,255,.94) !important; font-size: .68em !important; font-weight: 800 !important; backdrop-filter: blur(10px) saturate(140%) !important; -webkit-backdrop-filter: blur(10px) saturate(140%) !important; pointer-events: none !important; }',
-                'body.' + cfg.bodyClass + ' .akira-card-rating { top: .68em !important; right: .72em !important; border-radius: 999px !important; color: #fff !important; background: rgba(0,0,0,.58) !important; }',
-                'body.' + cfg.bodyClass + ' .card-episode .full-episode { overflow: hidden !important; border-radius: var(--akira-card-r) !important; }',
-                'body.' + cfg.bodyClass + ' .card-episode .full-episode__img, body.' + cfg.bodyClass + ' .card-episode .card__img { object-fit: cover !important; background-size: cover !important; background-position: center !important; }',
-                'body.' + cfg.bodyClass + ' .akira-episode-title { max-width: 82% !important; color: #fff !important; font-size: .9em !important; line-height: 1.15 !important; font-weight: 900 !important; text-shadow: 0 6px 16px rgba(0,0,0,.8) !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; }',
-                'body.' + cfg.bodyClass + ' .akira-episode-logo { display: block !important; max-width: 78% !important; max-height: 3.1em !important; object-fit: contain !important; object-position: left bottom !important; filter: drop-shadow(0 5px 12px rgba(0,0,0,.78)) !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(18.5em, 1fr)) !important; grid-auto-rows: var(--akira-card-h) !important; gap: 2.15em 1.18em !important; align-items: start !important; padding: .8em 1.3em 2.2em !important; }',
-                'body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid .card:not(.card-episode) { width: 100% !important; min-width: 0 !important; min-height: var(--akira-card-h) !important; height: var(--akira-card-h) !important; margin: 0 !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new, body.' + cfg.bodyClass + ' .full-start { position: relative !important; overflow: hidden !important; min-height: 80vh !important; margin: 0 !important; padding: 0 !important; background: transparent !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new .full-start-new__background, body.' + cfg.bodyClass + ' .full-start-new .full-start__background, body.' + cfg.bodyClass + ' .full-start__background { position: absolute !important; inset: -6em 0 auto 0 !important; width: 100% !important; height: calc(100% + 6em) !important; margin: 0 !important; padding: 0 !important; mask-image: none !important; -webkit-mask-image: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new .full-start-new__background img, body.' + cfg.bodyClass + ' .full-start-new .full-start__background img, body.' + cfg.bodyClass + ' .full-start__background img { width: 100% !important; height: 100% !important; object-fit: cover !important; filter: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new::before, body.' + cfg.bodyClass + ' .full-start::before { content: "" !important; display: block !important; position: absolute !important; inset: -6em 0 0 0 !important; z-index: 1 !important; background: linear-gradient(90deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.58) 44%, rgba(0,0,0,.12) 100%), linear-gradient(0deg, ' + p.bg + ' 0%, rgba(0,0,0,.72) 22%, rgba(0,0,0,0) 70%) !important; pointer-events: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new::after, body.' + cfg.bodyClass + ' .full-start::after, body.' + cfg.bodyClass + ' .full-start-new__gradient, body.' + cfg.bodyClass + ' .full-start__gradient, body.' + cfg.bodyClass + ' .full-start-new__mask, body.' + cfg.bodyClass + ' .full-start__mask { display: none !important; content: none !important; background: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__body, body.' + cfg.bodyClass + ' .full-start__body { position: relative !important; z-index: 2 !important; display: flex !important; align-items: flex-end !important; min-height: 80vh !important; padding: 6em 5% 2.25em !important; background: none !important; box-sizing: border-box !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__left, body.' + cfg.bodyClass + ' .full-start__left { display: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { position: relative !important; z-index: 3 !important; max-width: 650px !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; justify-content: flex-end !important; gap: 0 !important; background: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__title, body.' + cfg.bodyClass + ' .full-start__title { font-weight: 900 !important; font-size: 2.65em !important; line-height: 1.06 !important; color: #fff !important; text-shadow: 0 2px 10px rgba(0,0,0,.72), 0 8px 26px rgba(0,0,0,.78) !important; margin: 0 0 .22em !important; background: none !important; box-shadow: none !important; max-width: 100% !important; transition: opacity .22s ease, transform .26s ease !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-title-pending { opacity: .62 !important; transform: translateY(.08em) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-title.is-ready { opacity: 1 !important; transform: none !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-logo-holder { width: min(92vw, 720px) !important; max-width: 100% !important; display: inline-flex !important; align-items: flex-end !important; background: none !important; box-shadow: none !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-logo { width: auto !important; max-width: 100% !important; max-height: clamp(88px, 12vw, 210px) !important; object-fit: contain !important; filter: none !important; background: none !important; box-shadow: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__head, body.' + cfg.bodyClass + ' .full-start__head, body.' + cfg.bodyClass + ' .full-start-new__rate-line, body.' + cfg.bodyClass + ' .full-start__rate-line, body.' + cfg.bodyClass + ' .full-start-new__details, body.' + cfg.bodyClass + ' .full-start__details, body.' + cfg.bodyClass + ' .full-start-new__tagline, body.' + cfg.bodyClass + ' .full-start__title-original { font-weight: 600 !important; font-size: .86em !important; line-height: 1.32 !important; color: rgba(255,255,255,.72) !important; text-shadow: 0 2px 6px rgba(0,0,0,.55) !important; margin: 0 0 .26em !important; background: none !important; box-shadow: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__text, body.' + cfg.bodyClass + ' .full-start__text, body.' + cfg.bodyClass + ' .full-start-new__description, body.' + cfg.bodyClass + ' .full-start__description { max-width: 520px !important; margin: .22em 0 .72em !important; font-size: .9em !important; line-height: 1.44 !important; color: rgba(255,255,255,.76) !important; text-shadow: 0 2px 6px rgba(0,0,0,.55) !important; display: -webkit-box !important; -webkit-line-clamp: 4 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__reactions, body.' + cfg.bodyClass + ' .full-start__reactions, body.' + cfg.bodyClass + ' .full-start__status { display: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons, body.' + cfg.bodyClass + ' .full-start__buttons { display: flex !important; flex-wrap: wrap !important; gap: .62em !important; align-items: center !important; margin-top: .42em !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button, body.' + cfg.bodyClass + ' .full-start-new__button { min-height: 2.76em !important; padding: 0 1.02em !important; border-radius: 8px !important; border: 1px solid rgba(255,255,255,.13) !important; background: rgba(120,120,120,.2) !important; color: rgba(255,255,255,.86) !important; box-shadow: 0 4px 16px rgba(0,0,0,.3) !important; backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important; transform: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button.focus, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button.focus, body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button:hover, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button:hover { background: linear-gradient(92deg, ' + p.accent + ', ' + p.accent2 + ') !important; color: #fff !important; border-color: rgba(255,255,255,.28) !important; box-shadow: 0 0 20px ' + p.soft + ', 0 8px 28px rgba(0,0,0,.42) !important; transform: scale(1.035) !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new, body.' + cfg.bodyClass + ' .full-start { min-height: clamp(560px, 82vh, 920px) !important; isolation: isolate !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new .full-start-new__background, body.' + cfg.bodyClass + ' .full-start-new .full-start__background, body.' + cfg.bodyClass + ' .full-start__background { top: -6em !important; inset: -6em 0 auto 0 !important; height: calc(100% + 6em) !important; opacity: .98 !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new .full-start-new__background img, body.' + cfg.bodyClass + ' .full-start-new .full-start__background img, body.' + cfg.bodyClass + ' .full-start__background img { transform: scale(1.006) !important; filter: saturate(1.02) contrast(1.03) brightness(.92) !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new::before, body.' + cfg.bodyClass + ' .full-start::before { inset: -6em 0 0 0 !important; height: calc(100% + 6em) !important; background: linear-gradient(to top, ' + p.bg + ' 0%, rgba(7,7,7,.86) 28%, rgba(7,7,7,.28) 64%, rgba(7,7,7,0) 88%), linear-gradient(90deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.35) 36%, rgba(0,0,0,.04) 78%) !important; opacity: var(--akira-full-fog, .58) !important; transition: opacity .12s linear !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__body, body.' + cfg.bodyClass + ' .full-start__body { min-height: clamp(560px, 82vh, 920px) !important; padding: clamp(5.8em, 9vh, 8em) 5% clamp(2.1em, 4.6vh, 3.6em) !important; align-items: flex-end !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: min(650px, 48vw) !important; max-width: min(650px, 48vw) !important; padding: 0 !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__title, body.' + cfg.bodyClass + ' .full-start__title { font-size: clamp(2.05em, 3.7vw, 4.2em) !important; font-weight: 850 !important; line-height: 1.06 !important; margin: 0 0 .24em !important; text-shadow: 0 2px 10px rgba(0,0,0,.70), 0 6px 24px rgba(0,0,0,.82) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-title { min-height: clamp(110px, 13vw, 230px) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-title.is-swapping { opacity: 1 !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-title-pending { opacity: .58 !important; transform: translateY(.08em) !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-logo-holder { width: min(92vw, 820px) !important; max-width: 100% !important; min-height: 0 !important; display: inline-flex !important; align-items: flex-end !important; }',
-                'body.' + cfg.bodyClass + ' .akira-full-logo { width: auto !important; max-width: 100% !important; max-height: clamp(120px, 15vw, 240px) !important; object-fit: contain !important; object-position: left bottom !important; filter: none !important; background: none !important; box-shadow: none !important; padding-bottom: .08em !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__head, body.' + cfg.bodyClass + ' .full-start__head { order: -2 !important; font-size: .86em !important; font-weight: 650 !important; color: rgba(255,255,255,.82) !important; margin: 0 0 .46em !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__tagline, body.' + cfg.bodyClass + ' .full-start__tagline, body.' + cfg.bodyClass + ' .full-start__title-original { font-size: .88em !important; font-weight: 550 !important; font-style: italic !important; line-height: 1.32 !important; color: rgba(255,255,255,.68) !important; margin: 0 0 .34em !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__rate-line, body.' + cfg.bodyClass + ' .full-start__rate-line { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: .58em !important; margin: .16em 0 .34em !important; font-size: .84em !important; color: rgba(255,255,255,.86) !important; }',
-                'body.' + cfg.bodyClass + ' .full-start__rate, body.' + cfg.bodyClass + ' .full-start-new__rate { display: inline-flex !important; align-items: baseline !important; gap: .3em !important; padding: 0 !important; border: 0 !important; background: transparent !important; color: rgba(255,255,255,.9) !important; box-shadow: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start__rate > div:first-child, body.' + cfg.bodyClass + ' .full-start-new__rate > div:first-child { font-size: 1.18em !important; font-weight: 850 !important; color: #fff !important; }',
-                'body.' + cfg.bodyClass + ' .full-start__rate .source--name, body.' + cfg.bodyClass + ' .full-start-new__rate .source--name { font-size: .78em !important; font-weight: 750 !important; color: rgba(255,255,255,.72) !important; text-transform: uppercase !important; }',
-                'body.' + cfg.bodyClass + ' .full-start__pg, body.' + cfg.bodyClass + ' .full-start-new__pg { min-width: 2.2em !important; height: 1.72em !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 0 .35em !important; border: 1px solid rgba(255,255,255,.62) !important; background: transparent !important; color: #fff !important; border-radius: 0 !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__details, body.' + cfg.bodyClass + ' .full-start__details { max-width: 100% !important; margin: 0 0 .34em !important; font-size: .84em !important; font-weight: 560 !important; color: rgba(255,255,255,.76) !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__text, body.' + cfg.bodyClass + ' .full-start__text, body.' + cfg.bodyClass + ' .full-start-new__description, body.' + cfg.bodyClass + ' .full-start__description { max-width: 540px !important; margin: .08em 0 .8em !important; font-size: .88em !important; line-height: 1.42 !important; color: rgba(255,255,255,.78) !important; -webkit-line-clamp: 4 !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons, body.' + cfg.bodyClass + ' .full-start__buttons { gap: .68em !important; margin-top: .22em !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button, body.' + cfg.bodyClass + ' .full-start-new__button { min-height: 2.8em !important; padding: 0 1.08em !important; border-radius: 8px !important; border: 1px solid rgba(255,255,255,.11) !important; background: rgba(118,118,118,.20) !important; color: rgba(255,255,255,.84) !important; text-shadow: 0 2px 4px rgba(0,0,0,.5) !important; box-shadow: 0 4px 16px rgba(0,0,0,.30) !important; transition: background .3s ease, transform .2s ease, box-shadow .3s ease, border-color .3s ease !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .button--play, body.' + cfg.bodyClass + ' .full-start__buttons .button--play { background: rgba(255,255,255,.94) !important; color: #050505 !important; border-color: rgba(255,255,255,.82) !important; text-shadow: none !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button.focus, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button.focus, body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button:hover, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button:hover { background: linear-gradient(92deg, ' + p.accent + ', ' + p.accent2 + ') !important; color: #fff !important; border-color: rgba(255,255,255,.30) !important; box-shadow: 0 0 20px ' + p.soft + ', 0 8px 28px rgba(0,0,0,.40) !important; transform: scale(1.04) !important; }',
-                'body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button.focus *, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button.focus *, body.' + cfg.bodyClass + ' .full-start-new__buttons .full-start__button:hover *, body.' + cfg.bodyClass + ' .full-start__buttons .full-start__button:hover * { color: #fff !important; fill: #fff !important; }',
-                '@media (max-width: 768px) { body.' + cfg.bodyClass + ' .full-start-new__background, body.' + cfg.bodyClass + ' .full-start__background { display: none !important; } body.' + cfg.bodyClass + ' .full-start-new, body.' + cfg.bodyClass + ' .full-start { background-image: var(--akira-full-mobile-bg) !important; background-size: cover !important; background-position: center top !important; background-repeat: no-repeat !important; } body.' + cfg.bodyClass + ' .full-start-new__body, body.' + cfg.bodyClass + ' .full-start__body { min-height: 76vh !important; padding-left: 4% !important; padding-right: 4% !important; } body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: 92vw !important; max-width: 92vw !important; } body.' + cfg.bodyClass + ' .akira-full-logo { max-height: 130px !important; } }',
-                '@media (min-width: 1920px) { body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: min(980px, 50vw) !important; max-width: min(980px, 50vw) !important; } body.' + cfg.bodyClass + ' .akira-full-logo { max-height: clamp(170px, 13vw, 310px) !important; } }',
-                '@media (min-width: 2000px) { body.' + cfg.bodyClass + ' .akira-hero { max-height: clamp(400px, 44vh, 760px) !important; } body.' + cfg.bodyClass + ' .akira-hero__content { width: min(72em, 66%) !important; } body.' + cfg.bodyClass + ' .akira-hero__logo { max-height: 11em !important; } body.' + cfg.bodyClass + ' .akira-hero__title { font-size: clamp(2.4em, 3.8vw, 5em) !important; } body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: min(1100px, 52vw) !important; max-width: min(1100px, 52vw) !important; } }',
-                '@media (min-width: 2560px) { body.' + cfg.bodyClass + ' .akira-hero { max-height: clamp(480px, 46vh, 900px) !important; } body.' + cfg.bodyClass + ' .akira-hero__logo { max-height: 13em !important; } body.' + cfg.bodyClass + '[' + attrCards + '="on"] .scroll__body.mapping--grid { grid-template-columns: repeat(auto-fill, minmax(22em, 1fr)) !important; } body.' + cfg.bodyClass + ' .full-start-new__right, body.' + cfg.bodyClass + ' .full-start__right { width: min(1280px, 54vw) !important; max-width: min(1280px, 54vw) !important; } body.' + cfg.bodyClass + ' .akira-full-logo { max-height: clamp(200px, 14vw, 360px) !important; } }',
-                '@media (max-width: 900px) { body.' + cfg.bodyClass + ' .akira-topbar { left: .75em !important; right: .75em !important; top: 3.65em !important; } body.' + cfg.bodyClass + ' .akira-topbar__right { margin-left: auto !important; } body.' + cfg.bodyClass + ' .head__menu-icon.akira-head-brand { left: .75em !important; top: .55em !important; } body.' + cfg.bodyClass + ' .akira-hero { width: calc(100% - 1.3em) !important; margin: 6.65em .65em 1.1em !important; } }'
-            ].join('\n');
-            if (style.textContent !== css) style.textContent = css;
-            if (!style.parentNode) (document.head || document.body).appendChild(style);
-        }
-
-        function syncBodyState() {
-            if (!document.body) return;
-            if (!pluginEnabled()) {
-                document.body.classList.remove(cfg.bodyClass);
-                document.body.removeAttribute(attrTopbar);
-                document.body.removeAttribute(attrTopbarAlign);
-                document.body.removeAttribute(attrCards);
-                document.body.removeAttribute(attrPerf);
-                document.body.removeAttribute(attrCardSize);
-                document.body.removeAttribute(attrUiScale);
-                document.body.removeAttribute('data-' + cssName + '-ui-scale-applied');
-                try { document.documentElement.style.removeProperty('--akira-ui-font-size'); } catch (e) {}
+            if (moved) {
+                head.style.display = 'none';
                 return;
             }
-            var scale = appliedUiScale();
-            document.body.classList.add(cfg.bodyClass);
-            document.body.setAttribute(attrTopbar, isOn(KEY.topbar, true) ? 'on' : 'off');
-            document.body.setAttribute(attrTopbarAlign, topbarAlign());
-            document.body.setAttribute(attrCards, isOn(KEY.cards, true) ? 'on' : 'off');
-            document.body.setAttribute(attrPerf, perfMode());
-            document.body.setAttribute(attrCardSize, cardSize());
-            document.body.setAttribute(attrUiScale, uiScaleValue());
-            document.body.setAttribute('data-' + cssName + '-ui-scale-applied', scale || 'off');
-            try {
-                if (scale) document.documentElement.style.setProperty('--akira-ui-font-size', scale + 'px');
-                else document.documentElement.style.removeProperty('--akira-ui-font-size');
-            } catch (e) {}
-        }
+            var html = clean(head.innerHTML || '');
+            if (!html) return;
+            var headSpan = document.createElement('span');
+            headSpan.className = 'akira-logo-moved-head';
+            headSpan.innerHTML = head.innerHTML;
+            var sepSpan = document.createElement('span');
+            sepSpan.className = 'full-start-new__split akira-logo-moved-separator';
+            sepSpan.textContent = '•';
+            if (details.children && details.children.length) details.appendChild(sepSpan);
+            details.appendChild(headSpan);
+            head.style.display = 'none';
+        } catch (e) {}
+    }
 
-        function removePluginUi() {
-            var style = document.getElementById(cfg.styleId);
-            if (style) style.remove();
-            if (document.body) {
-                document.body.classList.remove(cfg.bodyClass);
-                document.body.removeAttribute(attrTopbar);
-                document.body.removeAttribute(attrTopbarAlign);
-                document.body.removeAttribute(attrCards);
-                document.body.removeAttribute(attrPerf);
-                document.body.removeAttribute(attrCardSize);
-                document.body.removeAttribute(attrUiScale);
-                document.body.removeAttribute('data-' + cssName + '-ui-scale-applied');
+    function InterfaceInfo() {
+        this.html = null;
+        this.timer = null;
+        this.network = null;
+        this.loaded = {};
+        try { this.network = new Lampa.Reguest(); } catch (e) {}
+    }
+
+    InterfaceInfo.prototype.create = function () {
+        if (this.html || !window.$) return;
+        this.html = $('<div class="akira-hero"><div class="akira-hero__body"><div class="akira-hero__left"><div class="akira-hero__head"></div><div class="akira-hero__title"></div></div><div class="akira-hero__right"><div class="akira-hero__textblock"><div class="akira-hero__meta"><div class="akira-hero__rate"></div><span class="akira-hero__dot dot-rate-head">•</span><div class="akira-hero__moved-head"></div><span class="akira-hero__dot dot-head-genre">•</span><span class="akira-hero__dot dot-rate-genre">•</span><div class="akira-hero__genres"></div><span class="akira-hero__dot dot-genre-runtime">•</span><div class="akira-hero__runtime"></div><span class="akira-hero__dot dot-runtime-pg">•</span><div class="akira-hero__pg"></div></div><div class="akira-hero__description"></div></div></div></div></div>');
+    };
+
+    InterfaceInfo.prototype.render = function (js) {
+        if (!this.html) this.create();
+        return js ? this.html[0] : this.html;
+    };
+
+    InterfaceInfo.prototype.update = function (data) {
+        if (!data) return;
+        if (!this.html) this.create();
+        this.html.find('.akira-hero__head,.akira-hero__genres,.akira-hero__runtime').text('---');
+        this.html.find('.akira-hero__rate,.akira-hero__pg').empty();
+        this.html.find('.akira-hero__title').text(data.title || data.name || '');
+        this.html.find('.akira-hero__description').text(data.overview || tr('full_notext', ''));
+        try { Lampa.Background.change(Lampa.Utils.cardImgBackground(data)); } catch (e) {}
+        this.load(data);
+    };
+
+    InterfaceInfo.prototype.load = function (data, options) {
+        if (!data || !data.id) return;
+        var source = data.source || 'tmdb';
+        if (source !== 'tmdb' && source !== 'cub') return;
+        if (!Lampa.TMDB || !Lampa.TMDB.api || !Lampa.TMDB.key) return;
+        var preload = options && options.preload;
+        var type = data.media_type === 'tv' || data.name ? 'tv' : 'movie';
+        var language = get('language', 'ru');
+        var url = Lampa.TMDB.api(type + '/' + data.id + '?api_key=' + Lampa.TMDB.key() + '&append_to_response=content_ratings,release_dates&language=' + language);
+        this.currentUrl = url;
+        if (this.loaded[url]) {
+            if (!preload) this.draw(this.loaded[url]);
+            return;
+        }
+        var self = this;
+        clearTimeout(this.timer);
+        this.timer = setTimeout(function () {
+            if (!self.network || !self.network.silent) return;
+            self.network.clear();
+            self.network.timeout(5000);
+            self.network.silent(url, function (movie) {
+                self.loaded[url] = movie;
+                if (!preload && self.currentUrl === url) self.draw(movie);
+            });
+        }, 0);
+    };
+
+    InterfaceInfo.prototype.draw = function (movie) {
+        if (!movie || !this.html) return;
+        var year = ((movie.release_date || movie.first_air_date || '0000') + '').slice(0, 4);
+        var vote = parseFloat((movie.vote_average || 0) + '').toFixed(1);
+        var head = [];
+        var sources = Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb ? Lampa.Api.sources.tmdb : null;
+        var countries = sources && sources.parseCountries ? sources.parseCountries(movie) : [];
+        var pg = sources && sources.parsePG ? sources.parsePG(movie) : '';
+        if (year !== '0000') head.push('<span>' + year + '</span>');
+        if (countries && countries.length) head.push(countries.join(', '));
+        var genreText = movie.genres && movie.genres.length ? movie.genres.map(function (item) {
+            return Lampa.Utils && Lampa.Utils.capitalizeFirstLetter ? Lampa.Utils.capitalizeFirstLetter(item.name) : item.name;
+        }).join(' | ') : '';
+        var runtimeText = movie.runtime && Lampa.Utils && Lampa.Utils.secondsToTime ? Lampa.Utils.secondsToTime(movie.runtime * 60, true) : '';
+
+        this.html.find('.akira-hero__head').empty().append(head.join(', '));
+        if (vote > 0) this.html.find('.akira-hero__rate').html('<div class="full-start__rate"><div>' + vote + '</div><div>TMDB</div></div>');
+        else this.html.find('.akira-hero__rate').empty();
+        this.html.find('.akira-hero__genres').text(genreText).toggle(!!genreText);
+        this.html.find('.akira-hero__runtime').text(runtimeText).toggle(!!runtimeText);
+        this.html.find('.akira-hero__pg').html(pg ? '<span class="full-start__pg">' + pg + '</span>' : '').toggle(!!pg);
+        this.html.find('.dot-rate-genre').toggle(!!(vote > 0 && genreText));
+        this.html.find('.dot-genre-runtime').toggle(!!(genreText && (runtimeText || pg)));
+        this.html.find('.dot-runtime-pg').toggle(!!(runtimeText && pg));
+        this.html.find('.dot-rate-head,.dot-head-genre').hide();
+        this.html.find('.akira-hero__description').text(movie.overview || tr('full_notext', ''));
+        var titleText = movie.title || movie.name || '';
+        var titleNode = this.html.find('.akira-hero__title');
+        this.html.find('.akira-hero__moved-head').text('').hide();
+        titleNode.text(titleText);
+        AkiraLogo.applyToInfo({
+            title: titleNode,
+            head: this.html.find('.akira-hero__head'),
+            movedHead: this.html.find('.akira-hero__moved-head'),
+            headText: head.join(', ')
+        }, movie, titleText);
+    };
+
+    InterfaceInfo.prototype.empty = function () {
+        if (!this.html) return;
+        this.html.find('.akira-hero__head,.akira-hero__genres,.akira-hero__runtime').text('---');
+        this.html.find('.akira-hero__rate').empty();
+    };
+
+    InterfaceInfo.prototype.destroy = function () {
+        clearTimeout(this.timer);
+        try { if (this.network) this.network.clear(); } catch (e) {}
+        if (this.html) this.html.remove();
+        this.html = null;
+    };
+
+    function shouldUseAkiraInterface(object) {
+        if (!pluginOn() || !getBool(K.interfaceEnabled, true)) return false;
+        if (!object) return false;
+        if (window.innerWidth < 767) return false;
+        if (object.source === 'other' && !object.backdrop_path) return false;
+        return true;
+    }
+
+    function wrap(target, method, handler) {
+        if (!target || target['__akira_wrap_' + method]) return;
+        var original = typeof target[method] === 'function' ? target[method] : null;
+        target['__akira_wrap_' + method] = true;
+        target[method] = function () {
+            return handler.call(this, original, Array.prototype.slice.call(arguments));
+        };
+    }
+
+    function initInterfaceHooks() {
+        if (window.__AKIRA_INTERFACE_HOOKS__) return;
+        window.__AKIRA_INTERFACE_HOOKS__ = true;
+        if (!Lampa.Maker || !Lampa.Maker.map || !Lampa.Utils) return;
+        var mainMap = Lampa.Maker.map('Main');
+        if (!mainMap || !mainMap.Items || !mainMap.Create) return;
+
+        wrap(mainMap.Items, 'onInit', function (original, args) {
+            if (original) original.apply(this, args);
+            this.__akiraEnabled = shouldUseAkiraInterface(this && this.object);
+        });
+        wrap(mainMap.Create, 'onCreate', function (original, args) {
+            if (original) original.apply(this, args);
+            if (!this.__akiraEnabled) return;
+            var state = ensureInterfaceState(this);
+            state.attach();
+        });
+        wrap(mainMap.Create, 'onCreateAndAppend', function (original, args) {
+            var element = args && args[0];
+            if (this.__akiraEnabled && element && Array.isArray(element.results)) {
+                Lampa.Utils.extendItemsParams(element.results, { style: { name: 'wide' } });
             }
-            try { document.documentElement.style.removeProperty('--akira-ui-font-size'); } catch (e) {}
-            try { document.documentElement.style.removeProperty('--akira-brand-w'); } catch (e) {}
-            var topbar = qs('.akira-topbar');
-            if (topbar) topbar.remove();
-            restoreMenuBrand();
-            removeHero();
-            stopHeroLoop();
-            stopClock();
-            qsa('.akira-full-title').forEach(restoreFullTitle);
-            qsa('.card[data-akira-card-key]').forEach(restoreCard);
-        }
-
-        function topbarItemValues() {
-            var lang = langCode();
-            if (lang === 'ru') return { on: '\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c', off: '\u0421\u043a\u0440\u044b\u0442\u044c' };
-            if (lang === 'uk') return { on: '\u041f\u043e\u043a\u0430\u0437\u0443\u0432\u0430\u0442\u0438', off: '\u0421\u0445\u043e\u0432\u0430\u0442\u0438' };
-            return { on: 'Show', off: 'Hide' };
-        }
-
-        function topbarSettingKey(action) {
-            return cfg.prefix + 'topnav_item_' + String(action || '').replace(/[^a-z0-9_-]/gi, '_');
-        }
-
-        function initDefaultSettings() {
-            ensureOnOff(KEY.enabled, true);
-            ensureValue(KEY.theme, cfg.defaultTheme, Object.keys(cfg.themes));
-            ensureValue(KEY.brandName, cfg.brand);
-            ensureOnOff(KEY.topbar, true);
-            ensureValue(KEY.topbarAlign, 'start', ['start', 'center']);
-            ensureOnOff(KEY.hero, true);
-            ensureOnOff(KEY.heroLogo, true);
-            ensureOnOff(KEY.cards, true);
-            ensureOnOff(KEY.cardLogo, true);
-            ensureOnOff(KEY.fullLogo, true);
-            ensureOnOff(KEY.splitButtons, true);
-            ensureValue(KEY.cardSize, cfg.defaultCardSize, ['sm', 'md', 'lg']);
-            ensureValue(KEY.perf, 'balanced', ['quality', 'balanced', 'economy']);
-            ensureValue(KEY.uiScale, 'auto', ['off', 'auto', '12', '14', '16', '18', '20', '22', '24', '28', '32']);
-            ensureValue(KEY.logoLang, 'auto', ['auto', 'ru', 'en', 'uk']);
-            ensureOnOff(KEY.tmdbRows, true);
-            var topnavStored = get(KEY.topnavItems, undefined);
-            if (typeof topnavStored === 'undefined' || topnavStored === null || topnavStored === '' || topnavStored === 'undefined' || topnavStored === 'null') set(KEY.topnavItems, cfg.defaultNav.slice());
-            TMDB_COLLECTIONS.forEach(function (collection) {
-                ensureOnOff(KEY.tmdbPrefix + collection.id, true);
-            });
-        }
-
-        function addTopbarItemSettings() {
-            var component = settingsSection('topnav');
-            addParamTo(component, { type: 'title' }, { name: text('topnavTitle') });
-            availableTopbarItems().forEach(function (item) {
-                var selected = storedTopbarActions().indexOf(item.action) > -1 ? 'on' : 'off';
-                var settingKey = topbarSettingKey(item.action);
-                set(settingKey, selected);
-                addParamTo(
-                    component,
-                    { name: settingKey, type: 'select', values: topbarItemValues(), default: selected },
-                    { name: item.label, description: item.action },
-                    function (value) {
-                        setTopbarAction(item.action, value !== 'off' && value !== false);
-                        schedulePatch(true);
-                    }
-                );
-            });
-        }
-
-        function addTmdbCollectionSettings() {
-            var component = settingsSection('tmdb');
-            addParamTo(component, { type: 'title' }, { name: text('tmdbRows') });
-            addParamTo(component, { name: KEY.tmdbRows, type: 'select', values: onOffValues(), default: 'on' }, { name: text('tmdbRows'), description: text('reloadHint') }, function () { notify(text('reloadHint')); });
-            TMDB_COLLECTIONS.forEach(function (collection) {
-                addParamTo(
-                    component,
-                    { name: KEY.tmdbPrefix + collection.id, type: 'select', values: onOffValues(), default: 'on' },
-                    { name: collection.icon + ' ' + localize(collection.title, collection.id), description: text('tmdbRows') },
-                    function () { notify(text('reloadHint')); }
-                );
-            });
-        }
-
-        function addSettings() {
-            if (settingsReady || !Lampa.SettingsApi || typeof Lampa.SettingsApi.addParam !== 'function') return;
-            settingsReady = true;
-            initDefaultSettings();
-            try {
-                if (Lampa.Template && typeof Lampa.Template.add === 'function') {
-                    Lampa.Template.add('settings_' + cfg.settingsComponent, '<div></div>');
-                    Lampa.Template.add('settings_' + settingsSection('topnav'), '<div></div>');
-                    Lampa.Template.add('settings_' + settingsSection('tmdb'), '<div></div>');
-                }
-            } catch (e) {}
-
-            var themeValues = {};
-            Object.keys(cfg.themes).forEach(function (name) {
-                themeValues[name] = localize(cfg.themes[name].label, name);
-            });
-
-            Lampa.SettingsApi.addComponent({
-                component: cfg.settingsComponent,
-                name: cfg.name,
-                icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v3H4V4Zm0 6h10v3H4v-3Zm0 6h16v4H4v-4Z"></path></svg>'
-            });
-
-            addParam({ name: cfg.prefix + 'about', type: 'static' }, { name: cfg.name, description: text('about') });
-            addParam({ type: 'title' }, { name: cfg.name });
-            addParam({ name: KEY.enabled, type: 'select', values: onOffValues(), default: 'on' }, { name: text('enabled') }, function () { schedulePatch(true); });
-            addParam({ name: KEY.theme, type: 'select', values: themeValues, default: cfg.defaultTheme }, { name: text('theme') }, function () { schedulePatch(true); });
-            addParam({ name: KEY.cardSize, type: 'select', values: { sm: 'S', md: 'M', lg: 'L' }, default: cfg.defaultCardSize }, { name: text('cardSize') }, function () { schedulePatch(true); });
-            addParam({ name: KEY.perf, type: 'select', values: { quality: 'Quality', balanced: 'Balanced', economy: 'Economy' }, default: 'balanced' }, { name: text('perf') }, function () { schedulePatch(true); });
-            addParam({ type: 'title' }, { name: 'UI' });
-            addParam({ name: cfg.prefix + 'brand_name_edit', type: 'button' }, { name: brandNameSettingName(), description: brandName() }, openBrandNameInput);
-            addParam({ name: KEY.topbar, type: 'select', values: onOffValues(), default: 'on' }, { name: text('topbar') }, function () { schedulePatch(true); });
-            addParam({ name: KEY.topbarAlign, type: 'select', values: topbarAlignValues(), default: 'start' }, { name: topbarAlignName() }, function () { schedulePatch(true); });
-            addParam({ name: KEY.uiScale, type: 'select', values: uiScaleValues(), default: 'auto' }, { name: uiScaleName() }, function () {
-                syncBodyState();
-                schedulePatch(true);
-                try {
-                    if (Lampa.Layer && typeof Lampa.Layer.update === 'function') Lampa.Layer.update();
-                } catch (e) {}
-            });
-            addParam({ name: KEY.hero, type: 'select', values: onOffValues(), default: 'on' }, { name: text('hero') }, function () { schedulePatch(true); });
-            addParam({ name: KEY.heroLogo, type: 'select', values: onOffValues(), default: 'on' }, { name: text('heroLogo') }, function () { logoCache = {}; logoResolveCache = {}; schedulePatch(true); });
-            addParam({ name: KEY.logoLang, type: 'select', values: { auto: 'Auto', ru: 'RU', en: 'EN', uk: 'UK' }, default: 'auto' }, { name: text('logoLang') }, function () { logoCache = {}; logoResolveCache = {}; schedulePatch(true); });
-            addParam({ name: KEY.cards, type: 'select', values: onOffValues(), default: 'on' }, { name: text('cards') }, function () { qsa('.card[data-akira-card-key]').forEach(restoreCard); schedulePatch(true); });
-            addParam({ name: KEY.cardLogo, type: 'select', values: onOffValues(), default: 'on' }, { name: text('cardLogo') }, function () { logoCache = {}; logoResolveCache = {}; qsa('.card[data-akira-card-key]').forEach(restoreCard); schedulePatch(true); });
-            addParam({ name: KEY.fullLogo, type: 'select', values: onOffValues(), default: 'on' }, { name: text('fullLogo') }, function () { logoCache = {}; logoResolveCache = {}; schedulePatch(true); });
-            addParam({ name: KEY.splitButtons, type: 'select', values: onOffValues(), default: 'on' }, { name: text('splitButtons') }, function () { schedulePatch(true); });
-            addParam({ name: cfg.prefix + 'open_topnav_settings', type: 'button' }, { name: text('topnavOpen'), description: text('topnavTitle') }, function () { openSettingsSection(settingsSection('topnav')); });
-            addParam({ name: cfg.prefix + 'open_tmdb_settings', type: 'button' }, { name: tmdbSettingsOpenName(), description: text('reloadHint') }, function () { openSettingsSection(settingsSection('tmdb')); });
-            addTopbarItemSettings();
-            addTmdbCollectionSettings();
-            addParam({ name: cfg.prefix + 'reset', type: 'button' }, { name: text('reset') }, resetSettings);
-
-        }
-
-        function addParamTo(component, param, field, onChange) {
-            Lampa.SettingsApi.addParam({
-                component: component,
-                param: param,
-                field: field,
-                onChange: onChange
-            });
-        }
-
-        function addParam(param, field, onChange) {
-            addParamTo(cfg.settingsComponent, param, field, onChange);
-        }
-
-        function onOffValues() {
-            return {
-                on: tr('extensions_enable', 'On'),
-                off: tr('extensions_disable', 'Off')
-            };
-        }
-
-        function uiScaleValues() {
-            var lang = langCode();
-            var values = {
-                auto: lang === 'ru' ? '\u0410\u0432\u0442\u043e' : (lang === 'uk' ? '\u0410\u0432\u0442\u043e' : 'Auto'),
-                off: lang === 'ru' ? '\u0412\u044b\u043a\u043b\u044e\u0447\u0435\u043d\u043e' : (lang === 'uk' ? '\u0412\u0438\u043c\u043a\u043d\u0435\u043d\u043e' : 'Off')
-            };
-            ['12', '14', '16', '18', '20', '22', '24', '28', '32'].forEach(function (size) {
-                values[size] = size + 'px';
-            });
-            return values;
-        }
-
-        function uiScaleName() {
-            var lang = langCode();
-            if (lang === 'ru') return '\u041c\u0430\u0441\u0448\u0442\u0430\u0431 \u0438\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u0430';
-            if (lang === 'uk') return '\u041c\u0430\u0441\u0448\u0442\u0430\u0431 \u0456\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u0443';
-            return 'Interface scale';
-        }
-
-        function topbarAlignValues() {
-            var lang = langCode();
-            if (lang === 'ru') return { start: '\u0421\u043b\u0435\u0432\u0430', center: '\u041f\u043e \u0446\u0435\u043d\u0442\u0440\u0443' };
-            if (lang === 'uk') return { start: '\u0417\u043b\u0456\u0432\u0430', center: '\u041f\u043e \u0446\u0435\u043d\u0442\u0440\u0443' };
-            return { start: 'Left', center: 'Center' };
-        }
-
-        function topbarAlignName() {
-            var lang = langCode();
-            if (lang === 'ru') return '\u041f\u043e\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u0432\u0435\u0440\u0445\u043d\u0435\u0433\u043e \u0431\u0430\u0440\u0430';
-            if (lang === 'uk') return '\u041f\u043e\u043b\u043e\u0436\u0435\u043d\u043d\u044f \u0432\u0435\u0440\u0445\u043d\u044c\u043e\u0433\u043e \u0431\u0430\u0440\u0430';
-            return text('topbarAlign');
-        }
-
-        function tmdbSettingsOpenName() {
-            var lang = langCode();
-            if (lang === 'ru') return '\u041d\u0430\u0441\u0442\u0440\u043e\u0438\u0442\u044c \u043f\u043e\u0434\u0431\u043e\u0440\u043a\u0438 TMDB';
-            if (lang === 'uk') return '\u041d\u0430\u043b\u0430\u0448\u0442\u0443\u0432\u0430\u0442\u0438 \u0434\u043e\u0431\u0456\u0440\u043a\u0438 TMDB';
-            return 'Configure TMDB rows';
-        }
-
-        function brandNameSettingName() {
-            var lang = langCode();
-            if (lang === 'ru') return '\u041d\u0430\u0434\u043f\u0438\u0441\u044c \u0431\u0440\u0435\u043d\u0434\u0430';
-            if (lang === 'uk') return '\u041d\u0430\u0434\u043f\u0438\u0441 \u0431\u0440\u0435\u043d\u0434\u0443';
-            return 'Brand label';
-        }
-
-        function resetSettings() {
-            set(KEY.enabled, 'on');
-            set(KEY.theme, cfg.defaultTheme);
-            set(KEY.brandName, cfg.brand);
-            set(KEY.topbar, 'on');
-            set(KEY.topbarAlign, 'start');
-            set(KEY.uiScale, 'auto');
-            set(KEY.hero, 'on');
-            set(KEY.heroLogo, 'on');
-            set(KEY.logoLang, 'auto');
-            set(KEY.cards, 'on');
-            set(KEY.cardLogo, 'on');
-            set(KEY.fullLogo, 'on');
-            set(KEY.splitButtons, 'on');
-            set(KEY.cardSize, cfg.defaultCardSize);
-            set(KEY.perf, 'balanced');
-            set(KEY.tmdbRows, 'on');
-            set(KEY.topnavItems, cfg.defaultNav.slice());
-            TMDB_COLLECTIONS.forEach(function (collection) { set(KEY.tmdbPrefix + collection.id, 'on'); });
-            logoCache = {};
-            logoResolveCache = {};
-            schedulePatch(true);
-            notify(cfg.name + ': OK');
-        }
-
-        function createTmdbMain(parent, originalMain) {
-            return function () {
-                var owner = this;
-                var args = Array.prototype.slice.call(arguments);
-                var params = args[0] || {};
-                var oncomplete = args[1];
-                var onerror = args[2];
-                var parts = [];
-
-                TMDB_COLLECTIONS.forEach(function (collection) {
-                    if (!isOn(KEY.tmdbPrefix + collection.id, true)) return;
-                    parts.push(function (call) {
-                        parent.get(collection.request, params, function (json) {
-                            json.title = collection.icon + ' ' + localize(collection.title, collection.id);
-                            if (Lampa.Utils && typeof Lampa.Utils.addSource === 'function') Lampa.Utils.addSource(json, 'tmdb');
-                            call(json);
-                        }, function () {
-                            call({ source: 'tmdb', results: [], title: collection.icon + ' ' + localize(collection.title, collection.id) });
-                        });
-                    });
-                });
-
-                if (!parts.length) return originalMain.apply(owner, args);
-                var runner = Lampa.Api && (Lampa.Api.sequentials || Lampa.Api.partNext);
-                if (!runner) return originalMain.apply(owner, args);
-                runner(parts, parts.length, oncomplete, onerror);
-                return function () {};
-            };
-        }
-
-        function initTmdbSource(retry) {
-            if (tmdbReady) return true;
-            if (!Lampa.Api || !Lampa.Api.sources || !Lampa.Api.sources.tmdb) {
-                if (retry !== false) setTimeout(function () { initTmdbSource(false); }, 900);
-                return false;
+            return original ? original.apply(this, args) : undefined;
+        });
+        wrap(mainMap.Items, 'onAppend', function (original, args) {
+            if (original) original.apply(this, args);
+            if (!this.__akiraEnabled) return;
+            var line = args && args[0];
+            var element = args && args[1];
+            if (line && element) attachLineHandlers(this, line, element);
+        });
+        wrap(mainMap.Items, 'onDestroy', function (original, args) {
+            if (this.__akiraState) {
+                this.__akiraState.destroy();
+                delete this.__akiraState;
             }
-            try {
-                var original = Lampa.Api.sources.tmdb;
-                var originalMain = original.main;
-                var source = Object.assign({}, original);
-                source.main = function () {
-                    if (pluginEnabled() && isOn(KEY.tmdbRows, true) && this.type !== 'movie' && this.type !== 'tv') {
-                        return createTmdbMain(source, originalMain).apply(this, arguments);
-                    }
-                    return originalMain.apply(this, arguments);
-                };
-                Lampa.Api.sources[cfg.sourceKey] = source;
-                try {
-                    Object.defineProperty(Lampa.Api.sources, cfg.sourceKey, {
-                        configurable: true,
-                        get: function () { return source; }
-                    });
-                } catch (e) {}
-                try {
-                    var sources = Lampa.Params.values && Lampa.Params.values.source ? Lampa.Params.values.source : {};
-                    if (!sources[cfg.sourceKey]) {
-                        sources[cfg.sourceKey] = cfg.sourceLabel;
-                        Lampa.Params.select('source', sources, 'tmdb');
-                    }
-                } catch (e) {}
-                tmdbReady = true;
-                return true;
-            } catch (e) {
-                return false;
+            delete this.__akiraEnabled;
+            if (original) original.apply(this, args);
+        });
+    }
+
+    function ensureInterfaceState(main) {
+        if (main.__akiraState) return main.__akiraState;
+        var info = new InterfaceInfo();
+        info.create();
+        var background = document.createElement('img');
+        background.className = 'full-start__background akira-main-bg';
+        var state = {
+            main: main,
+            info: info,
+            bg: background,
+            last: '',
+            timer: null,
+            attached: false,
+            attach: function () {
+                if (this.attached) return;
+                var container = main.render(true);
+                if (!container) return;
+                container.classList.add('akira-main', 'new-interface', 'new-interface-h');
+                if (!background.parentNode) container.insertBefore(background, container.firstChild || null);
+                var infoNode = info.render(true);
+                if (infoNode && infoNode.parentNode !== container) container.insertBefore(infoNode, background.nextSibling || container.firstChild);
+                try { main.scroll.minus(infoNode); } catch (e) {}
+                this.attached = true;
+            },
+            update: function (data) {
+                if (!data) return;
+                info.update(data);
+                this.updateBackground(data);
+            },
+            updateBackground: function (data) {
+                var path = data && data.backdrop_path && Lampa.Api && Lampa.Api.img ? Lampa.Api.img(data.backdrop_path, 'w1280') : '';
+                if (!path || path === this.last) return;
+                var self = this;
+                clearTimeout(this.timer);
+                this.timer = setTimeout(function () {
+                    background.classList.remove('loaded');
+                    background.onload = function () { background.classList.add('loaded'); };
+                    background.onerror = function () { background.classList.remove('loaded'); };
+                    self.last = path;
+                    setTimeout(function () { background.src = self.last; }, 300);
+                }, 600);
+            },
+            reset: function () { info.empty(); },
+            destroy: function () {
+                clearTimeout(this.timer);
+                info.destroy();
+                var container = main.render(true);
+                if (container) container.classList.remove('akira-main', 'new-interface', 'new-interface-h');
+                if (background.parentNode) background.parentNode.removeChild(background);
+                this.attached = false;
+            }
+        };
+        main.__akiraState = state;
+        return state;
+    }
+
+    function updateCardTitle(card) {
+        if (!card || !card.render) return;
+        var element = card.render(true);
+        if (element && element[0]) element = element[0];
+        if (!element) return;
+        if (!element.isConnected) {
+            clearTimeout(card.__akiraLabelTimer);
+            card.__akiraLabelTimer = setTimeout(function () { updateCardTitle(card); }, 50);
+            return;
+        }
+        var textValue = clean(card.data && (card.data.title || card.data.name || card.data.original_title || card.data.original_name));
+        var label = qs('.akira-card-title', element) || card.__akiraLabel;
+        if (!textValue) {
+            if (label && label.parentNode) label.parentNode.removeChild(label);
+            card.__akiraLabel = null;
+            return;
+        }
+        if (!label) {
+            label = document.createElement('div');
+            label.className = 'akira-card-title new-interface-card-title';
+        }
+        label.textContent = textValue;
+        if (label.parentNode !== element) {
+            if (label.parentNode) label.parentNode.removeChild(label);
+            element.appendChild(label);
+        }
+        card.__akiraLabel = label;
+    }
+
+    function decorateCard(state, card) {
+        if (!card || card.__akiraCard || !card.use || !card.data) return;
+        card.__akiraCard = true;
+        card.params = card.params || {};
+        card.params.style = card.params.style || {};
+        if (!card.params.style.name) card.params.style.name = 'wide';
+        card.use({
+            onFocus: function () { state.update(card.data); },
+            onHover: function () { state.update(card.data); },
+            onTouch: function () { state.update(card.data); },
+            onVisible: function () { updateCardTitle(card); AkiraLogo.applyToCard(card); },
+            onUpdate: function () { updateCardTitle(card); AkiraLogo.applyToCard(card); },
+            onDestroy: function () {
+                clearTimeout(card.__akiraLabelTimer);
+                var root = card.render && card.render(true);
+                if (root && root[0]) root = root[0];
+                var logo = root && qs('.akira-card-logo', root);
+                if (logo && logo.parentNode) logo.parentNode.removeChild(logo);
+                if (card.__akiraLabel && card.__akiraLabel.parentNode) card.__akiraLabel.parentNode.removeChild(card.__akiraLabel);
+                card.__akiraLabel = null;
+                delete card.__akiraCard;
+            }
+        });
+        updateCardTitle(card);
+        AkiraLogo.applyToCard(card);
+    }
+
+    function getDomCardData(node) {
+        var current = node && node.jquery ? node[0] : node;
+        while (current && !current.card_data) current = current.parentNode;
+        return current && current.card_data ? current.card_data : null;
+    }
+
+    function attachLineHandlers(main, line, element) {
+        if (line.__akiraLine) return;
+        line.__akiraLine = true;
+        var state = ensureInterfaceState(main);
+        var apply = function (card) { decorateCard(state, card); };
+        if (element && Array.isArray(element.results)) {
+            for (var i = 0; i < Math.min(element.results.length, 5); i++) {
+                state.info.load(element.results[i], { preload: true });
+                AkiraLogo.preload(element.results[i]);
             }
         }
-
-        function observeDom() {
-            if (domObserver || !window.MutationObserver || !document.body) return;
-            var pending = false;
-            domObserver = new MutationObserver(function (mutations) {
-                if (!pluginEnabled()) return;
-                var shouldPatch = false;
-                for (var i = 0; i < mutations.length && !shouldPatch; i++) {
-                    for (var j = 0; j < mutations[i].addedNodes.length; j++) {
-                        var node = mutations[i].addedNodes[j];
-                        if (!node || node.nodeType !== 1) continue;
-                        if ((node.classList && (node.classList.contains('card') || node.classList.contains('card-episode') || node.classList.contains('full-start-new') || node.classList.contains('head__backward'))) || (node.querySelector && node.querySelector('.card, .card-episode, .full-start-new, .head__body, .head__backward'))) {
-                            shouldPatch = true;
-                            break;
-                        }
-                    }
-                }
-                if (!shouldPatch || pending) return;
-                pending = true;
+        line.use({
+            onInstance: function (card) { apply(card); },
+            onActive: function (card, itemData) { state.update(card && card.data ? card.data : itemData); },
+            onToggle: function () {
                 setTimeout(function () {
-                    pending = false;
-                    schedulePatch();
-                }, perfMode() === 'economy' ? 220 : 90);
+                    var container = line.render && line.render(true);
+                    var focus = container && (qs('.selector.focus', container) || qs('.focus', container));
+                    var data = getDomCardData(focus);
+                    if (data) state.update(data);
+                }, 32);
+            },
+            onMore: function () { state.reset(); },
+            onDestroy: function () {
+                state.reset();
+                delete line.__akiraLine;
+            }
+        });
+        if (Array.isArray(line.items)) line.items.forEach(apply);
+        if (line.last) {
+            var lastData = getDomCardData(line.last);
+            if (lastData) state.update(lastData);
+        }
+    }
+
+    function applyFullTemplate() {
+        if (!Lampa.Template || !Lampa.Template.add) return;
+        var separate = getBool(K.buttonsSeparate, true);
+        var torrent = separate
+            ? '<div class="full-start__button selector view--torrent"><svg><use xlink:href="#sprite-torrent"></use></svg><span>#{full_torrents}</span></div><div class="full-start__button selector view--trailer"><svg><use xlink:href="#sprite-trailer"></use></svg><span>#{full_trailers}</span></div>'
+            : '';
+        var hidden = separate ? '' : '<div class="hide buttons--container"><div class="full-start__button view--torrent hide"><svg><use xlink:href="#sprite-torrent"></use></svg><span>#{full_torrents}</span></div><div class="full-start__button selector view--trailer"><svg><use xlink:href="#sprite-trailer"></use></svg><span>#{full_trailers}</span></div></div>';
+        Lampa.Template.add('full_start_new',
+            '<div class="full-start-new">' +
+            '<div class="full-start-new__body">' +
+            '<div class="full-start-new__left"><div class="full-start-new__poster"><img class="full-start-new__img full--poster" /></div></div>' +
+            '<div class="full-start-new__right">' +
+            '<div class="full-start-new__head"></div><div class="full-start-new__title">{title}</div><div class="full-start__title-original">{original_title}</div><div class="full-start-new__tagline full--tagline">{tagline}</div>' +
+            '<div class="full-start-new__rate-line"><div class="full-start__rate rate--tmdb"><div>{rating}</div><div class="source--name">TMDB</div></div><div class="full-start__rate rate--imdb hide"><div></div><div>IMDB</div></div><div class="full-start__rate rate--kp hide"><div></div><div>KP</div></div><div class="full-start__pg hide"></div><div class="full-start__status hide"></div></div>' +
+            '<div class="full-start-new__details"></div><div class="full-start-new__reactions"><div>#{reactions_none}</div></div>' +
+            '<div class="full-start-new__buttons"><div class="full-start__button selector button--play"><svg><use xlink:href="#sprite-play"></use></svg><span>#{title_watch}</span></div>' + torrent +
+            '<div class="full-start__button selector button--book"><svg width="21" height="32" viewBox="0 0 21 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 1.5H19C19.2761 1.5 19.5 1.72386 19.5 2V27.9618C19.5 28.3756 19.0261 28.6103 18.697 28.3595L12.6212 23.7303C11.3682 22.7757 9.63183 22.7757 8.37885 23.7303L2.30302 28.3595C1.9739 28.6103 1.5 28.3756 1.5 27.9618V2C1.5 1.72386 1.72386 1.5 2 1.5Z" stroke="currentColor" stroke-width="2.5"/></svg><span>#{settings_input_links}</span></div>' +
+            '<div class="full-start__button selector button--reaction"><svg><use xlink:href="#sprite-reaction"></use></svg><span>#{title_reactions}</span></div><div class="full-start__button selector button--subscribe hide"><svg viewBox="0 0 25 30" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6.01892 24C6.27423 27.3562 9.07836 30 12.5 30C15.9216 30 18.7257 27.3562 18.981 24H15.9645C15.7219 25.6961 14.2632 27 12.5 27C10.7367 27 9.27804 25.6961 9.03542 24H6.01892Z" fill="currentColor"></path><path d="M3.81972 14.5957V10.2679C3.81972 5.41336 7.7181 1.5 12.5 1.5C17.2819 1.5 21.1803 5.41336 21.1803 10.2679V14.5957C21.1803 15.8462 21.5399 17.0709 22.2168 18.1213L23.0727 19.4494C24.2077 21.2106 22.9392 23.5 20.9098 23.5H4.09021C2.06084 23.5 0.792282 21.2106 1.9273 19.4494L2.78317 18.1213C3.46012 17.0709 3.81972 15.8462 3.81972 14.5957Z" stroke="currentColor" stroke-width="2.6"></path></svg><span>#{title_subscribe}</span></div><div class="full-start__button selector button--options"><svg><use xlink:href="#sprite-dots"></use></svg></div></div>' +
+            '</div></div>' + hidden + '</div>'
+        );
+    }
+
+    function hookFullLogos() {
+        if (window.__AKIRA_FULL_LOGO_HOOK__) return;
+        window.__AKIRA_FULL_LOGO_HOOK__ = true;
+        try {
+            Lampa.Listener.follow('full', function (e) {
+                if (!e || e.type !== 'complite') return;
+                var data = e.data && (e.data.movie || e.data);
+                if (data && e.object && e.object.activity) {
+                    setMobileHeroBg(e.object.activity, data);
+                    AkiraLogo.applyToFull(e.object.activity, data);
+                }
             });
-            domObserver.observe(document.body, { childList: true, subtree: true });
-        }
+        } catch (err) {}
+    }
 
-        function bindListeners() {
-            if (listenersBound) return;
-            listenersBound = true;
-            try {
-                if (Lampa.Listener && typeof Lampa.Listener.follow === 'function') {
-                    Lampa.Listener.follow('activity', function (event) {
-                        if (event.type === 'start' || event.type === 'activity') {
-                            state.heroKey = '';
-                            schedulePatch();
-                            setTimeout(updateHero, 180);
-                        }
+    function setMobileHeroBg(activity, movie) {
+        try {
+            var render = activity.render();
+            var root = render && (render[0] || render);
+            if (!root) return;
+            var bg = '';
+            if (movie.backdrop_path && Lampa.TMDB && Lampa.TMDB.image) bg = Lampa.TMDB.image('t/p/original' + movie.backdrop_path);
+            else if (movie.poster_path && Lampa.TMDB && Lampa.TMDB.image) bg = Lampa.TMDB.image('t/p/w780' + movie.poster_path);
+            else if (movie.img) bg = movie.img;
+            if (bg) root.style.setProperty('--akira-mobile-bg', 'url(' + bg + ')');
+        } catch (e) {}
+    }
+
+    function initTmdbSource() {
+        if (window.__AKIRA_TMDB_SOURCE__) return;
+        if (!Lampa.Api || !Lampa.Api.sources || !Lampa.Api.sources.tmdb) return;
+        window.__AKIRA_TMDB_SOURCE__ = true;
+        var original = Lampa.Api.sources.tmdb;
+        var akira = {};
+        for (var k in original) if (Object.prototype.hasOwnProperty.call(original, k)) akira[k] = original[k];
+        Lampa.Api.sources.akira_tmdb = akira;
+        try {
+            Object.defineProperty(Lampa.Api.sources, 'akira_tmdb', { get: function () { return akira; } });
+        } catch (e) {}
+        var originalMain = original.main;
+        akira.main = function () {
+            var args = Array.prototype.slice.call(arguments);
+            if (pluginOn() && getBool(K.tmdb, true) && this.type !== 'movie' && this.type !== 'tv') {
+                return createAkiraMain(akira).apply(this, args);
+            }
+            return originalMain.apply(this, args);
+        };
+        try {
+            if (Lampa.Params && Lampa.Params.select) {
+                var sources = Lampa.Params.values && Lampa.Params.values.source ? Lampa.Params.values.source : {};
+                if (!sources.akira_tmdb) {
+                    sources.akira_tmdb = 'Akira TMDB';
+                    Lampa.Params.select('source', sources, storageField('source', 'tmdb'));
+                }
+            }
+        } catch (e2) {}
+    }
+
+    function createAkiraMain(parent) {
+        return function (params, oncomplete, onerror) {
+            var parts = [];
+            COLLECTIONS.forEach(function (item) {
+                if (!getBool(collectionKey(item.id), true)) return;
+                parts.push(function (call) {
+                    parent.get(item.request, params || {}, function (json) {
+                        json.title = item.label;
+                        if (Lampa.Utils && Lampa.Utils.addSource) Lampa.Utils.addSource(json, 'tmdb');
+                        call(json);
+                    }, function () {
+                        call({ source: 'tmdb', results: [], title: item.label });
                     });
-                    Lampa.Listener.follow('full', function (event) {
-                        if (event && event.data && event.data.movie) {
-                            state.fullMovie = event.data.movie;
-                            state.fullMovieKey = movieKey(state.fullMovie);
-                        }
-                        if (event.type === 'complite' || event.type === 'activity' || event.type === 'start') {
-                            setTimeout(function () { applyFullLogo(state.fullMovie); moveSplitButtons(); }, 40);
-                            setTimeout(function () { applyFullLogo(state.fullMovie); moveSplitButtons(); }, 260);
-                            setTimeout(function () { applyFullLogo(state.fullMovie); moveSplitButtons(); }, 640);
-                        }
-                    });
-                }
-            } catch (e) {}
-
-            try {
-                if (Lampa.Storage && Lampa.Storage.listener && typeof Lampa.Storage.listener.follow === 'function') {
-                    Lampa.Storage.listener.follow('change', function (event) {
-                        if (!event || !event.name || event.name.indexOf(cfg.prefix) !== 0) return;
-                        if (event.name === KEY.logoLang || event.name === KEY.heroLogo || event.name === KEY.cardLogo || event.name === KEY.fullLogo) logoCache = {};
-                        if (event.name === KEY.enabled && !pluginEnabled()) {
-                            removePluginUi();
-                            return;
-                        }
-                        if (event.name === KEY.cards || event.name === KEY.cardLogo) qsa('.card[data-akira-card-key]').forEach(restoreCard);
-                        schedulePatch(true);
-                    });
-                }
-            } catch (e) {}
-
-            document.addEventListener('mouseover', function (event) {
-                var card = event.target && event.target.closest ? event.target.closest('.card') : null;
-                if (card) {
-                    state.lastCard = card;
-                    updateHero();
-                }
-            }, true);
-
-            document.addEventListener('focusin', function (event) {
-                var card = event.target && event.target.closest ? event.target.closest('.card') : null;
-                if (card) {
-                    state.lastCard = card;
-                    updateHero();
-                }
-            }, true);
-
-            document.addEventListener('scroll', function (event) {
-                if (state.fullFogTick) return;
-                state.fullFogTick = true;
-                var target = event.target;
-                requestAnimationFrame(function () {
-                    state.fullFogTick = false;
-                    updateFullFog(target);
                 });
-            }, true);
-
-            window.addEventListener('resize', function () { syncBodyState(); schedulePatch(true); });
-            window.addEventListener('orientationchange', function () { syncBodyState(); schedulePatch(true); });
-            try {
-                if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { syncBodyState(); schedulePatch(true); });
-            } catch (e) {}
-        }
-
-        function safePatch() {
-            scheduled = false;
-            if (!pluginEnabled()) {
-                removePluginUi();
-                return;
+            });
+            if (!parts.length) {
+                if (onerror) onerror();
+                return function () {};
             }
-            injectStyle();
-            syncBodyState();
-            patchTopbar();
-            processCards(document.body);
-            updateHero();
-            updateFullFog();
-            applyFullLogo(state.fullMovie);
-            moveSplitButtons();
-            startHeroLoop();
-        }
-
-        function schedulePatch(now) {
-            if (scheduled && !now) return;
-            scheduled = true;
-            setTimeout(safePatch, now ? 10 : 120);
-        }
-
-        function startPlugin() {
-            addSettings();
-            initTmdbSource();
-            bindListeners();
-            if (!pluginEnabled()) {
-                removePluginUi();
-                return;
+            var method = Lampa.Api && Lampa.Api.sequentials ? Lampa.Api.sequentials : Lampa.Api.partNext;
+            if (!method) {
+                if (onerror) onerror();
+                return function () {};
             }
-            injectStyle();
-            syncBodyState();
-            observeDom();
-            schedulePatch(true);
-        }
+            method(parts, parts.length, oncomplete, onerror);
+            return function () {};
+        };
+    }
 
-        function boot() {
-            startPlugin();
+    function updateScale() {
+        if (!document.documentElement || !document.body) return;
+        if (!pluginOn() || !getBool(K.scale, true)) {
+            document.documentElement.style.removeProperty('--akira-font-size');
+            document.documentElement.style.removeProperty('--akira-card-scale');
+            document.documentElement.style.removeProperty('--akira-card-shift');
+            document.documentElement.style.removeProperty('--akira-hero-h');
+            document.documentElement.style.removeProperty('--akira-logo-max-h');
+            document.documentElement.style.removeProperty('--akira-card-logo-h');
+            document.documentElement.style.removeProperty('--akira-card-wide');
+            setBodyState();
+            return;
         }
+        var vp = window.visualViewport || {};
+        var width = Math.round(vp.width || window.innerWidth || document.documentElement.clientWidth || 1920);
+        var height = Math.round(vp.height || window.innerHeight || document.documentElement.clientHeight || 1080);
+        var base = clamp(width / 1920, 0.78, 1.28);
+        if (height < 760) base *= 0.92;
+        var font = Math.round(clamp(16 * base, 13, 22));
+        var cardScale = width < 580 ? 1.08 : width < 1024 ? 1.18 : width < 1920 ? 1.30 : 1.40;
+        var shift = width < 580 ? '8%' : width < 1024 ? '16%' : width < 1920 ? '24%' : '30%';
+        var heroH = Math.round(clamp(height * 0.28, 260, 430));
+        var logoH = Math.round(clamp(height * 0.12, 70, 170));
+        var cardLogoH = Math.round(clamp(height * 0.055, 34, 74));
+        var cardWide = (width < 900 ? 15.8 : width < 1920 ? 18.3 : 20.2) + 'em';
+        document.documentElement.style.setProperty('--akira-font-size', font + 'px');
+        document.documentElement.style.setProperty('--akira-card-scale', String(cardScale));
+        document.documentElement.style.setProperty('--akira-card-shift', shift);
+        document.documentElement.style.setProperty('--akira-hero-h', heroH + 'px');
+        document.documentElement.style.setProperty('--akira-logo-max-h', logoH + 'px');
+        document.documentElement.style.setProperty('--akira-card-logo-h', cardLogoH + 'px');
+        document.documentElement.style.setProperty('--akira-card-wide', cardWide);
+        setBodyState();
+    }
 
-        if (window.appready) {
-            boot();
-        } else {
-            try {
-                if (Lampa.Listener && typeof Lampa.Listener.follow === 'function') {
-                    Lampa.Listener.follow('app', function (event) {
-                        if (event.type === 'ready') boot();
-                    });
-                } else if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', boot);
-                } else {
-                    setTimeout(boot, 300);
-                }
-            } catch (e) {
-                if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-                else setTimeout(boot, 300);
+    function tagCardEdges() {
+        if (!pluginOn() || !getBool(K.cardDesign, true)) return;
+        qsa('.scroll__body, .items-line__body').forEach(function (row) {
+            var cards = qsa('.card', row);
+            if (!cards.length) return;
+            cards.forEach(function (card) {
+                card.removeAttribute('data-akira-edge');
+                card.removeAttribute('data-akira-single');
+            });
+            if (cards.length === 1) cards[0].setAttribute('data-akira-single', 'true');
+            else {
+                cards[0].setAttribute('data-akira-edge', 'first');
+                cards[cards.length - 1].setAttribute('data-akira-edge', 'last');
             }
+        });
+    }
+
+    function colorizeRatings() {
+        if (!pluginOn() || !getBool(K.cardDesign, true)) return;
+        qsa('.card__vote').forEach(function (el) {
+            var value = parseFloat((el.textContent || '').replace(',', '.'));
+            if (isNaN(value)) return;
+            var color = value >= 7.5 ? '#2ecc71' : value >= 6.5 ? '#f1c40f' : value >= 5 ? '#e67e22' : 'var(--akira-accent)';
+            el.style.setProperty('background', color, 'important');
+        });
+    }
+
+    function observeDom() {
+        if (topbarObserver || !window.MutationObserver || !document.body) return;
+        var pending = false;
+        topbarObserver = new MutationObserver(function () {
+            if (!pluginOn() || pending) return;
+            pending = true;
+            setTimeout(function () {
+                pending = false;
+                patchTopbar();
+                tagCardEdges();
+                colorizeRatings();
+            }, 100);
+        });
+        topbarObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    function injectStyle() {
+        var p = palette();
+        var style = document.getElementById(CFG.styleId) || document.createElement('style');
+        style.id = CFG.styleId;
+        var css = ''
+            + '@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap");\n'
+            + ':root{--akira-bg:#0a0d12;--akira-accent:' + p.accent + ';--akira-accent-2:' + p.accent2 + ';--akira-accent-rgb:' + p.rgb + ';--akira-accent-gl:rgba(' + p.rgb + ',.48);--akira-accent-bg:rgba(' + p.rgb + ',.74);--akira-text:#f4f4f5;--akira-font:"Montserrat","Helvetica Neue",Arial,sans-serif;--akira-font-size:16px;--akira-card-scale:1.3;--akira-card-shift:24%;--akira-radius:8px;--akira-hero-h:350px;--akira-logo-max-h:140px;--akira-card-logo-h:58px;--akira-card-wide:18.3em;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-scale="on"]{font-size:var(--akira-font-size)!important;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-theme="on"]{background-color:var(--akira-bg)!important;color:var(--akira-text)!important;font-family:var(--akira-font)!important;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__body,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__wrapper{background:transparent!important;box-shadow:none!important;overflow:visible!important;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__title,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__time,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__split,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__logo,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .open--search,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__settings{display:none!important;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__history,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__source,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__markers,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__backward,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .settings-icon-holder,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__action,body.' + CFG.bodyClass + '[data-akira-topbar="on"] .head__button{display:none!important;}\n'
+            + 'body.' + CFG.bodyClass + ' .head__menu-icon.akira-head-brand{position:absolute!important;left:1.05em!important;top:.54em!important;z-index:60!important;max-width:min(30vw,22em)!important;min-width:4.4em!important;height:2.62em!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0 .95em!important;border-radius:8px!important;background:linear-gradient(92deg,var(--akira-accent),var(--akira-accent-2))!important;color:' + p.focusText + '!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 10px 28px rgba(' + p.rgb + ',.22)!important;overflow:hidden!important;}\n'
+            + 'body.' + CFG.bodyClass + ' .head__menu-icon.akira-head-brand span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:900;font-size:.88em;line-height:1;letter-spacing:0;color:inherit;}\n'
+            + 'body.' + CFG.bodyClass + ' .akira-topbar{position:absolute;left:calc(var(--akira-brand-w,5.2em) + 1.55em)!important;top:.54em!important;right:1.05em!important;z-index:58!important;pointer-events:none;}\n'
+            + 'body.' + CFG.bodyClass + ' .akira-topbar__inner{height:2.8em;display:flex;align-items:center;gap:.34em;pointer-events:auto;}\n'
+            + 'body.' + CFG.bodyClass + ' .akira-topbar__items,body.' + CFG.bodyClass + ' .akira-topbar__right{display:inline-flex;align-items:center;gap:.18em;height:2.62em;padding:.18em;border-radius:8px;background:rgba(14,14,16,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(18px) saturate(130%);-webkit-backdrop-filter:blur(18px) saturate(130%);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 26px rgba(0,0,0,.22);}\n'
+            + 'body.' + CFG.bodyClass + ' .akira-topbar__items{max-width:calc(100vw - var(--akira-brand-w,5.2em) - 17em)!important;overflow:hidden!important;}body.' + CFG.bodyClass + ' .akira-topbar__right{margin-left:auto;}\n'
+            + 'body.' + CFG.bodyClass + ' .akira-topbar__item,body.' + CFG.bodyClass + ' .akira-topbar__clock{height:2.18em;min-width:2.18em;display:inline-flex;align-items:center;justify-content:center;padding:0 .88em;border-radius:7px;color:rgba(255,255,255,.9);font-size:.84em;font-weight:700;white-space:nowrap;transition:background .18s ease,transform .18s ease,color .18s ease;}\n'
+            + 'body.' + CFG.bodyClass + ' .akira-topbar__icon{width:2.18em;padding:0;}body.' + CFG.bodyClass + ' .akira-topbar__icon svg{width:1.08em;height:1.08em;}body.' + CFG.bodyClass + ' .akira-topbar__clock{min-width:4.1em;font-weight:800;padding:0 .72em;}\n'
+            + 'body.' + CFG.bodyClass + ' .akira-topbar__item.focus,body.' + CFG.bodyClass + ' .akira-topbar__item.hover,body.' + CFG.bodyClass + ' .akira-topbar__clock.focus,body.' + CFG.bodyClass + ' .akira-topbar__clock.hover{background:rgba(255,255,255,.15);color:#fff;transform:translateY(-1px);}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-topbar-align="center"] .akira-topbar{left:0!important;right:0!important;}body.' + CFG.bodyClass + '[data-akira-topbar-align="center"] .akira-topbar__inner{justify-content:center;pointer-events:none;}body.' + CFG.bodyClass + '[data-akira-topbar-align="center"] .akira-topbar__items{position:absolute;left:50%;top:0;transform:translateX(-50%);max-width:calc(100vw - 23em)!important;pointer-events:auto;}body.' + CFG.bodyClass + '[data-akira-topbar-align="center"] .akira-topbar__right{position:absolute;right:1.05em;top:0;margin-left:0;pointer-events:auto;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu{background:rgba(10,13,18,.74)!important;backdrop-filter:blur(28px) saturate(150%)!important;-webkit-backdrop-filter:blur(28px) saturate(150%)!important;border-right:1px solid rgba(255,255,255,.08)!important;overflow-x:hidden!important;}body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item{border-radius:0!important;background:rgba(255,255,255,.04)!important;border-left:3px solid transparent!important;padding:.55em 1.4em .55em 1em!important;margin:0!important;gap:.7em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.focus,body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.hover,body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.traverse,body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.active{background:rgba(255,255,255,.1)!important;border-left-color:var(--akira-accent)!important;box-shadow:none!important;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-cards="on"] .items-line__body,body.' + CFG.bodyClass + '[data-akira-cards="on"] .items-cards,body.' + CFG.bodyClass + '[data-akira-cards="on"] .scroll,body.' + CFG.bodyClass + '[data-akira-cards="on"] .scroll--horizontal,body.' + CFG.bodyClass + '[data-akira-cards="on"] .scroll__content,body.' + CFG.bodyClass + '[data-akira-cards="on"] .scroll__body{overflow:visible!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .items-line{overflow:visible!important;position:relative!important;z-index:1!important;padding:45px 0!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .items-line__title{font-family:var(--akira-font)!important;font-weight:700!important;font-size:1.3em!important;color:var(--akira-text)!important;text-shadow:0 2px 10px rgba(0,0,0,.8)!important;padding-left:4%!important;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-cards="on"] .card{position:relative!important;transition:transform 420ms cubic-bezier(.4,0,.2,1),z-index 0s!important;z-index:1!important;will-change:transform!important;backface-visibility:hidden!important;transform:translate3d(0,0,0)!important;transform-origin:center center!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card__view{border-radius:var(--akira-radius)!important;overflow:visible!important;position:relative!important;background:#16181d!important;border:3px solid transparent!important;transition:border-color 420ms cubic-bezier(.4,0,.2,1)!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card__view::before{content:""!important;display:block!important;position:absolute!important;inset:0;border-radius:inherit!important;box-shadow:0 0 20px var(--akira-accent-gl),0 20px 40px rgba(0,0,0,.6)!important;opacity:0!important;z-index:-1!important;pointer-events:none!important;transition:opacity 420ms cubic-bezier(.4,0,.2,1)!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card__view::after{display:none!important;content:none!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card__img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:var(--akira-radius)!important;filter:none!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card__age{display:none!important;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-cards="on"] .card__view-shadow,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card .card__overlay,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card .card__gradient,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card .card__mask,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card .card__blackout,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card .card-watched,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card__promo{display:none!important;background:none!important;opacity:0!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card__title{font-family:var(--akira-font)!important;font-size:.85em!important;font-weight:600!important;color:var(--akira-text)!important;padding:4px 2px 0!important;line-height:1.1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-shadow:0 1px 4px rgba(0,0,0,.5)!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card__quality{display:block!important;position:absolute!important;bottom:6px!important;left:6px!important;top:auto!important;right:auto!important;z-index:20!important;background:rgba(46,204,113,.88)!important;color:#fff!important;padding:2px 8px!important;border-radius:4px!important;font-size:.7em!important;font-weight:700!important;font-family:var(--akira-font)!important;text-transform:uppercase!important;letter-spacing:0!important;line-height:1.4!important;pointer-events:none!important;box-shadow:0 2px 8px rgba(0,0,0,.5)!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card__vote{display:block!important;position:absolute!important;bottom:6px!important;right:6px!important;top:auto!important;left:auto!important;z-index:20!important;background:rgba(120,120,120,.6)!important;color:#fff!important;padding:2px 8px!important;border-radius:10px 0 10px 0!important;font-size:.75em!important;font-weight:800!important;font-family:var(--akira-font)!important;line-height:1.4!important;pointer-events:none!important;box-shadow:0 2px 8px rgba(0,0,0,.5)!important;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-cards="on"] .card.focus,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card.hover,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card:hover{z-index:100!important;transform:scale3d(var(--akira-card-scale),var(--akira-card-scale),1)!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card.focus .card__view,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card.hover .card__view,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card:hover .card__view{border-color:var(--akira-accent)!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card.focus .card__view::before,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card.hover .card__view::before,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card:hover .card__view::before{opacity:1!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card.focus ~ .card,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card.hover ~ .card,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card:hover ~ .card{transform:translate3d(var(--akira-card-shift),0,0)!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card[data-akira-edge="first"].focus,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card[data-akira-edge="first"].hover{transform-origin:left center!important;}body.' + CFG.bodyClass + '[data-akira-cards="on"] .card[data-akira-edge="last"].focus,body.' + CFG.bodyClass + '[data-akira-cards="on"] .card[data-akira-edge="last"].hover{transform-origin:right center!important;}\n'
+            + 'body.' + CFG.bodyClass + ' .akira-main{position:relative;--ni-info-h:var(--akira-hero-h);}body.' + CFG.bodyClass + ' .akira-main .card.card--wide,body.' + CFG.bodyClass + ' .akira-main .card--small.card--wide{width:var(--akira-card-wide)!important;}body.' + CFG.bodyClass + ' .akira-main-bg{height:108%;top:-6em;opacity:0;transition:opacity .35s ease;}body.' + CFG.bodyClass + ' .akira-main-bg.loaded{opacity:.8;}body.' + CFG.bodyClass + ' .akira-hero{position:relative;padding:1.5em;height:var(--akira-hero-h);overflow:hidden;z-index:3;}body.' + CFG.bodyClass + ' .akira-hero__body{position:relative;z-index:1;width:min(96%,78em);padding-top:1.1em;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);column-gap:clamp(16px,3vw,54px);height:100%;box-sizing:border-box;}body.' + CFG.bodyClass + ' .akira-hero__left,body.' + CFG.bodyClass + ' .akira-hero__right{min-width:0;height:100%;}body.' + CFG.bodyClass + ' .akira-hero__right{padding-top:clamp(.2em,2.2vh,1.6em);padding-bottom:clamp(.8em,2.4vh,2em);display:flex;flex-direction:column;}body.' + CFG.bodyClass + ' .akira-hero__textblock{margin-top:auto;display:flex;flex-direction:column;gap:.55em;min-height:0;}body.' + CFG.bodyClass + ' .akira-hero__head{color:rgba(255,255,255,.6);margin-bottom:1em;font-size:1.3em;min-height:1em;}body.' + CFG.bodyClass + ' .akira-hero__head span{color:#fff;}body.' + CFG.bodyClass + ' .akira-hero__title{font-size:clamp(2.6em,4vw,3.6em);font-weight:700;margin-bottom:.3em;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;line-clamp:1;-webkit-box-orient:vertical;line-height:1.25;}body.' + CFG.bodyClass + ' .akira-info-logo{max-height:var(--akira-logo-max-h);}body.' + CFG.bodyClass + ' .akira-hero__description{font-size:.87em;font-weight:300;line-height:1.38;color:rgba(255,255,255,.9);text-shadow:0 2px 12px rgba(0,0,0,.45);overflow:hidden;display:-webkit-box;-webkit-line-clamp:7;line-clamp:7;-webkit-box-orient:vertical;}body.' + CFG.bodyClass + ' .akira-hero__meta{display:flex;align-items:center;gap:.48em;flex-wrap:wrap;color:rgba(255,255,255,.84);}body.' + CFG.bodyClass + ' .akira-hero__moved-head{display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.92;}\n'
+            + 'body.' + CFG.bodyClass + ' .akira-card-title{font-family:var(--akira-font)!important;font-size:.85em!important;font-weight:600!important;color:var(--akira-text)!important;padding:4px 2px 0!important;line-height:1.1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-shadow:0 1px 4px rgba(0,0,0,.5)!important;}body.' + CFG.bodyClass + ' .akira-card-logo{position:absolute;left:0;right:0;bottom:0;padding:.35em .45em;box-sizing:border-box;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.78),rgba(0,0,0,0));}body.' + CFG.bodyClass + ' .akira-card-logo img{max-height:var(--akira-card-logo-h);}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start{position:relative!important;overflow:hidden!important;margin:0!important;padding:0!important;background:none!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__background{position:absolute!important;top:-6em!important;left:0!important;width:100%!important;height:calc(100% + 6em)!important;margin:0!important;padding:0!important;mask-image:none!important;-webkit-mask-image:none!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new::after,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start::after{display:none!important;content:none!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new::before,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start::before{content:""!important;display:block!important;position:absolute!important;top:-6em!important;left:0!important;right:0!important;bottom:0!important;height:calc(100% + 6em)!important;background:linear-gradient(to top,var(--akira-bg) 0%,rgba(10,13,18,.85) 35%,transparent 80%)!important;opacity:.18!important;z-index:1!important;pointer-events:none!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__body,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__body{position:relative!important;z-index:2!important;padding-left:5%!important;display:flex!important;align-items:flex-end!important;min-height:80vh!important;padding-top:6em!important;padding-bottom:2em!important;background:none!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__left,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__left{display:none!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__right,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__right{position:relative!important;z-index:3!important;max-width:min(650px,92vw)!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-end!important;background:none!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__title,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__title{font-family:var(--akira-font)!important;font-weight:800!important;font-size:clamp(1.8em,3.5vw,3.8em)!important;line-height:1.08!important;color:#fff!important;text-shadow:0 2px 10px rgba(0,0,0,.7),0 6px 24px rgba(0,0,0,.8)!important;margin-bottom:8px!important;background:none!important;box-shadow:none!important;max-width:100%!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__title img,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__title img,body.' + CFG.bodyClass + '[data-akira-detail="on"] .akira-full-logo{max-height:var(--akira-logo-max-h)!important;filter:none!important;background:none!important;box-shadow:none!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__head,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__head,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__details,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__details{font-family:var(--akira-font)!important;font-weight:500!important;font-size:.85em!important;line-height:1.3!important;color:rgba(255,255,255,.74)!important;text-shadow:0 2px 4px rgba(0,0,0,.5)!important;background:none!important;box-shadow:none!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__tagline{font-style:italic;color:rgba(255,255,255,.65)!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__reactions{display:none!important;height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;}\n'
+            + 'body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__button,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__button{font-family:var(--akira-font)!important;font-weight:600!important;border-radius:8px!important;border:1px solid rgba(255,255,255,.1)!important;background:rgba(120,120,120,.2)!important;backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important;box-shadow:0 4px 16px rgba(0,0,0,.3)!important;color:rgba(255,255,255,.82)!important;text-shadow:0 2px 4px rgba(0,0,0,.5)!important;transition:background 300ms ease,transform 200ms ease,box-shadow 300ms ease,border-color 300ms ease!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__button.focus,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__button:hover{background:var(--akira-accent-bg)!important;border-color:rgba(255,255,255,.3)!important;color:#fff!important;box-shadow:0 0 20px var(--akira-accent-gl),0 8px 28px rgba(0,0,0,.4)!important;transform:scale(1.04)!important;}body.' + CFG.bodyClass + '[data-akira-buttons-big="on"] .full-start-new__buttons .full-start__button:not(.focus) span{display:inline!important;}body.' + CFG.bodyClass + '[data-akira-buttons-big="off"] .full-start-new__buttons .full-start__button:not(.focus) span{display:none;}\n'
+            + (getBool(K.translateTv, true) ? 'body.' + CFG.bodyClass + ' .card--tv .card__type,body.' + CFG.bodyClass + ' .card__type{font-size:1em;background:transparent!important;color:transparent!important;left:0;top:0;}body.' + CFG.bodyClass + ' .card__type::after{content:"СЕРИАЛ";color:#fff;position:absolute;left:0;top:0;padding:.4em .6em;border-radius:.4em 0 .4em 0;font-weight:700;background:var(--akira-accent-bg);}\n' : '')
+            + (getBool(K.animations, true) ? 'body.' + CFG.bodyClass + ' .watched-history,body.' + CFG.bodyClass + ' .torrent-item,body.' + CFG.bodyClass + ' .online-prestige,body.' + CFG.bodyClass + ' .extensions__item,body.' + CFG.bodyClass + ' .full-start__button,body.' + CFG.bodyClass + ' .simple-button,body.' + CFG.bodyClass + ' .settings-folder,body.' + CFG.bodyClass + ' .settings-param{transform:scale(1);transition:transform .25s ease;}body.' + CFG.bodyClass + ' .watched-history.focus,body.' + CFG.bodyClass + ' .torrent-item.focus,body.' + CFG.bodyClass + ' .online-prestige.focus,body.' + CFG.bodyClass + ' .extensions__item.focus,body.' + CFG.bodyClass + ' .full-start__button.focus,body.' + CFG.bodyClass + ' .simple-button.focus{transform:scale(1.03);}body.' + CFG.bodyClass + ' .settings-folder.focus,body.' + CFG.bodyClass + ' .settings-param.focus{transform:translateX(.2em);}\n' : '')
+            + '@media(max-width:900px){body.' + CFG.bodyClass + ' .akira-topbar{left:.75em!important;right:.75em!important;top:3.65em!important;}body.' + CFG.bodyClass + ' .akira-topbar__items{display:none!important;}body.' + CFG.bodyClass + ' .head__menu-icon.akira-head-brand{left:.75em!important;top:.55em!important;}body.' + CFG.bodyClass + ' .akira-hero{height:auto;min-height:260px;}body.' + CFG.bodyClass + ' .akira-hero__body{grid-template-columns:1fr;width:100%;}body.' + CFG.bodyClass + ' .akira-hero__right{padding-top:.6em;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start{background-image:var(--akira-mobile-bg)!important;background-size:cover!important;background-position:center top!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__background{display:none!important;}body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start-new__body,body.' + CFG.bodyClass + '[data-akira-detail="on"] .full-start__body{padding-left:3%!important;min-height:75vh!important;}}\n';
+        if (style.textContent !== css) style.textContent = css;
+        if (!style.parentNode) (document.head || document.body).appendChild(style);
+    }
+
+    function scheduleApply(now) {
+        clearTimeout(scheduleTimer);
+        scheduleTimer = setTimeout(applyAll, now ? 10 : 120);
+    }
+
+    function applyAll() {
+        setBodyState();
+        updateScale();
+        injectStyle();
+        applyFullTemplate();
+        patchTopbar();
+        tagCardEdges();
+        colorizeRatings();
+    }
+
+    function bindEvents() {
+        try {
+            if (Lampa.Listener && Lampa.Listener.follow) {
+                Lampa.Listener.follow('activity', function (e) {
+                    if (e && (e.type === 'start' || e.type === 'activity')) scheduleApply();
+                });
+                Lampa.Listener.follow('full', function () { scheduleApply(); });
+            }
+        } catch (e) {}
+        try {
+            if (Lampa.Storage && Lampa.Storage.listener && Lampa.Storage.listener.follow) {
+                Lampa.Storage.listener.follow('change', function (event) {
+                    if (!event || !event.name || event.name.indexOf(CFG.prefix) !== 0) return;
+                    scheduleApply(true);
+                });
+            }
+        } catch (e2) {}
+        window.addEventListener('resize', function () {
+            clearTimeout(scaleDebounce);
+            scaleDebounce = setTimeout(function () {
+                updateScale();
+                scheduleApply(true);
+            }, 120);
+        });
+        window.addEventListener('orientationchange', function () {
+            clearTimeout(scaleDebounce);
+            scaleDebounce = setTimeout(function () {
+                updateScale();
+                scheduleApply(true);
+            }, 120);
+        });
+    }
+
+    function boot() {
+        if (started) return;
+        started = true;
+        initDefaults();
+        addSettings();
+        applyFullTemplate();
+        injectStyle();
+        updateScale();
+        initTmdbSource();
+        initInterfaceHooks();
+        hookFullLogos();
+        bindEvents();
+        observeDom();
+        scheduleApply(true);
+    }
+
+    if (window.appready) {
+        boot();
+    } else {
+        try {
+            if (Lampa.Listener && Lampa.Listener.follow) {
+                Lampa.Listener.follow('app', function (event) {
+                    if (event && event.type === 'ready') boot();
+                });
+            } else if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', boot);
+            } else {
+                setTimeout(boot, 300);
+            }
+        } catch (e) {
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+            else setTimeout(boot, 300);
         }
     }
 })();
