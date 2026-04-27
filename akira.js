@@ -29,7 +29,7 @@
         scaleStyleId: 'akira-scale-style',
         bodyClass: 'akira-ui',
         brand: 'AKIRA',
-        logoCachePrefix: 'akira_logo_v1_',
+        logoCachePrefix: 'akira_logo_v2_',
         defaultNav: ['main', 'movie', 'tv', 'anime', 'release', 'favorite']
     };
 
@@ -168,7 +168,7 @@
             open_theme: 'Тема и шрифты',
             open_logos: 'Логотипы фильмов',
             open_scale: 'Адаптивный масштаб',
-            open_tmdb: 'TMDB подборки',
+            open_tmdb: 'Akira TMDB',
             reset_all: 'Сбросить все настройки Akira',
             reset_done: 'Akira: настройки сброшены',
             topbar_title: 'Верхний бар',
@@ -199,7 +199,7 @@
             logos_clear_done: 'Кеш логотипов очищен',
             scale_title: 'Адаптивный масштаб',
             scale_enabled: 'Включить (рассчитывается автоматически по экрану)',
-            tmdb_title: 'TMDB подборки',
+            tmdb_title: 'Akira TMDB',
             tmdb_enabled: 'Включить подборки Akira',
             tmdb_about: 'Подборки добавятся к источнику Akira (выбирается в стандартном выборе источника).'
         },
@@ -213,7 +213,7 @@
             open_theme: 'Theme & fonts',
             open_logos: 'Movie logos',
             open_scale: 'Adaptive scale',
-            open_tmdb: 'TMDB collections',
+            open_tmdb: 'Akira TMDB',
             reset_all: 'Reset all Akira settings',
             reset_done: 'Akira: settings reset',
             topbar_title: 'Top bar',
@@ -244,7 +244,7 @@
             logos_clear_done: 'Logo cache cleared',
             scale_title: 'Adaptive scale',
             scale_enabled: 'Enable (auto computed from viewport)',
-            tmdb_title: 'TMDB collections',
+            tmdb_title: 'Akira TMDB',
             tmdb_enabled: 'Enable Akira collections',
             tmdb_about: 'Collections appear under the Akira source (use the standard source picker).'
         },
@@ -258,7 +258,7 @@
             open_theme: 'Тема та шрифти',
             open_logos: 'Логотипи фільмів',
             open_scale: 'Адаптивний масштаб',
-            open_tmdb: 'TMDB добірки',
+            open_tmdb: 'Akira TMDB',
             reset_all: 'Скинути всі налаштування Akira',
             reset_done: 'Akira: налаштування скинуто',
             topbar_title: 'Верхній бар',
@@ -289,7 +289,7 @@
             logos_clear_done: 'Кеш логотипів очищено',
             scale_title: 'Адаптивний масштаб',
             scale_enabled: 'Увімкнути (рахується автоматично за екраном)',
-            tmdb_title: 'TMDB добірки',
+            tmdb_title: 'Akira TMDB',
             tmdb_enabled: 'Увімкнути добірки Akira',
             tmdb_about: 'Добірки зявляться у джерелі Akira (стандартний перемикач джерел).'
         }
@@ -833,7 +833,7 @@
      *     потребитель показывает текстовый заголовок.
      *
      * Кеш — общий для всех трёх потребителей: один ключ
-     * akira_logo_v1_<type>_<id>_<lang>.
+     * akira_logo_v2_<type>_<id>_<lang>.
      * Уровень 1 — sessionStorage (быстро), уровень 2 — localStorage
      * (переживёт перезагрузку), плюс in-memory map для мгновенных хитов.
      * ================================================================ */
@@ -902,7 +902,19 @@
             } catch (e) {}
         }
 
-        /* Подбор лучшего логотипа: PNG > SVG, точный язык > ru (для uk/ua) > en > любой. */
+        /* Способ interface_horizontal: точный язык > en > любой первый. */
+        function pickInterface(logos, targetLang) {
+            if (!logos || !logos.length) return null;
+            for (var i = 0; i < logos.length; i++) {
+                if (logos[i].iso_639_1 === targetLang && logos[i].file_path) return logos[i].file_path;
+            }
+            for (var j = 0; j < logos.length; j++) {
+                if (logos[j].iso_639_1 === 'en' && logos[j].file_path) return logos[j].file_path;
+            }
+            return logos[0] && logos[0].file_path ? logos[0].file_path : null;
+        }
+
+        /* Способ netflix_premium_style: PNG > SVG, точный язык > ru (для uk/ua) > en > любой. */
         function pickBest(logos, targetLang) {
             if (!logos || !logos.length) return null;
             var sorted = logos.slice().sort(function (a, b) {
@@ -952,11 +964,11 @@
 
         function methodB(item, type, lng, key, done) {
             var url;
-            try { url = Lampa.TMDB.api(type + '/' + item.id + '/images?api_key=' + Lampa.TMDB.key() + '&language=' + lng); }
+            try { url = Lampa.TMDB.api(type + '/' + item.id + '/images?api_key=' + Lampa.TMDB.key() + '&include_image_language=' + lng + ',en,null'); }
             catch (e) { return done(null); }
             try {
                 $.get(url, function (res) {
-                    var path = res ? pickBest(res.logos, lng) : null;
+                    var path = res ? pickInterface(res.logos, lng) : null;
                     done(buildUrl(path));
                 }).fail(function () { done(null); });
             } catch (e) { done(null); }
@@ -1241,7 +1253,15 @@
                 '.akira-iface .full-start__lines{padding-bottom:env(safe-area-inset-bottom,0px);}',
                 '.akira-iface .card__promo{display:none;}',
                 '.akira-iface .card .card-watched{display:none !important;}',
-                '.akira-iface .card .card__view{position:relative;}',
+                '.akira-iface .card{position:relative !important;transition:transform .25s ease,z-index .25s ease !important;transform-origin:center center !important;}',
+                '.akira-iface .card.focus,.akira-iface .card.hover,.akira-iface .card:hover{z-index:40 !important;transform:scale(1.08) !important;}',
+                '.akira-iface .card .card__view{position:relative;overflow:visible !important;border-radius:8px !important;}',
+                '.akira-iface .card .card__view::after{content:"";position:absolute;inset:-3px;border:3px solid transparent;border-radius:10px;pointer-events:none;box-shadow:none;transition:border-color .2s ease,box-shadow .2s ease;}',
+                '.akira-iface .card.focus .card__view::after,.akira-iface .card.hover .card__view::after,.akira-iface .card:hover .card__view::after{border-color:var(--akira-accent,#e50914);box-shadow:0 0 0 3px rgba(229,9,20,.24),0 0 24px rgba(229,9,20,.45);}',
+                '.akira-iface .akira-card-type,.akira-iface .akira-card-rating,.akira-iface .akira-card-quality{position:absolute;z-index:22;pointer-events:none;font-family:var(--akira-font,Arial,sans-serif);font-weight:800;line-height:1.25;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.55);box-shadow:0 2px 10px rgba(0,0,0,.42);}',
+                '.akira-iface .akira-card-type{left:6px;top:6px;padding:.32em .55em;border-radius:6px 0 6px 0;background:rgba(229,9,20,.86);font-size:.68em;letter-spacing:0;text-transform:uppercase;}',
+                '.akira-iface .card__quality,.akira-iface .akira-card-quality{display:block !important;left:6px !important;right:auto !important;bottom:6px !important;top:auto !important;padding:2px 8px !important;border-radius:4px !important;background:rgba(46,204,113,.88) !important;color:#fff !important;font-size:.7em !important;font-weight:800 !important;text-transform:uppercase !important;letter-spacing:0 !important;}',
+                '.akira-iface .card__vote,.akira-iface .akira-card-rating{display:block !important;right:6px !important;left:auto !important;bottom:6px !important;top:auto !important;padding:2px 8px !important;border-radius:10px 0 10px 0 !important;background:rgba(20,20,24,.72) !important;color:#fff !important;font-size:.75em !important;font-weight:900 !important;}',
                 '.akira-card-title{margin-top:.6em;font-size:1.05em;font-weight:500;color:#fff;display:block;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;}',
                 'body.light--version .akira-card-title{color:#111;}',
                 '.akira-iface-h{--ni-line-head-shift:-2vh;--ni-line-body-shift:-3vh;}',
@@ -1499,6 +1519,60 @@
             card.__akiraLabel = label;
         }
 
+        function cardView(element) {
+            if (!element || !element.querySelector) return element;
+            return element.querySelector('.card__view') || element;
+        }
+
+        function mediaTypeLabel(data) {
+            var isTv = !!(data && (data.media_type === 'tv' || data.name || data.first_air_date || data.number_of_seasons));
+            var lang = Util.langCode();
+            if (lang === 'en') return isTv ? 'SERIES' : 'MOVIE';
+            if (lang === 'uk') return isTv ? 'СЕРІАЛ' : 'ФІЛЬМ';
+            return isTv ? 'СЕРИАЛ' : 'ФИЛЬМ';
+        }
+
+        function normalizeRating(value) {
+            var num = parseFloat(String(value || '').replace(',', '.'));
+            if (!isFinite(num) || num <= 0) return '';
+            return num.toFixed(1);
+        }
+
+        function qualityLabel(data) {
+            var value = data && (data.quality || data.quality_name || data.video_quality || data.release_quality || data.rezolution || data.resolution);
+            return Util.clean(value || '').toUpperCase();
+        }
+
+        function ensureBadge(view, className, text) {
+            if (!view || !view.querySelector) return;
+            var badge = view.querySelector('.' + className);
+            if (!text) {
+                if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
+                return;
+            }
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = className;
+                view.appendChild(badge);
+            }
+            badge.textContent = text;
+        }
+
+        function updateCardBadges(card) {
+            if (!card || !card.data || typeof card.render !== 'function') return;
+            var element = card.render(true);
+            if (!element) return;
+            var view = cardView(element);
+            ensureBadge(view, 'akira-card-type', mediaTypeLabel(card.data));
+
+            var hasNativeVote = element.querySelector && element.querySelector('.card__vote');
+            var rating = normalizeRating(card.data.vote_average || card.data.vote || card.data.rating || card.data.rate);
+            ensureBadge(view, 'akira-card-rating', hasNativeVote ? '' : rating);
+
+            var hasNativeQuality = element.querySelector && element.querySelector('.card__quality');
+            ensureBadge(view, 'akira-card-quality', hasNativeQuality ? '' : qualityLabel(card.data));
+        }
+
         function decorateCard(state, card) {
             if (!card || card.__akiraCard || typeof card.use !== 'function' || !card.data) return;
             card.__akiraCard = true;
@@ -1509,17 +1583,25 @@
                 onFocus:   function () { state.update(card.data); },
                 onHover:   function () { state.update(card.data); },
                 onTouch:   function () { state.update(card.data); },
-                onVisible: function () { updateCardTitle(card); Logos.applyToCard(card); },
-                onUpdate:  function () { updateCardTitle(card); Logos.applyToCard(card); },
+                onVisible: function () { updateCardTitle(card); updateCardBadges(card); Logos.applyToCard(card); },
+                onUpdate:  function () { updateCardTitle(card); updateCardBadges(card); Logos.applyToCard(card); },
                 onDestroy: function () {
                     Logos.cleanupCard(card);
                     clearTimeout(card.__akiraLabelTimer);
+                    try {
+                        var root = card.render && card.render(true);
+                        ['akira-card-type', 'akira-card-rating', 'akira-card-quality'].forEach(function (name) {
+                            var node = root && root.querySelector && root.querySelector('.' + name);
+                            if (node && node.parentNode) node.parentNode.removeChild(node);
+                        });
+                    } catch (e) {}
                     if (card.__akiraLabel && card.__akiraLabel.parentNode) card.__akiraLabel.parentNode.removeChild(card.__akiraLabel);
                     card.__akiraLabel = null;
                     delete card.__akiraCard;
                 }
             });
             updateCardTitle(card);
+            updateCardBadges(card);
             Logos.applyToCard(card);
         }
 
@@ -1954,7 +2036,16 @@
         function installSource() {
             try {
                 if (!Lampa.Api || !Lampa.Api.sources || !Lampa.Api.sources.tmdb) return false;
-                if (Lampa.Api.sources.akira_tmdb) return true;
+                if (Lampa.Api.sources.akira_tmdb) {
+                    try {
+                        var readySources = (Lampa.Params && Lampa.Params.values && Lampa.Params.values.source) ? Lampa.Params.values.source : {};
+                        if (readySources.akira_tmdb !== 'Akira') {
+                            readySources.akira_tmdb = 'Akira';
+                            Lampa.Params.select('source', readySources, (Lampa.Storage && Lampa.Storage.field ? Lampa.Storage.field('source') : 'tmdb') || 'tmdb');
+                        }
+                    } catch (readyErr) {}
+                    return true;
+                }
                 var origTmdb = Lampa.Api.sources.tmdb;
                 var clone = Object.assign({}, origTmdb);
                 Lampa.Api.sources.akira_tmdb = clone;
@@ -1970,9 +2061,13 @@
                 if (Lampa.Params && Lampa.Params.select) {
                     try {
                         var sources = (Lampa.Params.values && Lampa.Params.values.source) ? Lampa.Params.values.source : {};
-                        if (!sources.akira_tmdb) {
-                            sources.akira_tmdb = 'AKIRA';
-                            Lampa.Params.select('source', sources, 'tmdb');
+                        if (sources.akira_tmdb !== 'Akira') {
+                            sources.akira_tmdb = 'Akira';
+                            var current = 'tmdb';
+                            try {
+                                current = Lampa.Storage && Lampa.Storage.field ? Lampa.Storage.field('source') : Lampa.Storage.get('source', 'tmdb');
+                            } catch (e2) {}
+                            Lampa.Params.select('source', sources, current || 'tmdb');
                         }
                     } catch (e) {}
                 }
@@ -2010,7 +2105,9 @@
 
         function addComponent(name, label) {
             try {
-                Lampa.SettingsApi.addComponent({ component: name, name: label, icon: ICON });
+                if (name === CFG.component) {
+                    Lampa.SettingsApi.addComponent({ component: name, name: label, icon: ICON });
+                }
                 if (Lampa.Template && typeof Lampa.Template.add === 'function') {
                     Lampa.Template.add('settings_' + name, '<div></div>');
                 }
@@ -2032,6 +2129,19 @@
 
         function notyReload() {
             Util.notify(t('reset_done').replace('сброшены', 'требуют перезагрузки главной').replace('reset', 'require home reload'));
+        }
+
+        function currentBrand() {
+            var value = Util.clean(Util.get(K.topbarBrand, CFG.brand) || CFG.brand);
+            return value || CFG.brand;
+        }
+
+        function openBrandPrompt() {
+            var value = null;
+            try { value = window.prompt(t('topbar_brand'), currentBrand()); } catch (e) {}
+            if (value === null || typeof value === 'undefined') return;
+            Util.set(K.topbarBrand, Util.clean(value) || CFG.brand);
+            try { Topbar.schedule(true); } catch (e2) {}
         }
 
         function buildRoot() {
@@ -2064,8 +2174,8 @@
             addComponent(SUB.topbar, t('topbar_title'));
             addParam(SUB.topbar, { name: K.topbarEnabled, type: 'trigger', default: true },
                 { name: t('topbar_enabled') });
-            addParam(SUB.topbar, { name: K.topbarBrand, type: 'input', default: CFG.brand },
-                { name: t('topbar_brand') });
+            addParam(SUB.topbar, { name: CFG.prefix + 'brand_edit', type: 'button' },
+                { name: t('topbar_brand'), description: currentBrand() }, openBrandPrompt);
             addParam(SUB.topbar, { name: K.topbarAlign, type: 'select', values: { start: t('topbar_align_start'), center: t('topbar_align_center') }, default: 'start' },
                 { name: t('topbar_align') }, function () { try { Topbar.schedule(true); } catch (e) {} });
             addParam(SUB.topbar, { name: CFG.prefix + 'open_topnav', type: 'button' },
