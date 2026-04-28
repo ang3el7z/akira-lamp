@@ -1240,10 +1240,10 @@
                 '.akira-iface{position:relative;}',
                 '.akira-iface .card.card--wide, .akira-iface .card--small.card--wide{width:18.3em;}',
                 '.akira-iface .card-more__box, .akira-iface .card.card--wide + .card-more .card-more__box, .akira-iface .card--small.card--wide + .card-more .card-more__box{padding-bottom:95%;}',
-                '.akira-info{position:relative;padding:0 1.5em;height:0;opacity:0;overflow:hidden;z-index:3;pointer-events:none;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;transition:height .48s cubic-bezier(.22,.61,.36,1),padding-top .48s cubic-bezier(.22,.61,.36,1),padding-bottom .48s cubic-bezier(.22,.61,.36,1),opacity .28s ease;}',
+                '.akira-info{position:relative;padding:0 1.5em;height:0;opacity:0;overflow:hidden;z-index:3;pointer-events:none;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;will-change:height,opacity,padding;transition:height .56s cubic-bezier(.2,.8,.2,1),padding-top .56s cubic-bezier(.2,.8,.2,1),padding-bottom .56s cubic-bezier(.2,.8,.2,1),opacity .26s ease;}',
                 '.akira-iface[data-akira-hero-state="shown"] .akira-info{height:var(--ni-info-h);padding-top:1.5em;padding-bottom:1.5em;opacity:1;pointer-events:auto;}',
                 '.akira-info:before{display:none !important;}',
-                '.akira-info__body{position:relative;z-index:1;width:min(96%,78em);padding-top:1.1em;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);column-gap:clamp(16px,3vw,54px);align-items:end;height:100%;box-sizing:border-box;opacity:0;transform:translateY(.7em);transition:opacity .34s ease,transform .48s cubic-bezier(.22,.61,.36,1);}',
+                '.akira-info__body{position:relative;z-index:1;width:min(96%,78em);padding-top:1.1em;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);column-gap:clamp(16px,3vw,54px);align-items:end;height:100%;box-sizing:border-box;opacity:0;transform:translateY(.7em);will-change:opacity,transform;transition:opacity .26s ease,transform .52s cubic-bezier(.2,.8,.2,1);}',
                 '.akira-iface[data-akira-hero-state="shown"] .akira-info__body{opacity:1;transform:none;}',
                 '.akira-info__left,.akira-info__right{min-width:0;height:100%;}',
                 '.akira-info__textblock{margin-top:auto;display:flex;flex-direction:column;gap:.55em;min-height:0;}',
@@ -1260,15 +1260,15 @@
                 '.akira-info__pg{flex:0 0 auto;white-space:nowrap;}',
                 '.akira-info__pg .full-start__pg{font-size:.95em;}',
                 '.akira-info__description{font-size:.87em;font-weight:300;line-height:1.38;color:rgba(255,255,255,.9);text-shadow:0 2px 12px rgba(0,0,0,.45);overflow:hidden;text-overflow:".";display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;width:auto;}',
-                '.akira-iface .akira-info__background{position:absolute!important;left:0!important;right:0!important;top:0!important;height:0!important;overflow:hidden!important;pointer-events:none!important;z-index:0!important;opacity:0;transition:height .48s cubic-bezier(.22,.61,.36,1),opacity .32s ease;}',
+                '.akira-iface .akira-info__background{position:absolute!important;left:0!important;right:0!important;top:0!important;height:0!important;overflow:hidden!important;pointer-events:none!important;z-index:0!important;opacity:0;will-change:height,opacity;transition:height .56s cubic-bezier(.2,.8,.2,1),opacity .34s ease;}',
                 '.akira-iface[data-akira-hero-state="shown"] .akira-info__background{height:var(--ni-info-h)!important;opacity:1;}',
                 '.akira-iface .akira-info__background img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:0;transition:opacity .55s ease-in-out;will-change:opacity;filter:none!important;}',
                 '.akira-iface .akira-info__background img.active{opacity:1;}',
-                '.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="shown"] .akira-info__background{position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100vh!important;z-index:0!important;}',
+                '.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="shown"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="hiding"] .akira-info__background{position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100vh!important;z-index:0!important;}',
                 '.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,var(--akira-bg,#0a0d12) 0%,rgba(10,13,18,.78) 38%,rgba(10,13,18,.18) 72%,transparent 100%);z-index:1;}',
                 '.akira-iface[data-akira-hero="fullscreen"] .akira-info{position:relative!important;z-index:2!important;}',
                 '.akira-iface[data-akira-hero="fullscreen"] .akira-info__right{background:none!important;}',
-                '@media(max-width:767px){.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="shown"] .akira-info__background{position:absolute!important;height:var(--ni-info-h)!important;width:100%!important;}.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{display:none;}}',
+                '@media(max-width:767px){.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="shown"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="hiding"] .akira-info__background{position:absolute!important;height:var(--ni-info-h)!important;width:100%!important;}.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{display:none;}}',
                 '.akira-iface .full-start__rate{font-size:1.3em;margin-right:0;}',
                 '.akira-iface .full-start__lines{padding-bottom:env(safe-area-inset-bottom,0px);}',
                 '.akira-iface .card__promo{display:none;}',
@@ -1291,9 +1291,9 @@
                 '.akira-card-title{position:absolute;left:0;right:0;bottom:.35em;padding:.42em .55em 1.05em;color:#fff;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.52) 68%,transparent 100%);z-index:14;box-sizing:border-box;}','.akira-ct-meta{display:block;font-size:.66em;font-weight:500;line-height:1.15;color:rgba(255,255,255,.78);margin-bottom:.24em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}','.akira-ct-name{display:block;font-size:.82em;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}','.akira-card-has-logo .akira-card-title{bottom:calc(var(--akira-card-logo-h) + 1.35em);padding:.15em .55em 0;background:none;}','.akira-card-has-logo .akira-ct-name{display:none;}',
                 'body.light--version .akira-card-title{color:#fff;}',
                 '.akira-iface-h{--ni-line-head-shift:-2vh;--ni-line-body-shift:-3vh;}',
-                '.akira-iface-h[data-akira-hero-state="empty"]{--ni-line-head-shift:0;--ni-line-body-shift:0;}',
-                '.akira-iface-h .items-line__head{position:relative;top:var(--ni-line-head-shift);z-index:2;}',
-                '.akira-iface-h .items-line__body > .scroll.scroll--horizontal{position:relative;top:var(--ni-line-body-shift);z-index:1;}',
+                '.akira-iface-h[data-akira-hero-state="empty"],.akira-iface-h[data-akira-hero-state="hiding"]{--ni-line-head-shift:0;--ni-line-body-shift:0;}',
+                '.akira-iface-h .items-line__head{position:relative;top:var(--ni-line-head-shift);z-index:2;transition:top .56s cubic-bezier(.2,.8,.2,1);}',
+                '.akira-iface-h .items-line__body > .scroll.scroll--horizontal{position:relative;top:var(--ni-line-body-shift);z-index:1;transition:top .56s cubic-bezier(.2,.8,.2,1);}',
                 '@media (max-width:1100px){.akira-info__right{transform:none;}}',
                 '@media (max-height:820px){.akira-info__right{padding-top:clamp(.15em,1.8vh,1.2em);}.akira-info__title{font-size:clamp(2.4em,3.6vw,3.1em);}.akira-info__description{-webkit-line-clamp:6;font-size:.83em;}}'
             ].join('\n');
@@ -1526,14 +1526,14 @@
 
             var state = {
                 main: main, info: info, background: background, infoElement: null,
-                backgroundTimer: null, clearTimer: null, backgroundLast: '', backgroundSlot: 0, updateSeq: 0, attached: false,
+                backgroundTimer: null, clearTimer: null, clearInfoTimer: null, backgroundLast: '', backgroundSlot: 0, updateSeq: 0, attached: false,
                 attach: function () {
                     if (this.attached) return;
                     var container = main.render(true);
                     if (!container) return;
                     container.classList.add('akira-iface', 'akira-iface-h');
                     this.applyHeroMode(container);
-                    this.setHeroState(false, container);
+                    this.setHeroState('empty', container);
                     if (!background.parentElement) container.insertBefore(background, container.firstChild || null);
                     var infoNode = info.render(true);
                     this.infoElement = infoNode;
@@ -1551,10 +1551,11 @@
                     if (mode !== 'fullscreen') mode = 'block';
                     node.setAttribute('data-akira-hero', mode);
                 },
-                setHeroState: function (shown, container) {
+                setHeroState: function (stateName, container) {
                     var node = container || (main && main.render ? main.render(true) : null);
                     if (!node || !node.setAttribute) return;
-                    node.setAttribute('data-akira-hero-state', shown ? 'shown' : 'empty');
+                    var next = stateName === true ? 'shown' : (stateName === 'shown' || stateName === 'hiding' ? stateName : 'empty');
+                    if (node.getAttribute('data-akira-hero-state') !== next) node.setAttribute('data-akira-hero-state', next);
                 },
                 backgroundPath: function (movie) {
                     return movie && movie.backdrop_path ? Lampa.Api.img(movie.backdrop_path, 'w1280') : '';
@@ -1567,6 +1568,9 @@
                     var infoReady = false, bgReady = false, movieReady = null, logoReady = null;
                     clearTimeout(this.backgroundTimer);
                     clearTimeout(this.clearTimer);
+                    clearTimeout(this.clearInfoTimer);
+                    this.clearTimer = null;
+                    this.clearInfoTimer = null;
                     info.prepare(data, function (movie, logoUrl) {
                         if (seq !== self.updateSeq) return;
                         infoReady = true;
@@ -1607,7 +1611,7 @@
                             self.backgroundSlot = self.backgroundSlot ? 0 : 1;
                             self.backgroundLast = finalPath;
                         }
-                        self.setHeroState(true);
+                        self.setHeroState('shown');
                         try { Lampa.Background.change(Lampa.Utils.cardImgBackground(finalData)); } catch (e) {}
                         info.drawPrepared(finalData, logoReady);
                     }
@@ -1635,18 +1639,28 @@
                     this.backgroundSlot = 0;
                     try { Lampa.Background.change(''); } catch (e) {}
                 },
-                clearBackground: function () {
+                clearBackground: function (emptyInfo) {
                     var self = this;
                     clearTimeout(this.clearTimer);
-                    this.setHeroState(false);
+                    clearTimeout(this.clearInfoTimer);
+                    this.setHeroState('hiding');
                     this.clearTimer = setTimeout(function () {
                         if (self.clearTimer) self.clearTimer = null;
                         self.flushBackground();
-                    }, 520);
+                        self.setHeroState('empty');
+                    }, 580);
+                    if (emptyInfo) {
+                        this.clearInfoTimer = setTimeout(function () {
+                            if (self.clearInfoTimer) self.clearInfoTimer = null;
+                            info.empty();
+                        }, 600);
+                    }
                 },
                 clearBackgroundNow: function () {
                     clearTimeout(this.clearTimer);
+                    clearTimeout(this.clearInfoTimer);
                     this.clearTimer = null;
+                    this.clearInfoTimer = null;
                     backgroundA.classList.remove('active');
                     backgroundB.classList.remove('active');
                     backgroundA.removeAttribute('src');
@@ -1655,10 +1669,11 @@
                     this.backgroundSlot = 0;
                     try { Lampa.Background.change(''); } catch (e) {}
                 },
-                reset: function () { this.updateSeq++; clearTimeout(this.backgroundTimer); this.clearBackground(); info.empty(); },
+                reset: function () { this.updateSeq++; clearTimeout(this.backgroundTimer); this.clearBackground(true); },
                 destroy: function () {
                     clearTimeout(this.backgroundTimer);
                     clearTimeout(this.clearTimer);
+                    clearTimeout(this.clearInfoTimer);
                     info.destroy();
                     var container = main.render(true);
                     if (container) container.classList.remove('akira-iface');
