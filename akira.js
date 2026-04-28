@@ -43,6 +43,7 @@
 
         ifaceEnabled: CFG.prefix + 'iface_enabled',
         ifaceCardLogos: CFG.prefix + 'iface_card_logos',
+        ifaceHeroMode: CFG.prefix + 'iface_hero_mode',
 
         buttonsSeparate: CFG.prefix + 'buttons_separate',
         buttonsBig: CFG.prefix + 'buttons_big',
@@ -160,6 +161,9 @@
             iface_title: 'Интерфейс главной',
             iface_enabled: 'Большая карточка + горизонтальные ряды',
             iface_card_logos: 'Логотипы внутри маленьких карточек',
+            iface_hero_mode: 'Главная картинка',
+            iface_hero_mode_block: 'Отдельным окном',
+            iface_hero_mode_fullscreen: 'На весь экран',
             buttons_title: 'Кнопки в карточке фильма',
             buttons_separate: 'Раскрытые кнопки (Смотреть/Торренты/Трейлер)',
             buttons_big: 'Сохранять текст на маленьких экранах',
@@ -205,6 +209,9 @@
             iface_title: 'Home interface',
             iface_enabled: 'Big hero card + horizontal rows',
             iface_card_logos: 'Logos inside small cards',
+            iface_hero_mode: 'Hero image',
+            iface_hero_mode_block: 'Inside info block',
+            iface_hero_mode_fullscreen: 'Fullscreen',
             buttons_title: 'Movie card buttons',
             buttons_separate: 'Expanded buttons (Watch/Torrents/Trailer)',
             buttons_big: 'Keep button text on small screens',
@@ -250,6 +257,9 @@
             iface_title: 'Інтерфейс головної',
             iface_enabled: 'Велика картка + горизонтальні ряди',
             iface_card_logos: 'Логотипи в маленьких картках',
+            iface_hero_mode: 'Головна картинка',
+            iface_hero_mode_block: 'Окремим вікном',
+            iface_hero_mode_fullscreen: 'На весь екран',
             buttons_title: 'Кнопки в картці',
             buttons_separate: 'Розкриті кнопки (Дивитись/Торенти/Трейлер)',
             buttons_big: 'Зберігати текст на малих екранах',
@@ -307,6 +317,7 @@
 
         Util.ensureOnOff(K.ifaceEnabled, true);
         Util.ensureOnOff(K.ifaceCardLogos, true);
+        Util.ensure(K.ifaceHeroMode, 'block');
 
         Util.ensureOnOff(K.buttonsSeparate, true);
         Util.ensureOnOff(K.buttonsBig, true);
@@ -1036,11 +1047,22 @@
             var jq = card.render(true);
             var root = (jq && jq[0]) ? jq[0] : jq;
             if (!root) return;
-            var view = root.querySelector ? (root.querySelector('.card__view') || root) : root;
+            var view = root.querySelector ? root.querySelector('.card__view') : null;
             var label = root.querySelector ? root.querySelector('.akira-card-title, .new-interface-card-title') : null;
-            if (view && view.closest && view.closest('.card-episode__footer')) {
-                var old = view.querySelector('.akira-card-logo');
-                if (old && old.parentNode) old.parentNode.removeChild(old);
+            var serviceView = view && (
+                (view.classList && view.classList.contains('bookmarks-folder__inner')) ||
+                (view.closest && view.closest('.card-episode__footer,.bookmarks-folder,.register,.full-person,.card-more'))
+            );
+            if (!view || serviceView || (root.classList && !root.classList.contains('card'))) {
+                if (root.querySelectorAll) {
+                    ['.akira-card-title', '.akira-card-logo', '.akira-card-type', '.akira-card-rating', '.akira-card-quality'].forEach(function (selector) {
+                        var nodes = root.querySelectorAll(selector);
+                        Array.prototype.forEach.call(nodes, function (node) {
+                            if (node && node.parentNode) node.parentNode.removeChild(node);
+                        });
+                    });
+                }
+                if (view && view.classList) view.classList.remove('akira-card-has-logo');
                 if (label) label.style.display = '';
                 return;
             }
@@ -1052,6 +1074,7 @@
             function removeLogo() {
                 var ex = view.querySelector('.akira-card-logo');
                 if (ex && ex.parentNode) ex.parentNode.removeChild(ex);
+                if (view && view.classList) view.classList.remove('akira-card-has-logo');
                 if (label) label.style.display = '';
             }
 
@@ -1068,13 +1091,14 @@
                 if (card.__akira_logo_req !== reqId) return;
                 if (!root.isConnected) return;
                 if (!url) { removeLogo(); return; }
+                if (view && view.classList) view.classList.add('akira-card-has-logo');
                 var img = new Image();
                 img.alt = titleText;
                 img.src = url;
                 setImageSizing(img);
                 wrap.innerHTML = '';
                 wrap.appendChild(img);
-                if (label) label.style.display = 'none';
+                if (label) label.style.display = '';
             });
         }
 
@@ -1086,6 +1110,8 @@
                 if (root) {
                     var w = root.querySelector('.akira-card-logo');
                     if (w && w.parentNode) w.parentNode.removeChild(w);
+                    var v = root.querySelector('.card__view') || root;
+                    if (v && v.classList) v.classList.remove('akira-card-has-logo');
                 }
                 delete card.__akira_logo_req;
             } catch (e) {}
@@ -1141,7 +1167,7 @@
             style.id = id;
             var css = [
                 ':root{--akira-logo-max-h: clamp(3.6em, 11vh, 7.2em); --akira-card-logo-h: clamp(2.2em, 6vh, 3.8em);}',
-                '.akira-card-logo{position:absolute;left:0;right:0;bottom:0;padding:.35em .45em;box-sizing:border-box;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.78),rgba(0,0,0,0));}',
+                '.akira-card-logo{position:absolute;left:0;right:0;bottom:0;padding:.25em .55em 1.05em;box-sizing:border-box;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.86) 0%,rgba(0,0,0,.48) 68%,rgba(0,0,0,0) 100%);z-index:12;}',
                 '.akira-card-logo img{display:block;max-width:100%;max-height:var(--akira-card-logo-h);width:auto;height:auto;object-fit:contain;object-position:left bottom;}',
                 '.akira-info-logo{display:block;max-width:100%;max-height:var(--akira-logo-max-h);width:auto;height:auto;object-fit:contain;object-position:left bottom;}',
                 '.full-start-new__title img.akira-full-logo, .full-start__title img.akira-full-logo{display:block;max-width:100%;max-height:var(--akira-logo-max-h);width:auto;height:auto;object-fit:contain;object-position:left bottom;margin-top:.25em;filter:none!important;background:none!important;box-shadow:none!important;}',
@@ -1219,7 +1245,7 @@
                 '.akira-info__body{position:relative;z-index:1;width:min(96%,78em);padding-top:1.1em;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);column-gap:clamp(16px,3vw,54px);align-items:end;height:100%;box-sizing:border-box;}',
                 '.akira-info__left,.akira-info__right{min-width:0;height:100%;}',
                 '.akira-info__textblock{margin-top:auto;display:flex;flex-direction:column;gap:.55em;min-height:0;}',
-                '.akira-info__right{padding-top:clamp(.2em,2.2vh,1.6em);padding-bottom:clamp(.8em,2.4vh,2em);display:flex;flex-direction:column;}',
+                '.akira-info__right{padding-top:clamp(.2em,2.2vh,1.6em);padding-bottom:clamp(.8em,2.4vh,2em);display:flex;flex-direction:column;transform:translateX(clamp(1.5em,4vw,6em));}',
                 '.akira-info__head{color:rgba(255,255,255,.6);margin-bottom:1em;font-size:1.3em;min-height:1em;}',
                 '.akira-info__head span{color:#fff;}',
                 '.akira-info__title{font-size:clamp(2.6em,4vw,3.6em);font-weight:600;margin-bottom:.3em;overflow:hidden;text-overflow:".";display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2;margin-left:-.03em;text-shadow:0 2px 16px rgba(0,0,0,.7),0 0 40px rgba(0,0,0,.4);}',
@@ -1232,7 +1258,14 @@
                 '.akira-info__pg{flex:0 0 auto;white-space:nowrap;}',
                 '.akira-info__pg .full-start__pg{font-size:.95em;}',
                 '.akira-info__description{font-size:.87em;font-weight:300;line-height:1.38;color:rgba(255,255,255,.9);text-shadow:0 2px 12px rgba(0,0,0,.45);overflow:hidden;text-overflow:".";display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;width:auto;}',
-                '.akira-iface .full-start__background{height:108%;top:-6em;}',
+                '.akira-iface .akira-info__background{position:absolute!important;left:0!important;right:0!important;top:0!important;height:var(--ni-info-h)!important;overflow:hidden!important;pointer-events:none!important;z-index:0!important;}',
+                '.akira-iface .akira-info__background img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:0;transition:opacity .55s ease-in-out;will-change:opacity;filter:none!important;}',
+                '.akira-iface .akira-info__background img.active{opacity:1;}',
+                '.akira-iface[data-akira-hero="fullscreen"] .akira-info__background{position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100vh!important;z-index:0!important;}',
+                '.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,var(--akira-bg,#0a0d12) 0%,rgba(10,13,18,.78) 38%,rgba(10,13,18,.18) 72%,transparent 100%);z-index:1;}',
+                '.akira-iface[data-akira-hero="fullscreen"] .akira-info{position:relative!important;z-index:2!important;}',
+                '.akira-iface[data-akira-hero="fullscreen"] .akira-info__right{background:none!important;}',
+                '@media(max-width:767px){.akira-iface[data-akira-hero="fullscreen"] .akira-info__background{position:absolute!important;height:var(--ni-info-h)!important;width:100%!important;}.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{display:none;}}',
                 '.akira-iface .full-start__rate{font-size:1.3em;margin-right:0;}',
                 '.akira-iface .full-start__lines{padding-bottom:env(safe-area-inset-bottom,0px);}',
                 '.akira-iface .card__promo{display:none;}',
@@ -1240,22 +1273,24 @@
                 '.akira-iface .card__vote{display:none !important;}',
                 '.akira-iface .card__quality{display:none !important;}',
                 '.akira-iface .card-episode__footer .akira-card-logo,.akira-iface .card-episode__footer .akira-card-title,.akira-iface .card-episode__footer .akira-card-type,.akira-iface .card-episode__footer .akira-card-rating,.akira-iface .card-episode__footer .akira-card-quality{display:none !important;}',
+                '.akira-iface .bookmarks-folder__inner .akira-card-logo,.akira-iface .bookmarks-folder__inner .akira-card-title,.akira-iface .bookmarks-folder__inner .akira-card-type,.akira-iface .bookmarks-folder__inner .akira-card-rating,.akira-iface .bookmarks-folder__inner .akira-card-quality{display:none !important;}',
                 '.akira-iface .card .card-watched{display:none !important;}',
                 '.akira-iface .card{position:relative !important;transition:transform .3s cubic-bezier(.4,0,.2,1),z-index 0s !important;transform-origin:center center !important;}',
-                '.akira-iface .card.focus,.akira-iface .card.hover,.akira-iface .card:hover{z-index:100 !important;transform:scale(1.10) !important;}',
+                '.akira-iface .card.focus,.akira-iface .card.hover,.akira-iface .card:hover{z-index:100 !important;transform:scale(1.06) !important;}',
                 '.akira-iface .card .card__view{position:relative;overflow:hidden !important;border-radius:8px !important;border:2px solid transparent;transition:border-color .25s ease,box-shadow .25s ease;}',
-                '.akira-iface .card.focus .card__view,.akira-iface .card.hover .card__view,.akira-iface .card:hover .card__view{border-color:var(--akira-accent,#e50914);box-shadow:0 0 0 4px rgba(229,9,20,.30),0 0 28px 4px rgba(229,9,20,.50),0 8px 32px rgba(0,0,0,.6);}',
-                '.akira-iface .card.focus ~ .card,.akira-iface .card.hover ~ .card,.akira-iface .card:hover ~ .card{transform:translateX(12px) !important;z-index:1 !important;}',
+                '.akira-iface .card.focus .card__view,.akira-iface .card.hover .card__view,.akira-iface .card:hover .card__view{border-color:var(--akira-accent,#e50914);box-shadow:0 0 0 3px rgba(229,9,20,.30),0 0 22px 3px rgba(229,9,20,.46),0 8px 28px rgba(0,0,0,.58);}',
+                '.akira-iface .card.focus ~ .card,.akira-iface .card.hover ~ .card,.akira-iface .card:hover ~ .card{transform:translateX(8px) !important;z-index:1 !important;}',
                 '.akira-iface .akira-card-type,.akira-iface .akira-card-rating,.akira-iface .akira-card-quality{position:absolute;z-index:22;pointer-events:none;font-family:var(--akira-font,Arial,sans-serif);font-weight:800;line-height:1.25;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.55);box-shadow:0 2px 10px rgba(0,0,0,.42);max-width:calc(100% - 12px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
                 '.akira-iface .akira-card-type{left:6px;top:6px;padding:.32em .55em;border-radius:6px 0 6px 0;background:rgba(229,9,20,.86);font-size:.68em;letter-spacing:0;text-transform:uppercase;}',
                 '.akira-iface .akira-card-quality{display:block !important;left:auto !important;right:6px !important;bottom:auto !important;top:6px !important;padding:2px 8px !important;border-radius:4px !important;background:rgba(46,204,113,.88) !important;color:#fff !important;font-size:.7em !important;font-weight:800 !important;text-transform:uppercase !important;letter-spacing:0 !important;z-index:22 !important;}',
                 '.akira-iface .card__view.akira-card-has-rating .akira-card-quality{top:calc(6px + 2.05em) !important;}',
                 '.akira-iface .akira-card-rating{display:block !important;right:6px !important;left:auto !important;bottom:auto !important;top:6px !important;padding:2px 8px !important;border-radius:10px 0 10px 0 !important;background:rgba(12,14,20,.68);border:1px solid rgba(255,255,255,.14);color:#ffd13d !important;font-size:.75em !important;font-weight:900 !important;z-index:23 !important;backdrop-filter:blur(8px) saturate(140%);-webkit-backdrop-filter:blur(8px) saturate(140%);}',
-                '.akira-card-title{position:absolute;left:0;right:0;bottom:0;padding:.4em .5em;color:#fff;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.5) 65%,transparent 100%);z-index:10;box-sizing:border-box;}','.akira-ct-name{display:block;font-size:.82em;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}','.akira-ct-sub{display:block;font-size:.68em;font-weight:400;color:rgba(255,255,255,.7);margin-top:.15em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+                '.akira-card-title{position:absolute;left:0;right:0;bottom:.35em;padding:.42em .55em 1.05em;color:#fff;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.52) 68%,transparent 100%);z-index:14;box-sizing:border-box;}','.akira-ct-meta{display:block;font-size:.66em;font-weight:500;line-height:1.15;color:rgba(255,255,255,.78);margin-bottom:.24em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}','.akira-ct-name{display:block;font-size:.82em;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}','.akira-card-has-logo .akira-card-title{bottom:calc(var(--akira-card-logo-h) + 1.35em);padding:.15em .55em 0;background:none;}','.akira-card-has-logo .akira-ct-name{display:none;}',
                 'body.light--version .akira-card-title{color:#fff;}',
                 '.akira-iface-h{--ni-line-head-shift:-2vh;--ni-line-body-shift:-3vh;}',
                 '.akira-iface-h .items-line__head{position:relative;top:var(--ni-line-head-shift);z-index:2;}',
                 '.akira-iface-h .items-line__body > .scroll.scroll--horizontal{position:relative;top:var(--ni-line-body-shift);z-index:1;}',
+                '@media (max-width:1100px){.akira-info__right{transform:none;}}',
                 '@media (max-height:820px){.akira-info__right{padding-top:clamp(.15em,1.8vh,1.2em);}.akira-info__title{font-size:clamp(2.4em,3.6vw,3.1em);}.akira-info__description{-webkit-line-clamp:6;font-size:.83em;}}'
             ].join('\n');
             (document.head || document.body).appendChild(style);
@@ -1389,7 +1424,8 @@
                 html.find('.dot-rate-genre').toggle(!!(voteNum > 0 && genreText));
                 html.find('.dot-genre-runtime').toggle(!!(genreText && (runtimeText || pg)));
                 html.find('.dot-runtime-pg').toggle(!!(runtimeText && pg));
-                html.find('.akira-info__description').text(movie.overview || (Lampa.Lang ? Lampa.Lang.translate('full_notext') : ''));
+                var overview = Util.clean(movie.overview || '');
+                html.find('.akira-info__description').text(overview).toggle(!!overview);
                 var titleNode = html.find('.akira-info__title');
                 var titleText = (movie.title || movie.name || movie.original_title || movie.original_name || '') + '';
                 if (logoUrl && titleNode[0]) {
@@ -1422,8 +1458,10 @@
         };
         InfoBlock.prototype.empty = function () {
             if (!this.html) return;
-            this.html.find('.akira-info__head,.akira-info__genres,.akira-info__runtime').text('---');
+            this.html.find('.akira-info__head,.akira-info__title,.akira-info__genres,.akira-info__runtime,.akira-info__description').empty();
             this.html.find('.akira-info__rate').empty();
+            this.html.find('.akira-info__pg').empty();
+            this.html.find('.akira-info__dot').hide();
         };
         InfoBlock.prototype.destroy = function () {
             clearTimeout(this.timer);
@@ -1474,17 +1512,23 @@
         function ensureState(main) {
             if (main.__akiraState) return main.__akiraState;
             var info = new InfoBlock(); info.create();
-            var background = document.createElement('img');
-            background.className = 'full-start__background';
+            var background = document.createElement('div');
+            background.className = 'akira-info__background';
+            var backgroundA = document.createElement('img');
+            var backgroundB = document.createElement('img');
+            backgroundA.className = 'active';
+            background.appendChild(backgroundA);
+            background.appendChild(backgroundB);
 
             var state = {
                 main: main, info: info, background: background, infoElement: null,
-                backgroundTimer: null, backgroundLast: '', updateSeq: 0, attached: false,
+                backgroundTimer: null, backgroundLast: '', backgroundSlot: 0, updateSeq: 0, attached: false,
                 attach: function () {
                     if (this.attached) return;
                     var container = main.render(true);
                     if (!container) return;
                     container.classList.add('akira-iface', 'akira-iface-h');
+                    this.applyHeroMode(container);
                     if (!background.parentElement) container.insertBefore(background, container.firstChild || null);
                     var infoNode = info.render(true);
                     this.infoElement = infoNode;
@@ -1495,8 +1539,15 @@
                     if (main.scroll && typeof main.scroll.minus === 'function') main.scroll.minus(infoNode);
                     this.attached = true;
                 },
+                applyHeroMode: function (container) {
+                    var node = container || (main && main.render ? main.render(true) : null);
+                    if (!node || !node.setAttribute) return;
+                    var mode = String(Util.get(K.ifaceHeroMode, 'block') || 'block').toLowerCase();
+                    if (mode !== 'fullscreen') mode = 'block';
+                    node.setAttribute('data-akira-hero', mode);
+                },
                 update: function (data) {
-                    if (!data) return;
+                    if (!data || !canUseHeroData(data)) { this.reset(); return; }
                     var self = this;
                     var seq = ++this.updateSeq;
                     var path = data && data.backdrop_path ? Lampa.Api.img(data.backdrop_path, 'w1280') : '';
@@ -1517,12 +1568,17 @@
                     function commit() {
                         if (!infoReady || !bgReady || seq !== self.updateSeq) return;
                         if (path && path !== self.backgroundLast) {
-                            background.classList.remove('loaded');
-                            background.src = path;
+                            var next = self.backgroundSlot ? backgroundA : backgroundB;
+                            var prev = self.backgroundSlot ? backgroundB : backgroundA;
+                            next.src = path;
+                            next.classList.add('active');
+                            prev.classList.remove('active');
+                            self.backgroundSlot = self.backgroundSlot ? 0 : 1;
                             self.backgroundLast = path;
-                            setTimeout(function () { if (seq === self.updateSeq) background.classList.add('loaded'); }, 30);
+                        } else if (!path) {
+                            self.clearBackground();
                         }
-                        try { Lampa.Background.change(Lampa.Utils.cardImgBackground(movieReady || data)); } catch (e) {}
+                        try { Lampa.Background.change(path ? Lampa.Utils.cardImgBackground(movieReady || data) : ''); } catch (e) {}
                         info.drawPrepared(movieReady || data, logoReady);
                     }
                 },
@@ -1540,7 +1596,16 @@
                         if (img.complete) finish();
                     }, 90);
                 },
-                reset: function () { info.empty(); },
+                clearBackground: function () {
+                    backgroundA.classList.remove('active');
+                    backgroundB.classList.remove('active');
+                    backgroundA.removeAttribute('src');
+                    backgroundB.removeAttribute('src');
+                    this.backgroundLast = '';
+                    this.backgroundSlot = 0;
+                    try { Lampa.Background.change(''); } catch (e) {}
+                },
+                reset: function () { this.updateSeq++; clearTimeout(this.backgroundTimer); this.clearBackground(); info.empty(); },
                 destroy: function () {
                     clearTimeout(this.backgroundTimer);
                     info.destroy();
@@ -1562,7 +1627,109 @@
             }
         }
 
-        function updateCardTitle(card) {
+        function removeCardDecor(root) {
+            try {
+                if (!root || !root.querySelectorAll) return;
+                ['.akira-card-title', '.akira-card-logo', '.akira-card-type', '.akira-card-rating', '.akira-card-quality'].forEach(function (selector) {
+                    var nodes = root.querySelectorAll(selector);
+                    Array.prototype.forEach.call(nodes, function (node) {
+                        if (node && node.parentNode) node.parentNode.removeChild(node);
+                    });
+                });
+                var view = root.querySelector('.card__view');
+                if (view && view.classList) view.classList.remove('akira-card-has-rating', 'akira-card-has-logo');
+            } catch (e) {}
+        }
+
+        function realCardView(root) {
+            if (!root || !root.querySelector) return null;
+            if (root.classList && !root.classList.contains('card')) return null;
+            var view = root.querySelector('.card__view');
+            if (!view || (view.closest && view.closest('.card-episode__footer'))) return null;
+            if (view.classList && view.classList.contains('bookmarks-folder__inner')) return null;
+            if (view.closest && view.closest('.bookmarks-folder,.register,.full-person,.card-more')) return null;
+            return view;
+        }
+
+        function isEpisodeData(d) {
+            return !!(d && (d.episode_number || d.season_number || d.still_path || d.air_date) && !d.backdrop_path);
+        }
+
+        function canUseHeroData(d) {
+            if (!d || !d.id || isEpisodeData(d)) return false;
+            var title = Util.clean(d.title || d.name || d.original_title || d.original_name || '');
+            if (!title) return false;
+            return !!(d.backdrop_path || d.poster_path || d.img || d.release_date || d.first_air_date || d.overview || d.vote_average || (d.genres && d.genres.length));
+        }
+
+        var GENRE_MAP = {
+            en: {
+                28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+                99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+                27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
+                10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western', 10759: 'Action',
+                10762: 'Kids', 10763: 'News', 10764: 'Reality', 10765: 'Sci-Fi',
+                10766: 'Soap', 10767: 'Talk', 10768: 'War'
+            },
+            ru: {
+                28: 'Боевик', 12: 'Приключения', 16: 'Мультфильм', 35: 'Комедия', 80: 'Криминал',
+                99: 'Документальный', 18: 'Драма', 10751: 'Семейный', 14: 'Фэнтези', 36: 'История',
+                27: 'Ужасы', 10402: 'Музыка', 9648: 'Детектив', 10749: 'Мелодрама', 878: 'Фантастика',
+                10770: 'Телефильм', 53: 'Триллер', 10752: 'Военный', 37: 'Вестерн', 10759: 'Боевик',
+                10762: 'Детский', 10763: 'Новости', 10764: 'Реалити', 10765: 'Фантастика',
+                10766: 'Мыльная опера', 10767: 'Ток-шоу', 10768: 'Военный'
+            },
+            uk: {
+                28: 'Бойовик', 12: 'Пригоди', 16: 'Мультфільм', 35: 'Комедія', 80: 'Кримінал',
+                99: 'Документальний', 18: 'Драма', 10751: 'Сімейний', 14: 'Фентезі', 36: 'Історія',
+                27: 'Жахи', 10402: 'Музика', 9648: 'Детектив', 10749: 'Мелодрама', 878: 'Фантастика',
+                10770: 'Телефільм', 53: 'Трилер', 10752: 'Воєнний', 37: 'Вестерн', 10759: 'Бойовик',
+                10762: 'Дитячий', 10763: 'Новини', 10764: 'Реаліті', 10765: 'Фантастика',
+                10766: 'Мильна опера', 10767: 'Ток-шоу', 10768: 'Воєнний'
+            }
+        };
+
+        function cardGenreNames(d) {
+            var names = [];
+            var i;
+            if (!d) return names;
+            if (d.genres && d.genres.length) {
+                for (i = 0; i < d.genres.length; i++) {
+                    if (d.genres[i] && d.genres[i].name) names.push(Util.clean(d.genres[i].name));
+                }
+            } else if (d.genre_ids && d.genre_ids.length) {
+                var map = GENRE_MAP[Util.langCode()] || GENRE_MAP.en;
+                for (i = 0; i < d.genre_ids.length; i++) {
+                    if (map[d.genre_ids[i]]) names.push(map[d.genre_ids[i]]);
+                    else if (GENRE_MAP.en[d.genre_ids[i]]) names.push(GENRE_MAP.en[d.genre_ids[i]]);
+                }
+            }
+            return names.filter(Boolean);
+        }
+
+        function cardRuntime(d) {
+            if (!d) return '';
+            var minutes = parseInt(d.runtime || (d.episode_run_time && d.episode_run_time[0]) || 0, 10);
+            if (!isFinite(minutes) || minutes <= 0) return '';
+            var h = Math.floor(minutes / 60);
+            var m = minutes % 60;
+            if (h && m) return h + 'h ' + m + 'm';
+            if (h) return h + 'h';
+            return m + 'm';
+        }
+
+        function cardMetaText(d) {
+            var parts = [];
+            var year = d ? ((d.release_date || d.first_air_date || '') + '').slice(0,4) : '';
+            var genres = cardGenreNames(d);
+            var runtime = cardRuntime(d);
+            if (year) parts.push(year);
+            if (genres.length) parts.push(genres.slice(0, 1).join(', '));
+            if (runtime) parts.push(runtime);
+            return parts.join(' · ');
+        }
+
+        function updateCardTitle(card, movieData) {
             if (!card || typeof card.render !== 'function') return;
             var element = card.render(true);
             if (!element) return;
@@ -1572,22 +1739,21 @@
                 return;
             }
             clearTimeout(card.__akiraLabelTimer);
-            var d = card.data;
+            var d = movieData || card.__akiraMetaData || card.data;
             var text = d ? (d.title || d.name || d.original_title || d.original_name || '').trim() : '';
-            var _view = cardView(element);
+            var _view = realCardView(element);
+            if (!_view) { removeCardDecor(element); card.__akiraLabel = null; return; }
             var seek = _view.querySelector('.akira-card-title');
             if (_view && _view.closest && _view.closest('.card-episode__footer')) {
                 if (seek && seek.parentNode) seek.parentNode.removeChild(seek);
                 card.__akiraLabel = null;
                 return;
             }
-            var year = d ? ((d.release_date || d.first_air_date || '') + '').slice(0,4) : '';
             if (!text) { if (seek) seek.parentNode.removeChild(seek); card.__akiraLabel = null; return; }
             var label = seek || card.__akiraLabel;
             if (!label) { label = document.createElement('div'); label.className = 'akira-card-title'; }
-            var genre = d && d.genres && d.genres.length ? d.genres.slice(0,2).map(function(g){return g.name;}).join(', ') : '';
-            var sub = (year && genre) ? year + ' · ' + genre : (year || genre || '');
-            label.innerHTML = '<span class="akira-ct-name">' + text + '</span>' + (sub ? '<span class="akira-ct-sub">' + sub + '</span>' : '');
+            var meta = cardMetaText(d);
+            label.innerHTML = (meta ? '<span class="akira-ct-meta">' + Util.escapeHtml(meta) + '</span>' : '') + '<span class="akira-ct-name">' + Util.escapeHtml(text) + '</span>';
             if (!label.parentNode || label.parentNode !== _view) {
                 if (label.parentNode) label.parentNode.removeChild(label);
                 _view.appendChild(label);
@@ -1595,7 +1761,7 @@
             card.__akiraLabel = label;
         }
 
-        function cardView(e){return e&&e.querySelector?e.querySelector('.card__view')||e:e;}
+        function cardView(e){return e&&e.querySelector?e.querySelector('.card__view'):null;}
 
         function mediaTypeLabel(d){var tv=!!(d&&(d.media_type==='tv'||d.name||d.first_air_date||d.number_of_seasons)),l=Util.langCode();return l==='en'?(tv?'SERIES':'MOVIE'):l==='uk'?(tv?'СЕРІАЛ':'ФІЛЬМ'):(tv?'СЕРИАЛ':'ФИЛЬМ');}
 
@@ -1610,7 +1776,9 @@
             if (!card || !card.data || typeof card.render !== 'function') return;
             var element = card.render(true);
             if (!element) return;
-            var view = cardView(element);
+            var view = realCardView(element);
+            if (!view) { removeCardDecor(element); return; }
+            var data = card.__akiraMetaData || card.data;
             if (view && view.closest && view.closest('.card-episode__footer')) {
                 ['akira-card-type','akira-card-rating','akira-card-quality'].forEach(function (name) {
                     var node = view.querySelector('.' + name);
@@ -1619,31 +1787,57 @@
                 view.classList.remove('akira-card-has-rating');
                 return;
             }
-            ensureBadge(view, 'akira-card-type', mediaTypeLabel(card.data));
+            ensureBadge(view, 'akira-card-type', mediaTypeLabel(data));
             var nativeVote = element.querySelector && element.querySelector('.card__vote');
-            var rating = normalizeRating(card.data.vote_average || card.data.vote || card.data.rating || card.data.rate);
+            var rating = normalizeRating(data.vote_average || data.vote || data.rating || data.rate);
             if (!rating && nativeVote) rating = normalizeRating(nativeVote.textContent || nativeVote.innerText);
             ensureBadge(view, 'akira-card-rating', rating);
             view.classList.toggle('akira-card-has-rating', !!rating);
             var rb = view.querySelector('.akira-card-rating');
             if(rb && rating) rb.style.background = ratingColor(rating);
             var nativeQuality = element.querySelector && element.querySelector('.card__quality');
-            var quality = qualityLabel(card.data) || (nativeQuality ? Util.clean(nativeQuality.textContent || nativeQuality.innerText).toUpperCase() : '');
+            var quality = qualityLabel(data) || (nativeQuality ? Util.clean(nativeQuality.textContent || nativeQuality.innerText).toUpperCase() : '');
             ensureBadge(view, 'akira-card-quality', quality);
+        }
+
+        function refreshCardDetails(state, card) {
+            if (!state || !state.info || !card || !card.data || !card.data.id) return;
+            var key = (card.data.media_type || (card.data.name ? 'tv' : 'movie')) + ':' + card.data.id;
+            if (card.__akiraDetailsReq === key) return;
+            card.__akiraDetailsReq = key;
+            state.info.load(card.data, { preload: true }, function (movie) {
+                if (!card.__akiraCard || !movie || !movie.id) return;
+                card.__akiraMetaData = movie;
+                updateCardTitle(card, movie);
+                updateCardBadges(card);
+            });
+        }
+
+        function updateHero(state, data) {
+            if (!state) return;
+            if (canUseHeroData(data)) state.update(data);
+            else state.reset();
         }
 
         function decorateCard(state, card) {
             if (!card || card.__akiraCard || typeof card.use !== 'function' || !card.data) return;
+            try {
+                var initialRoot = card.render && card.render(true);
+                if (initialRoot && initialRoot.isConnected && !realCardView(initialRoot)) {
+                    removeCardDecor(initialRoot);
+                    return;
+                }
+            } catch (e) {}
             card.__akiraCard = true;
             card.params = card.params || {};
             card.params.style = card.params.style || {};
             if (!card.params.style.name) card.params.style.name = 'wide';
             card.use({
-                onFocus:   function () { state.update(card.data); },
-                onHover:   function () { state.update(card.data); },
-                onTouch:   function () { state.update(card.data); },
-                onVisible: function(){updateCardTitle(card);updateCardBadges(card);Logos.applyToCard(card);},
-                onUpdate:function(){updateCardTitle(card);updateCardBadges(card);Logos.applyToCard(card);},
+                onFocus:   function () { updateHero(state, card.data); },
+                onHover:   function () { updateHero(state, card.data); },
+                onTouch:   function () { updateHero(state, card.data); },
+                onVisible: function(){updateCardTitle(card);updateCardBadges(card);Logos.applyToCard(card);refreshCardDetails(state, card);},
+                onUpdate:function(){updateCardTitle(card);updateCardBadges(card);Logos.applyToCard(card);refreshCardDetails(state, card);},
                 onDestroy: function () {
                     Logos.cleanupCard(card);
                     clearTimeout(card.__akiraLabelTimer);
@@ -1654,10 +1848,12 @@
                             if (node && node.parentNode) node.parentNode.removeChild(node);
                         });
                         var view = root && cardView(root);
-                        if (view && view.classList) view.classList.remove('akira-card-has-rating');
+                        if (view && view.classList) view.classList.remove('akira-card-has-rating', 'akira-card-has-logo');
                     } catch (e) {}
                     if (card.__akiraLabel && card.__akiraLabel.parentNode) card.__akiraLabel.parentNode.removeChild(card.__akiraLabel);
                     card.__akiraLabel = null;
+                    delete card.__akiraMetaData;
+                    delete card.__akiraDetailsReq;
                     delete card.__akiraCard;
                 }
             });
@@ -1687,13 +1883,13 @@
             }
             line.use({
                 onInstance: function (card) { apply(card); },
-                onActive: function (card, itemData) { var d = getCardData(card, itemData); if (d) state.update(d); },
-                onToggle: function () { setTimeout(function () { var d = getFocusedCardData(line); if (d) state.update(d); }, 32); },
+                onActive: function (card, itemData) { var d = getCardData(card, itemData); updateHero(state, d); },
+                onToggle: function () { setTimeout(function () { var d = getFocusedCardData(line); updateHero(state, d); }, 32); },
                 onMore:    function () { state.reset(); },
                 onDestroy: function () { state.reset(); delete line.__akiraLine; }
             });
             if (Array.isArray(line.items) && line.items.length) line.items.forEach(apply);
-            if (line.last) { var last = getDomCardData(line.last); if (last) state.update(last); }
+            if (line.last) { var last = getDomCardData(line.last); updateHero(state, last); }
         }
 
         function wrap(target, method, handler) {
@@ -1702,11 +1898,30 @@
             target[method] = function () { return handler.call(this, orig, arguments); };
         }
 
+        function applyHeroModeToAll() {
+            try {
+                var nodes = document.querySelectorAll('.akira-iface');
+                var mode = String(Util.get(K.ifaceHeroMode, 'block') || 'block').toLowerCase();
+                if (mode !== 'fullscreen') mode = 'block';
+                Array.prototype.forEach.call(nodes, function (n) {
+                    n.setAttribute('data-akira-hero', mode);
+                });
+            } catch (e) {}
+        }
+
         return {
             start: function () {
                 if (started) return;
                 started = true;
                 injectStyle();
+                try {
+                    if (Lampa.Storage && Lampa.Storage.listener && typeof Lampa.Storage.listener.follow === 'function') {
+                        Lampa.Storage.listener.follow('change', function (e) {
+                            if (!e) return;
+                            if (e.name === K.ifaceHeroMode) applyHeroModeToAll();
+                        });
+                    }
+                } catch (e) {}
                 if (!moduleEnabled()) return;
                 startV3();
             }
@@ -1839,6 +2054,24 @@
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.traverse, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.hover, body.' + CFG.bodyClass + '[data-akira-theme="on"] .simple-button.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .full-start__button.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .selectbox-item.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings-folder.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings-param.focus{background:linear-gradient(90deg, var(--akira-accent), rgba(' + rgb + ',.85)) !important;color:#fff !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.focus .card__view::after, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.hover .card__view::after, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card-more.focus .card-more__box::after{border:.18em solid var(--akira-accent) !important;box-shadow:0 0 0 .35em var(--akira-accent-soft) !important;border-radius:.6em !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card .card__view, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card .card__img{border-radius:.6em !important;overflow:hidden !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid{display:grid !important;grid-template-columns:repeat(auto-fit,minmax(17.6em,1fr)) !important;gap:1em .62em !important;align-items:start !important;overflow:visible !important;}',
+                '@media(max-width:1279px){body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid{grid-template-columns:repeat(auto-fit,minmax(15em,1fr)) !important;}}',
+                '@media(max-width:767px){body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid{grid-template-columns:repeat(auto-fit,minmax(13.4em,1fr)) !important;}}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card{width:auto !important;margin:0 !important;padding-bottom:0 !important;position:relative !important;z-index:1;overflow:visible !important;transform-origin:center center !important;transition:transform .28s cubic-bezier(.22,.61,.36,1),z-index 0s !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__view{position:relative !important;height:0 !important;padding-bottom:56.25% !important;margin-bottom:0 !important;border-radius:10px !important;overflow:hidden !important;border:1px solid rgba(255,255,255,.08) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 22px rgba(0,0,0,.28) !important;transition:transform .28s cubic-bezier(.22,.61,.36,1),box-shadow .28s ease,filter .28s ease,border-color .28s ease !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__view > img, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__img{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;object-fit:cover !important;object-position:center 22% !important;border-radius:10px !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.hover{z-index:40 !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.focus .card__view{transform:translateY(-.08em) scale(1.055) !important;filter:saturate(1.05) brightness(1.02) !important;border-color:var(--akira-accent) !important;box-shadow:0 0 0 2px var(--akira-accent),0 0 22px rgba(var(--akira-accent-rgb),.42),0 18px 42px rgba(0,0,0,.42) !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.hover .card__view{transform:translateY(-.04em) scale(1.025) !important;filter:saturate(1.02) brightness(1.01) !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.focus::after, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.hover::after, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__view::before, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__view::after{display:none !important;content:none !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready > .card__title, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready > .card__age, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready .card__vote, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready .card__quality, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready .card__type, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready .card__promo{display:none !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-overlay{position:absolute;left:0;right:0;bottom:0;z-index:12;padding:2.3em .72em .68em;box-sizing:border-box;background:linear-gradient(0deg,rgba(6,8,14,.92) 0%,rgba(6,8,14,.58) 44%,rgba(6,8,14,.16) 72%,rgba(6,8,14,0) 100%);pointer-events:none;border-radius:0 0 10px 10px;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-title{font-family:var(--akira-font) !important;font-size:.9em !important;line-height:1.14 !important;font-weight:800 !important;color:#fff !important;text-shadow:0 2px 10px rgba(0,0,0,.72);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-meta{font-family:var(--akira-font) !important;color:rgba(255,255,255,.76);font-size:.68em !important;font-weight:500 !important;line-height:1.2 !important;margin-top:.22em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 8px rgba(0,0,0,.64);}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-badge{position:absolute;z-index:14;display:inline-flex;align-items:center;justify-content:center;min-height:1.6em;padding:.16em .52em;border-radius:7px;font-family:var(--akira-font) !important;font-weight:900 !important;line-height:1.1 !important;color:#fff !important;text-shadow:0 1px 5px rgba(0,0,0,.55);box-shadow:0 3px 10px rgba(0,0,0,.36);pointer-events:none;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-rating{right:.46em;top:.46em;background:rgba(46,204,113,.9);font-size:.72em !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-quality{right:.46em;top:.46em;background:rgba(var(--akira-accent-rgb),.88);font-size:.64em !important;text-transform:uppercase;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card__view.akira-grid-has-rating .akira-grid-quality{top:2.35em;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .modal__content, body.' + CFG.bodyClass + '[data-akira-theme="on"] .selectbox__content, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings__content{background:rgba(10,13,18,.96) !important;border:0 !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .full-start__rate.rate--tmdb{background:linear-gradient(90deg, var(--akira-accent), rgba(' + rgb + ',.7)) !important;color:#fff !important;border-radius:.4em !important;padding:.3em .5em !important;}',
                 '@media (max-width:560px){body.' + CFG.bodyClass + '[data-akira-theme="on"] .items-line__title{padding-left:.7em !important;font-size:1.1em !important;}}'
@@ -1868,8 +2101,143 @@
                 if (!Lampa.Storage || !Lampa.Storage.listener || !Lampa.Storage.listener.follow) return;
                 Lampa.Storage.listener.follow('change', function (e) {
                     if (!e || !e.name) return;
-                    if (e.name === K.themeEnabled || e.name === K.themeAccent || e.name === K.themeFont || e.name === K.enabled) injectStyle();
+                    if (e.name === K.themeEnabled || e.name === K.themeAccent || e.name === K.themeFont || e.name === K.enabled) {
+                        injectStyle();
+                        scheduleGridDecorate();
+                    }
                 });
+            } catch (e) {}
+        }
+
+        var gridObserver = null;
+        var gridTimer = null;
+
+        function domText(root, selector) {
+            var node = root && root.querySelector ? root.querySelector(selector) : null;
+            return Util.clean(node ? (node.textContent || node.innerText || '') : '');
+        }
+
+        function nativeBadgeText(root, selector) {
+            var node = root && root.querySelector ? root.querySelector(selector) : null;
+            if (!node) return '';
+            return Util.clean(node.textContent || node.innerText || '').toUpperCase();
+        }
+
+        function gridData(card) {
+            var node = card;
+            while (node && node !== document.body) {
+                if (node.card_data) return node.card_data;
+                node = node.parentNode;
+            }
+            return null;
+        }
+
+        function gridYear(card, data) {
+            var y = data ? ((data.release_date || data.first_air_date || '') + '').slice(0, 4) : '';
+            return y || domText(card, '.card__age');
+        }
+
+        function gridRating(card, data) {
+            var raw = data && (data.vote_average || data.vote || data.rating || data.rate);
+            var n = parseFloat(String(raw || '').replace(',', '.'));
+            if (isFinite(n) && n > 0) return n.toFixed(1);
+            return domText(card, '.card__vote');
+        }
+
+        function gridQuality(card, data) {
+            var raw = data && (data.quality || data.quality_name || data.video_quality || data.release_quality || data.rezolution || data.resolution);
+            return Util.clean(raw || nativeBadgeText(card, '.card__quality')).toUpperCase();
+        }
+
+        function gridGenres(data) {
+            if (!data || !data.genres || !data.genres.length) return '';
+            return data.genres.slice(0, 2).map(function (item) {
+                return Util.clean(item && item.name ? item.name : '');
+            }).filter(Boolean).join(', ');
+        }
+
+        function setGridBadge(view, cls, text) {
+            var node = view.querySelector('.' + cls);
+            if (!text) {
+                if (node && node.parentNode) node.parentNode.removeChild(node);
+                return;
+            }
+            if (!node) {
+                node = document.createElement('div');
+                node.className = 'akira-grid-badge ' + cls;
+                view.appendChild(node);
+            }
+            if (node.textContent !== text) node.textContent = text;
+        }
+
+        function decorateGridCard(card) {
+            if (!card || !card.querySelector || !card.closest || !card.closest('.mapping--grid')) return;
+            var view = card.querySelector('.card__view');
+            if (!view) return;
+            if ((view.classList && view.classList.contains('bookmarks-folder__inner')) ||
+                (view.closest && view.closest('.bookmarks-folder,.register,.full-person,.card-more,.card-episode__footer'))) {
+                return;
+            }
+
+            var data = gridData(card);
+            var title = Util.clean((data && (data.title || data.name || data.original_title || data.original_name)) || domText(card, '.card__title'));
+            var year = gridYear(card, data);
+            var genres = gridGenres(data);
+            var metaParts = [];
+            if (year) metaParts.push(year);
+            if (genres) metaParts.push(genres);
+
+            var overlay = view.querySelector('.akira-grid-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'akira-grid-overlay';
+                view.appendChild(overlay);
+            }
+            var html = (title ? '<div class="akira-grid-title">' + Util.escapeHtml(title) + '</div>' : '')
+                + (metaParts.length ? '<div class="akira-grid-meta">' + Util.escapeHtml(metaParts.join(' · ')) + '</div>' : '');
+            if (overlay.innerHTML !== html) overlay.innerHTML = html;
+
+            var rating = gridRating(card, data);
+            setGridBadge(view, 'akira-grid-rating', rating);
+            if (view.classList) view.classList.toggle('akira-grid-has-rating', !!rating);
+            setGridBadge(view, 'akira-grid-quality', gridQuality(card, data));
+            card.classList.add('akira-grid-ready');
+        }
+
+        function cleanupGridCards() {
+            try {
+                var cards = document.querySelectorAll('.mapping--grid .card.akira-grid-ready');
+                Array.prototype.forEach.call(cards, function (card) {
+                    card.classList.remove('akira-grid-ready');
+                    var view = card.querySelector && card.querySelector('.card__view');
+                    if (!view) return;
+                    ['akira-grid-overlay', 'akira-grid-rating', 'akira-grid-quality'].forEach(function (cls) {
+                        var node = view.querySelector('.' + cls);
+                        if (node && node.parentNode) node.parentNode.removeChild(node);
+                    });
+                    if (view.classList) view.classList.remove('akira-grid-has-rating');
+                });
+            } catch (e) {}
+        }
+
+        function decorateGrid() {
+            if (!moduleEnabled()) { cleanupGridCards(); return; }
+            try {
+                var cards = document.querySelectorAll('.mapping--grid .card');
+                Array.prototype.forEach.call(cards, decorateGridCard);
+            } catch (e) {}
+        }
+
+        function scheduleGridDecorate() {
+            clearTimeout(gridTimer);
+            gridTimer = setTimeout(decorateGrid, 80);
+        }
+
+        function bindGridObserver() {
+            if (gridObserver || !window.MutationObserver) return;
+            try {
+                gridObserver = new MutationObserver(scheduleGridDecorate);
+                gridObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
             } catch (e) {}
         }
 
@@ -1877,6 +2245,10 @@
             start: function () {
                 injectStyle();
                 bindStorageWatch();
+                bindGridObserver();
+                scheduleGridDecorate();
+                setTimeout(scheduleGridDecorate, 450);
+                setTimeout(scheduleGridDecorate, 1200);
             }
         };
     })();
@@ -2263,6 +2635,11 @@
                 { name: t('iface_enabled') }, function () { Util.notify(t('reset_done')); });
             addParam(SUB.iface, { name: K.ifaceCardLogos, type: 'trigger', default: true },
                 { name: t('iface_card_logos') });
+            addParam(SUB.iface, {
+                name: K.ifaceHeroMode, type: 'select',
+                values: { 'block': t('iface_hero_mode_block'), 'fullscreen': t('iface_hero_mode_fullscreen') },
+                default: 'block'
+            }, { name: t('iface_hero_mode') });
         }
 
         function buildButtons() {
