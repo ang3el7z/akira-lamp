@@ -496,7 +496,7 @@
         Util.ensureOnOff(K.scaleEnabled, true);
 
         Util.ensureOnOff(K.shotsEnabled, true);
-        Util.ensureOnOff(K.mobilePlayerEnabled, true);
+        Util.ensureOnOff(K.mobilePlayerEnabled, false);
 
         Util.ensureOnOff(K.tmdbEnabled, true);
     }
@@ -509,6 +509,7 @@
         var ATTR_ON = 'data-akira-topbar';
         var ATTR_ALIGN = 'data-akira-topbar-align';
         var BRAND_VAR = '--akira-brand-w';
+        var BACK_VAR = '--akira-back-w';
 
         var state = { clockTimer: null, domObserver: null, scheduled: false, scheduleTimer: null, listenersBound: false };
 
@@ -759,10 +760,16 @@
 
         function patchBar() {
             var old = Util.qs('.akira-topbar');
-            if (!moduleEnabled()) { if (old) old.remove(); restoreBrand(); stopClock(); return; }
+            if (!moduleEnabled()) { removeUi(); return; }
             var head = Util.qs('.head__body') || Util.qs('.head');
             if (!head) return;
             patchBrand(head);
+            var backDock = Util.qs('.akira-topbar-backdock', head);
+            if (!backDock) {
+                backDock = document.createElement('div');
+                backDock.className = 'akira-topbar-backdock';
+                head.appendChild(backDock);
+            }
             var bar = Util.qs('.akira-topbar', head);
             if (!bar) {
                 bar = document.createElement('div');
@@ -776,7 +783,10 @@
             rightNode.innerHTML = '';
 
             var hasBack = !!nativeBack();
-            itemsNode.classList.toggle('akira-topbar__items--no-back', !hasBack);
+            var centerMode = topbarAlign() === 'center';
+            backDock.innerHTML = '';
+            itemsNode.classList.toggle('akira-topbar__items--no-back', !hasBack || centerMode);
+            try { document.documentElement.style.setProperty(BACK_VAR, centerMode && hasBack ? '3.08em' : '0px'); } catch (e) {}
 
             if (hasBack) {
                 var back = document.createElement('div');
@@ -784,7 +794,8 @@
                 back.setAttribute('data-selector', 'true'); back.setAttribute('tabindex', '0');
                 back.innerHTML = iconBack();
                 bindAction(back, goBack);
-                itemsNode.appendChild(back);
+                if (centerMode) backDock.appendChild(back);
+                else itemsNode.appendChild(back);
             }
 
             selectedItems().forEach(function (item) {
@@ -842,28 +853,30 @@
                 'body.' + bc + '[' + ATTR_ON + '="on"] .head__title, body.' + bc + '[' + ATTR_ON + '="on"] .head__time, body.' + bc + '[' + ATTR_ON + '="on"] .head__split, body.' + bc + '[' + ATTR_ON + '="on"] .head__navigator, body.' + bc + '[' + ATTR_ON + '="on"] .head__logo, body.' + bc + '[' + ATTR_ON + '="on"] .open--search, body.' + bc + '[' + ATTR_ON + '="on"] .head__settings { display: none !important; }',
                 'body.' + bc + '[' + ATTR_ON + '="on"] .head__body { position: relative !important; z-index: 48 !important; min-height: 0 !important; height: 0 !important; padding: 0 !important; overflow: visible !important; }',
                 'body.' + bc + '[' + ATTR_ON + '="on"] .head__history, body.' + bc + '[' + ATTR_ON + '="on"] .head__source, body.' + bc + '[' + ATTR_ON + '="on"] .head__markers, body.' + bc + '[' + ATTR_ON + '="on"] .head__backward, body.' + bc + '[' + ATTR_ON + '="on"] .settings-icon-holder, body.' + bc + '[' + ATTR_ON + '="on"] .head__action, body.' + bc + '[' + ATTR_ON + '="on"] .head__button { display: none !important; }',
-                'body.' + bc + ' .head__menu-icon.akira-head-brand { position: absolute !important; left: 1.05em !important; top: .54em !important; z-index: 50 !important; width: auto !important; max-width: min(30vw, 22em) !important; min-width: 4.4em !important; height: 2.62em !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 0 .95em !important; margin: 0 !important; border-radius: 8px !important; background: linear-gradient(92deg, ' + accent + ', rgba(' + rgb + ',.78)) !important; color: #fff !important; border: 1px solid rgba(255,255,255,.12) !important; box-shadow: 0 10px 28px ' + soft + ' !important; transform: none !important; overflow: hidden !important; }',
+                'body.' + bc + ' .head__menu-icon.akira-head-brand { position: absolute !important; left: 1.05em !important; top: .5em !important; z-index: 51 !important; width: auto !important; max-width: min(30vw, 22em) !important; min-width: 4.4em !important; height: 2.8em !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 0 .95em !important; margin: 0 !important; border-radius: 8px !important; background: linear-gradient(92deg, ' + accent + ', rgba(' + rgb + ',.78)) !important; color: #fff !important; border: 1px solid rgba(255,255,255,.12) !important; box-shadow: 0 10px 28px ' + soft + ' !important; transform: none !important; overflow: hidden !important; box-sizing: border-box !important; }',
                 'body.' + bc + ' .head__menu-icon.akira-head-brand span { display: block !important; max-width: 100% !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: .88em !important; line-height: 1 !important; font-weight: 900 !important; color: inherit !important; }',
                 'body.' + bc + ' .head__menu-icon.akira-head-brand.focus, body.' + bc + ' .head__menu-icon.akira-head-brand.hover { box-shadow: 0 0 0 2px rgba(255,255,255,.18), 0 12px 30px ' + soft + ' !important; transform: translateY(-1px) !important; }',
-                'body.' + bc + ' .akira-topbar { position: absolute; left: calc(1.05em + var(' + BRAND_VAR + ', 5.2em) + .55em) !important; top: .54em !important; right: 1.05em !important; z-index: 49 !important; pointer-events: none; max-width: calc(100vw - 1.05em - var(' + BRAND_VAR + ', 5.2em) - .55em - 1.05em) !important; }',
+                'body.' + bc + ' .akira-topbar-backdock { position: absolute !important; left: calc(1.05em + var(' + BRAND_VAR + ', 5.2em) + .45em) !important; top: .5em !important; z-index: 50 !important; height: 2.8em !important; display: inline-flex !important; align-items: center !important; gap: .18em !important; padding: .18em !important; border-radius: 8px !important; background: ' + panel + ' !important; border: 1px solid ' + edge + ' !important; backdrop-filter: blur(18px) saturate(130%) !important; -webkit-backdrop-filter: blur(18px) saturate(130%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 26px rgba(0,0,0,.22) !important; box-sizing: border-box !important; pointer-events: auto !important; }',
+                'body.' + bc + ' .akira-topbar-backdock:empty { display: none !important; }',
+                'body.' + bc + ' .akira-topbar { position: absolute; left: calc(1.05em + var(' + BRAND_VAR + ', 5.2em) + .65em + var(' + BACK_VAR + ', 0px)) !important; top: .5em !important; right: 1.05em !important; z-index: 49 !important; pointer-events: none; max-width: calc(100vw - 1.05em - var(' + BRAND_VAR + ', 5.2em) - .65em - var(' + BACK_VAR + ', 0px) - 1.05em) !important; }',
                 'body.' + bc + ' .akira-topbar__inner { height: 2.8em; display: flex; align-items: center; gap: .34em !important; flex-wrap: nowrap !important; min-width: 0 !important; pointer-events: auto; }',
-                'body.' + bc + ' .akira-topbar__items, body.' + bc + ' .akira-topbar__right { display: inline-flex; align-items: center; gap: .18em; height: 2.62em; padding: .18em; border-radius: 8px; background: ' + panel + '; border: 1px solid ' + edge + '; backdrop-filter: blur(18px) saturate(130%); -webkit-backdrop-filter: blur(18px) saturate(130%); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 26px rgba(0,0,0,.22); box-sizing: border-box; white-space: nowrap; }',
+                'body.' + bc + ' .akira-topbar__items, body.' + bc + ' .akira-topbar__right { display: inline-flex; align-items: center; gap: .18em; height: 2.8em; padding: .18em; border-radius: 8px; background: ' + panel + '; border: 1px solid ' + edge + '; backdrop-filter: blur(18px) saturate(130%); -webkit-backdrop-filter: blur(18px) saturate(130%); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 26px rgba(0,0,0,.22); box-sizing: border-box; white-space: nowrap; }',
                 'body.' + bc + ' .akira-topbar__items { flex: 0 1 auto; min-width: 0 !important; max-width: calc(100% - 10.5em) !important; overflow: hidden !important; }',
                 'body.' + bc + ' .akira-topbar__items:empty { display: none !important; }',
                 'body.' + bc + ' .akira-topbar__right { flex: 0 0 auto; margin-left: auto; }',
-                'body.' + bc + ' .akira-topbar__item { flex: 0 0 auto; height: 2.18em; min-width: 2.18em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .88em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 700; white-space: nowrap; transition: background .18s ease, transform .18s ease, color .18s ease; }',
-                'body.' + bc + ' .akira-topbar__icon { width: 2.18em; padding: 0; }',
+                'body.' + bc + ' .akira-topbar__item { flex: 0 0 auto; height: 2.34em; min-width: 2.34em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .88em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 700; white-space: nowrap; transition: background .18s ease, transform .18s ease, color .18s ease; box-sizing: border-box; }',
+                'body.' + bc + ' .akira-topbar__icon { width: 2.34em; padding: 0; }',
                 'body.' + bc + ' .akira-topbar__icon svg { width: 1.08em; height: 1.08em; }',
-                'body.' + bc + ' .akira-topbar__clock { flex: 0 0 auto; height: 2.18em; min-width: 4.1em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .72em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 800; cursor: default; pointer-events: none; }',
+                'body.' + bc + ' .akira-topbar__clock { flex: 0 0 auto; height: 2.34em; min-width: 4.1em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .72em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 800; cursor: default; pointer-events: none; box-sizing: border-box; }',
                 'body.' + bc + ' .akira-topbar__item.focus, body.' + bc + ' .akira-topbar__item.hover, body.' + bc + ' .akira-topbar__item.is-active { background: rgba(' + rgb + ',.85); color: #fff; transform: translateY(-1px); }',
-                'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar { left: 0 !important; right: 0 !important; pointer-events: none !important; }',
+                'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar { left: 0 !important; right: 0 !important; max-width: none !important; pointer-events: none !important; }',
                 'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__inner { position: relative !important; width: 100% !important; justify-content: center !important; pointer-events: none !important; }',
-                'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__items { position: absolute !important; left: 50% !important; top: 0 !important; transform: translateX(-50%) !important; max-width: calc(100vw - 23em) !important; pointer-events: auto !important; }',
+                'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__items { position: absolute !important; left: 50% !important; top: 0 !important; transform: translateX(-50%) !important; max-width: calc(100vw - 2.1em - var(' + BRAND_VAR + ', 5.2em) - var(' + BACK_VAR + ', 0px) - 13em) !important; pointer-events: auto !important; }',
                 'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__right { position: absolute !important; right: 1.05em !important; top: 0 !important; margin-left: 0 !important; pointer-events: auto !important; }',
                 '@media (min-width: 1800px) { body.' + bc + ' .head__menu-icon.akira-head-brand, body.' + bc + ' .akira-topbar { font-size: 1.1em !important; } }',
                 '@media (min-width: 2500px) { body.' + bc + ' .head__menu-icon.akira-head-brand, body.' + bc + ' .akira-topbar { font-size: 1.18em !important; } }',
-                '@media (max-width: 900px) { body.' + bc + ' .akira-topbar, body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar { left: calc(.75em + var(' + BRAND_VAR + ', 5.2em) + .55em) !important; right: .75em !important; top: .55em !important; max-width: calc(100vw - .75em - var(' + BRAND_VAR + ', 5.2em) - .55em - .75em) !important; } body.' + bc + ' .akira-topbar__inner, body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__inner { justify-content: space-between !important; width: 100% !important; } body.' + bc + ' .akira-topbar__items, body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__items { position: static !important; left: auto !important; top: auto !important; transform: none !important; flex: 0 0 auto; max-width: 2.62em !important; pointer-events: auto !important; } body.' + bc + ' .akira-topbar__items--no-back { display: none !important; } body.' + bc + ' .akira-topbar__nav { display: none !important; } body.' + bc + ' .akira-topbar__right, body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__right { position: static !important; right: auto !important; top: auto !important; margin-left: .34em !important; pointer-events: auto !important; } body.' + bc + ' .head__menu-icon.akira-head-brand { left: .75em !important; top: .55em !important; max-width: min(28vw, 13em) !important; } }',
-                '@media (max-width: 560px) { body.' + bc + ' .akira-topbar { right: .65em !important; } body.' + bc + ' .akira-topbar__right { gap: .08em !important; padding-left: .14em !important; padding-right: .14em !important; } body.' + bc + ' .head__menu-icon.akira-head-brand { left: .65em !important; max-width: min(30vw, 10em) !important; min-width: 3.8em !important; padding-left: .7em !important; padding-right: .7em !important; } }',
+                '@media (max-width: 900px) { body.' + bc + ' .akira-topbar-backdock { left: calc(.75em + var(' + BRAND_VAR + ', 5.2em) + .42em) !important; top: .55em !important; } body.' + bc + ' .akira-topbar, body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar { left: calc(.75em + var(' + BRAND_VAR + ', 5.2em) + .62em + var(' + BACK_VAR + ', 0px)) !important; right: .75em !important; top: .55em !important; max-width: calc(100vw - .75em - var(' + BRAND_VAR + ', 5.2em) - .62em - var(' + BACK_VAR + ', 0px) - .75em) !important; } body.' + bc + ' .akira-topbar__inner, body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__inner { justify-content: space-between !important; width: 100% !important; } body.' + bc + ' .akira-topbar__items { position: static !important; left: auto !important; top: auto !important; transform: none !important; display: inline-flex !important; flex: 0 0 auto !important; max-width: 2.8em !important; pointer-events: auto !important; } body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__items, body.' + bc + ' .akira-topbar__items--no-back { display: none !important; } body.' + bc + ' .akira-topbar__nav { display: none !important; } body.' + bc + ' .akira-topbar__right, body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__right { position: static !important; right: auto !important; top: auto !important; margin-left: auto !important; pointer-events: auto !important; } body.' + bc + ' .head__menu-icon.akira-head-brand { left: .75em !important; top: .55em !important; max-width: min(28vw, 13em) !important; } }',
+                '@media (max-width: 560px) { body.' + bc + ' .akira-topbar { right: .65em !important; } body.' + bc + ' .akira-topbar-backdock { left: calc(.65em + var(' + BRAND_VAR + ', 5.2em) + .36em) !important; } body.' + bc + ' .akira-topbar__right { gap: .08em !important; padding-left: .14em !important; padding-right: .14em !important; } body.' + bc + ' .head__menu-icon.akira-head-brand { left: .65em !important; max-width: min(30vw, 10em) !important; min-width: 3.8em !important; padding-left: .7em !important; padding-right: .7em !important; } }',
                 '@media (max-width: 380px) { body.' + bc + ' .akira-topbar__clock { display: none !important; } }'
             ].join('\n');
             if (style.textContent !== css) style.textContent = css;
@@ -891,7 +904,9 @@
                 document.body.removeAttribute(ATTR_ALIGN);
             }
             try { document.documentElement.style.removeProperty(BRAND_VAR); } catch (e) {}
+            try { document.documentElement.style.removeProperty(BACK_VAR); } catch (e2) {}
             var bar = Util.qs('.akira-topbar'); if (bar) bar.remove();
+            Util.qsa('.akira-topbar-backdock').forEach(function (node) { try { node.remove(); } catch (e3) {} });
             restoreBrand();
             stopClock();
         }
@@ -1410,16 +1425,21 @@
 
         return {
             start: function () {
-                bindStorage();
-                sync();
+                removeStyle();
+                try { delete window.lampac_mobile_player_safearea_ready; } catch (e1) { window.lampac_mobile_player_safearea_ready = false; }
+                try { delete window.lampac_mobile_player_fullscreen_ready; } catch (e2) { window.lampac_mobile_player_fullscreen_ready = false; }
+                state.session += 1;
+                resetState();
             },
-            sync: sync
+            sync: function () {
+                removeStyle();
+                state.session += 1;
+                resetState();
+            }
         };
     })();
 
-    // Mobile fullscreen hooks are event-driven and idempotent, so early binding
-    // keeps player events covered even if the app-ready event is late.
-    startModule('MobilePlayer early start', MobilePlayer);
+    // Mobile fullscreen hooks are disabled for testing player performance.
 
     /* ================================================================
      * 6. LOGO ENGINE — двойной fallback с общим кешем
@@ -1748,6 +1768,11 @@
         }
 
         function applyToCard(card) {
+            function connected(node) {
+                if (!node) return false;
+                if (typeof node.isConnected === 'boolean') return node.isConnected;
+                return !!(document.documentElement && document.documentElement.contains && document.documentElement.contains(node));
+            }
             if (!card || !card.data || typeof card.render !== 'function') return;
             if (!Util.isOn(K.ifaceCardLogos, true)) return;
 
@@ -1793,10 +1818,11 @@
                 wrap.className = 'akira-card-logo';
                 view.appendChild(wrap);
             }
+            try { wrap.setAttribute('data-akira-logo-owner', 'card'); } catch (e) {}
 
             resolve(card.data, function (url) {
                 if (card.__akira_logo_req !== reqId) return;
-                if (!root.isConnected) return;
+                if (!connected(root)) return;
                 if (!url) { removeLogo(); return; }
                 if (view && view.classList) view.classList.add('akira-card-has-logo');
                 var img = new Image();
@@ -2979,6 +3005,9 @@
 
     var Theme = (function () {
         var storageBound = false;
+        var menuEventsBound = false;
+        var menuTimer = null;
+        var MENU_WIDTH_VAR = '--akira-menu-w';
 
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
         function moduleEnabled() { return pluginEnabled() && Util.isOn(K.themeEnabled, true); }
@@ -3009,11 +3038,14 @@
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] html, body.' + CFG.bodyClass + '[data-akira-theme="on"] .extensions{background:linear-gradient(135deg,#0a0d12,#13171f) !important;color:var(--akira-text) !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .navigation-bar__body{background:rgba(10,13,18,.92) !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .items-line__title{font-family:var(--akira-font) !important;font-weight:700 !important;font-size:1.25em !important;color:#fff !important;text-shadow:0 2px 10px rgba(0,0,0,.6) !important;padding-left:1.2em !important;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu{width:min(30em,94vw) !important;max-width:94vw !important;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item{box-sizing:border-box!important;max-width:calc(100% - .7em)!important;padding-right:.9em!important;overflow:hidden!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu{width:var(' + MENU_WIDTH_VAR + ',min(22em,94vw)) !important;max-width:94vw !important;padding-right:0!important;overflow:hidden!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__case, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__list{width:100%!important;max-width:100%!important;box-sizing:border-box!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item{position:relative!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important;padding-right:0!important;overflow:hidden!important;border-radius:0!important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__text, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-name, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-text, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-title{min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}',
-                '@media(max-width:520px){body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item{max-width:calc(100vw - .9em)!important;}body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__text, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-name, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-text, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-title{font-size:.88em!important;}}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.traverse, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.hover, body.' + CFG.bodyClass + '[data-akira-theme="on"] .simple-button.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .full-start__button.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .selectbox-item.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings-folder.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings-param.focus{background:linear-gradient(90deg, var(--akira-accent), rgba(' + rgb + ',.85)) !important;color:#fff !important;}',
+                '@media(max-width:520px){body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu{width:min(var(' + MENU_WIDTH_VAR + ',22em),94vw)!important;}body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item{max-width:100%!important;}body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__text, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-name, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-text, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-title{font-size:.88em!important;}}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.traverse, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.hover{background:linear-gradient(90deg, var(--akira-accent), rgba(' + rgb + ',.86)) !important;color:#fff !important;box-shadow:inset 0 0 0 2px rgba(255,255,255,.10)!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.focus:before, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.traverse:before, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.hover:before{content:""!important;position:absolute!important;left:0!important;right:0!important;top:0!important;bottom:0!important;border-radius:0!important;pointer-events:none!important;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .simple-button.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .full-start__button.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .selectbox-item.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings-folder.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings-param.focus{background:linear-gradient(90deg, var(--akira-accent), rgba(' + rgb + ',.85)) !important;color:#fff !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card__type, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card--tv .card__type, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card__type::after{background:linear-gradient(90deg,var(--akira-accent),rgba(' + rgb + ',.72)) !important;color:#fff!important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.focus .card__view::after, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.hover .card__view::after, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card-more.focus .card-more__box::after{border:.18em solid var(--akira-accent) !important;box-shadow:0 0 0 .35em var(--akira-accent-soft) !important;border-radius:.6em !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card .card__view, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card .card__img{border-radius:.6em !important;overflow:hidden !important;}',
@@ -3209,13 +3241,21 @@
         }
 
         function setGridLogo(card, view, data, title) {
+            function connected(node) {
+                if (!node) return false;
+                if (typeof node.isConnected === 'boolean') return node.isConnected;
+                return !!(document.documentElement && document.documentElement.contains && document.documentElement.contains(node));
+            }
             function remove() {
                 var old = view.querySelector('.akira-card-logo');
                 if (old && old.parentNode) old.parentNode.removeChild(old);
                 if (view.classList) view.classList.remove('akira-card-has-logo');
             }
-            if (!data || !data.id || !Util.isOn(K.ifaceCardLogos, true) || !Logos.enabled()) {
+            if (!Util.isOn(K.ifaceCardLogos, true) || !Logos.enabled()) {
                 remove();
+                return;
+            }
+            if (!data || !data.id) {
                 return;
             }
             var requestId = (card.__akiraGridLogoReq || 0) + 1;
@@ -3226,9 +3266,19 @@
                 wrap.className = 'akira-card-logo';
                 view.appendChild(wrap);
             }
+            try { wrap.setAttribute('data-akira-logo-owner', 'theme'); } catch (e) {}
             Logos.resolve(data, function (url) {
-                if (card.__akiraGridLogoReq !== requestId || !card.isConnected) return;
+                if (card.__akiraGridLogoReq !== requestId || !connected(card)) return;
                 if (!url) { remove(); return; }
+                if (!wrap.parentNode) {
+                    wrap = view.querySelector('.akira-card-logo');
+                    if (!wrap) {
+                        wrap = document.createElement('div');
+                        wrap.className = 'akira-card-logo';
+                        view.appendChild(wrap);
+                    }
+                }
+                try { wrap.setAttribute('data-akira-logo-owner', 'theme'); } catch (e) {}
                 var img = new Image();
                 img.alt = title || '';
                 img.src = url;
@@ -3344,9 +3394,87 @@
             } catch (e) {}
         }
 
+        function syncMenuWidth() {
+            if (!moduleEnabled()) {
+                try { document.documentElement.style.removeProperty(MENU_WIDTH_VAR); } catch (e) {}
+                return;
+            }
+            try {
+                var menus = document.querySelectorAll ? document.querySelectorAll('.menu') : [];
+                var menu = null;
+                Array.prototype.forEach.call(menus, function (node) {
+                    var rect = node.getBoundingClientRect ? node.getBoundingClientRect() : null;
+                    if (!menu || (rect && rect.width > 0)) menu = node;
+                });
+                if (!menu) return;
+                var max = 0;
+                var items = menu.querySelectorAll('.menu__item');
+                var canvas = syncMenuWidth.canvas || (syncMenuWidth.canvas = document.createElement('canvas'));
+                var ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+                Array.prototype.forEach.call(items, function (item) {
+                    var label = item.querySelector && item.querySelector('.menu__text, .menu__item-name, .menu__item-text, .menu__item-title');
+                    var icon = item.querySelector && item.querySelector('.menu__ico, .menu__icon, .menu__item-icon, svg, img');
+                    var itemRect = item.getBoundingClientRect ? item.getBoundingClientRect() : null;
+                    var labelRect = label && label.getBoundingClientRect ? label.getBoundingClientRect() : null;
+                    var iconRect = icon && icon.getBoundingClientRect ? icon.getBoundingClientRect() : null;
+                    var text = label ? Util.clean(label.textContent || '') : '';
+                    var labelWidth = label ? Math.ceil(Math.max(label.scrollWidth || 0, labelRect ? labelRect.width : 0)) : 0;
+                    if (ctx && text) {
+                        try {
+                            var cs = window.getComputedStyle ? window.getComputedStyle(label) : null;
+                            ctx.font = cs ? [cs.fontStyle, cs.fontVariant, cs.fontWeight, cs.fontSize, cs.fontFamily].join(' ') : '400 28px Arial';
+                            labelWidth = Math.max(labelWidth, Math.ceil(ctx.measureText(text).width));
+                            var fontSize = cs ? parseFloat(cs.fontSize || '0') : 0;
+                            if (fontSize > 0) labelWidth = Math.max(labelWidth, Math.ceil(text.length * fontSize * .76));
+                        } catch (e) {}
+                    } else if (text) {
+                        labelWidth = Math.max(labelWidth, text.length * 24);
+                    }
+                    var labelOffset = itemRect && labelRect ? Math.max(0, Math.round(labelRect.left - itemRect.left)) : 0;
+                    var iconOffset = itemRect && iconRect ? Math.max(0, Math.round(iconRect.left - itemRect.left)) : 0;
+                    if (!labelWidth) labelWidth = Math.ceil((itemRect && itemRect.width) || item.scrollWidth || 0);
+                    if (!labelOffset) labelOffset = Math.max(76, iconOffset + Math.ceil((iconRect && iconRect.width) || 32) + 24);
+                    max = Math.max(max, labelOffset + labelWidth + Math.max(48, iconOffset || 0));
+                });
+                if (!max) return;
+                var viewportMax = Math.floor((window.innerWidth || 420) * .94);
+                var width = Math.min(Math.max(max, 240), Math.min(viewportMax, 460));
+                document.documentElement.style.setProperty(MENU_WIDTH_VAR, width + 'px');
+                menu.style.setProperty('width', width + 'px', 'important');
+                menu.style.setProperty('max-width', '94vw', 'important');
+                var body = menu.parentNode && menu.parentNode.classList && menu.parentNode.classList.contains('scroll__body') ? menu.parentNode : null;
+                var content = body && body.parentNode && body.parentNode.classList && body.parentNode.classList.contains('scroll__content') ? body.parentNode : null;
+                if (body) body.style.setProperty('width', width + 'px', 'important');
+                if (content) content.style.setProperty('width', width + 'px', 'important');
+            } catch (e2) {}
+        }
+
+        function scheduleMenuWidth() {
+            clearTimeout(menuTimer);
+            menuTimer = setTimeout(syncMenuWidth, 90);
+        }
+
         function scheduleGridDecorate() {
             clearTimeout(gridTimer);
             gridTimer = setTimeout(decorateGrid, 80);
+        }
+
+        function shouldSyncMenuFromMutations(mutations) {
+            try {
+                for (var i = 0; i < mutations.length; i++) {
+                    var nodes = mutations[i].addedNodes || [];
+                    for (var j = 0; j < nodes.length; j++) {
+                        var node = nodes[j];
+                        if (!node || node.nodeType !== 1) continue;
+                        if ((node.matches && node.matches('.menu, .menu__item')) ||
+                            (node.closest && node.closest('.menu')) ||
+                            (node.querySelector && node.querySelector('.menu, .menu__item'))) {
+                            return true;
+                        }
+                    }
+                }
+            } catch (e) {}
+            return false;
         }
 
         function shouldDecorateFromMutations(mutations) {
@@ -3387,9 +3515,19 @@
             if (gridObserver || !window.MutationObserver) return;
             try {
                 gridObserver = new MutationObserver(function (mutations) {
+                    if (shouldSyncMenuFromMutations(mutations)) scheduleMenuWidth();
                     if (shouldDecorateFromMutations(mutations)) scheduleGridDecorate();
                 });
                 gridObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
+            } catch (e) {}
+        }
+
+        function bindMenuWidthEvents() {
+            if (menuEventsBound) return;
+            menuEventsBound = true;
+            try {
+                window.addEventListener('resize', scheduleMenuWidth);
+                window.addEventListener('orientationchange', scheduleMenuWidth);
             } catch (e) {}
         }
 
@@ -3397,8 +3535,12 @@
             start: function () {
                 injectStyle();
                 bindStorageWatch();
+                bindMenuWidthEvents();
                 bindGridObserver();
+                scheduleMenuWidth();
                 scheduleGridDecorate();
+                setTimeout(scheduleMenuWidth, 450);
+                setTimeout(scheduleMenuWidth, 1200);
                 setTimeout(scheduleGridDecorate, 450);
                 setTimeout(scheduleGridDecorate, 1200);
             }
@@ -4142,14 +4284,6 @@
             return value || CFG.brand;
         }
 
-        function openBrandPrompt() {
-            var value = null;
-            try { value = window.prompt(t('topbar_brand'), currentBrand()); } catch (e) {}
-            if (value === null || typeof value === 'undefined') return;
-            Util.set(K.topbarBrand, Util.clean(value) || CFG.brand);
-            try { Topbar.schedule(true); } catch (e2) {}
-        }
-
         function buildRoot() {
             addComponent(CFG.component, t('root_name'));
             addParam(CFG.component, { name: CFG.prefix + 'about', type: 'static' },
@@ -4158,9 +4292,6 @@
                 { name: t('master_enabled') });
             addParam(CFG.component, { name: K.shotsEnabled, type: 'trigger', default: true },
                 { name: t('shots_enabled') }, function () { try { Shots.sync(); } catch (e) {} });
-            addParam(CFG.component, { name: K.mobilePlayerEnabled, type: 'trigger', default: true },
-                { name: t('mobile_player_enabled') }, function () { try { MobilePlayer.sync(); } catch (e) {} });
-
             addParam(CFG.component, { name: CFG.prefix + 'open_topbar', type: 'button' },
                 { name: t('open_topbar'), description: t('topbar_title') }, function () { openSub(SUB.topbar); });
             addParam(CFG.component, { name: CFG.prefix + 'open_iface', type: 'button' },
@@ -4184,8 +4315,12 @@
             addComponent(SUB.topbar, t('topbar_title'));
             addParam(SUB.topbar, { name: K.topbarEnabled, type: 'trigger', default: true },
                 { name: t('topbar_enabled') });
-            addParam(SUB.topbar, { name: CFG.prefix + 'brand_edit', type: 'button' },
-                { name: t('topbar_brand'), description: currentBrand() }, openBrandPrompt);
+            addParam(SUB.topbar, { name: K.topbarBrand, type: 'input', values: '', placeholder: CFG.brand, default: CFG.brand },
+                { name: t('topbar_brand'), description: currentBrand() }, function (value) {
+                    var clean = Util.clean(value) || CFG.brand;
+                    if (clean !== value) Util.set(K.topbarBrand, clean);
+                    try { Topbar.schedule(true); } catch (e) {}
+                });
             addParam(SUB.topbar, { name: K.topbarAlign, type: 'select', values: { start: t('topbar_align_start'), center: t('topbar_align_center') }, default: 'start' },
                 { name: t('topbar_align') }, function () { try { Topbar.schedule(true); } catch (e) {} });
             addParam(SUB.topbar, { name: CFG.prefix + 'open_topnav', type: 'button' },
@@ -4362,7 +4497,6 @@
     // and settings are in place, optional data source last.
     var BOOT_MODULES = [
         { name: 'Shots', module: Shots },
-        { name: 'MobilePlayer', module: MobilePlayer },
         { name: 'Settings', module: Settings, method: 'buildAll' },
         { name: 'Theme', module: Theme },
         { name: 'Scale', module: Scale },
