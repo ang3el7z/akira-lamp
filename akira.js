@@ -1469,7 +1469,11 @@
         var memCache = {};
         var memCacheOrder = [];
         var pending = {};
-        var LOGO_MEM_CACHE_LIMIT = 300;
+        var logoStorageWrites = 0;
+        var LOGO_MEM_CACHE_LIMIT = 2000;
+        var LOGO_STORAGE_CACHE_LIMIT = 5000;
+        var LOGO_PRUNE_BATCH = 400;
+        var LOGO_CACHE_INDEX_KEY = CFG.logoCachePrefix + 'index';
 
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
         function moduleEnabled() { return pluginEnabled() && Util.isOn(K.logosEnabled, true); }
@@ -1491,6 +1495,10 @@
             return CFG.logoCachePrefix + type + '_' + id + '_' + lng;
         }
 
+        function isLogoCacheKey(key) {
+            return !!(key && key.indexOf(CFG.logoCachePrefix) === 0 && key !== LOGO_CACHE_INDEX_KEY);
+        }
+
         function rememberCached(key, value) {
             if (!(key in memCache)) memCacheOrder.push(key);
             memCache[key] = value;
@@ -1498,6 +1506,97 @@
                 delete memCache[memCacheOrder.shift()];
             }
             return value;
+        }
+
+        function readLogoIndex() {
+            try {
+                var raw = localStorage.getItem(LOGO_CACHE_INDEX_KEY);
+                var parsed = raw ? JSON.parse(raw) : {};
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function writeLogoIndex(index) {
+            try { localStorage.setItem(LOGO_CACHE_INDEX_KEY, JSON.stringify(index || {})); } catch (e) {}
+        }
+
+        function listLogoStorageKeys(storage, index) {
+            var keys = [];
+            try {
+                for (var i = 0; i < storage.length; i++) {
+                    var key = storage.key(i);
+                    if (!isLogoCacheKey(key)) continue;
+                    keys.push(key);
+                    if (index && !index[key]) index[key] = 0;
+                }
+            } catch (e) {}
+            return keys;
+        }
+
+        function pruneLocalLogoCache(reserve) {
+            var index = readLogoIndex();
+            var keys = listLogoStorageKeys(localStorage, index);
+            var existing = {};
+            keys.forEach(function (key) { existing[key] = true; });
+            Object.keys(index).forEach(function (key) {
+                if (!isLogoCacheKey(key) || !existing[key]) delete index[key];
+            });
+
+            var target = Math.max(0, LOGO_STORAGE_CACHE_LIMIT - (reserve || 0));
+            if (keys.length <= target) {
+                writeLogoIndex(index);
+                return;
+            }
+
+            keys.sort(function (a, b) { return (index[a] || 0) - (index[b] || 0); });
+            keys.slice(0, keys.length - target).forEach(function (key) {
+                try { localStorage.removeItem(key); } catch (e) {}
+                delete index[key];
+            });
+            writeLogoIndex(index);
+        }
+
+        function pruneSessionLogoCache(reserve) {
+            try {
+                var keys = listLogoStorageKeys(sessionStorage);
+                var target = Math.max(0, LOGO_MEM_CACHE_LIMIT - (reserve || 0));
+                if (keys.length <= target) return;
+                keys.slice(0, keys.length - target).forEach(function (key) {
+                    try { sessionStorage.removeItem(key); } catch (e) {}
+                });
+            } catch (e) {}
+        }
+
+        function setSessionCached(key, value) {
+            try {
+                sessionStorage.setItem(key, value);
+            } catch (e) {
+                pruneSessionLogoCache(LOGO_PRUNE_BATCH);
+                try { sessionStorage.setItem(key, value); } catch (e2) {}
+            }
+        }
+
+        function setLocalCached(key, value) {
+            var index = readLogoIndex();
+            index[key] = new Date().getTime();
+            try {
+                localStorage.setItem(key, value);
+                writeLogoIndex(index);
+                logoStorageWrites++;
+                if (Object.keys(index).length > LOGO_STORAGE_CACHE_LIMIT || logoStorageWrites % 60 === 0) {
+                    pruneLocalLogoCache(0);
+                }
+            } catch (e) {
+                pruneLocalLogoCache(LOGO_PRUNE_BATCH);
+                try {
+                    localStorage.setItem(key, value);
+                    index = readLogoIndex();
+                    index[key] = new Date().getTime();
+                    writeLogoIndex(index);
+                } catch (e2) {}
+            }
         }
 
         function getCached(key) {
@@ -1516,8 +1615,8 @@
         function setCached(key, value) {
             var v = value || 'none';
             rememberCached(key, v);
-            try { sessionStorage.setItem(key, v); } catch (e) {}
-            try { localStorage.setItem(key, v); } catch (e) {}
+            setSessionCached(key, v);
+            setLocalCached(key, v);
         }
 
         function clearCache() {
@@ -1527,7 +1626,7 @@
                 var rmS = [];
                 for (var i = 0; i < sessionStorage.length; i++) {
                     var k = sessionStorage.key(i);
-                    if (k && k.indexOf(CFG.logoCachePrefix) === 0) rmS.push(k);
+                    if (isLogoCacheKey(k)) rmS.push(k);
                 }
                 rmS.forEach(function (k) { sessionStorage.removeItem(k); });
             } catch (e) {}
@@ -1535,7 +1634,7 @@
                 var rm = [];
                 for (var j = 0; j < localStorage.length; j++) {
                     var k2 = localStorage.key(j);
-                    if (k2 && k2.indexOf(CFG.logoCachePrefix) === 0) rm.push(k2);
+                    if (isLogoCacheKey(k2) || k2 === LOGO_CACHE_INDEX_KEY) rm.push(k2);
                 }
                 rm.forEach(function (k) { localStorage.removeItem(k); });
             } catch (e) {}
