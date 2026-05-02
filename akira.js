@@ -1,6 +1,12 @@
 /* Akira v2 */
 (function () {
-    'use strict';if(typeof Lampa==='undefined')return;
+    'use strict';
+
+    if (typeof Lampa === 'undefined') return;
+
+    /* ================================================================
+     * 1. CORE CONFIG
+     * ================================================================ */
 
     var CFG = {
         guard: '__AKIRA_PLUGIN_V2__',
@@ -21,6 +27,16 @@
 
     if (window[CFG.guard]) return;
     window[CFG.guard] = true;
+
+    /*
+     * Akira intentionally ships as one file: Lampa plugins are loaded as a
+     * single script. Architecture inside this monolith is still modular:
+     *
+     *  - CFG / K / L keep configuration, storage keys and translations.
+     *  - Util contains shared safe wrappers and small pure helpers.
+     *  - Feature modules are isolated IIFEs with a small public contract.
+     *  - boot() is the only full application startup path and preserves order.
+     */
 
     var SUB = {
         topbar: 'akira_topbar',
@@ -433,6 +449,17 @@
 
     function onOffValues() {
         return { 'true': trLampa('extensions_enable', t('show')), 'false': trLampa('extensions_disable', t('hide')) };
+    }
+
+    function safeRun(name, fn) {
+        try { return fn(); } catch (e) { Util.log(name, e); }
+    }
+
+    function startModule(name, module, method) {
+        method = method || 'start';
+        safeRun(name, function () {
+            if (module && typeof module[method] === 'function') module[method]();
+        });
     }
 
     /* ================================================================
@@ -1085,7 +1112,9 @@
         };
     })();
 
-    try { Shots.start(); } catch (e) {}
+    // Shots must patch Lampa.Utils as early as possible; boot() starts it again
+    // safely after defaults are ready.
+    startModule('Shots early start', Shots);
 
     var MobilePlayer = (function () {
         var STYLE_ID = 'lampac-mobile-player-safearea-style';
@@ -1368,7 +1397,9 @@
         };
     })();
 
-    try { MobilePlayer.start(); } catch (e) {}
+    // Mobile fullscreen hooks are event-driven and idempotent, so early binding
+    // keeps player events covered even if the app-ready event is late.
+    startModule('MobilePlayer early start', MobilePlayer);
 
     /* ================================================================
      * 6. LOGO ENGINE — двойной fallback с общим кешем
@@ -1504,24 +1535,72 @@
             list.forEach(function (cb) { try { cb(value); } catch (e) {} });
         }
 
-        var _queue=[],_running=0,_maxConcurrent=2,_retryDelay=1500;
-        function _enqueue(f){_queue.push(f);_drain();}
-        function _drain(){while(_running<_maxConcurrent&&_queue.length){_running++;_queue.shift()();}}
-        function _done(){_running--;_drain();}
-        function _fetch(url,picker,lng,done,retries){
-            retries=retries||0;
-            $.get(url,function(res){_done();var p=res?picker(res.logos,lng):null;done(buildUrl(p));}).fail(function(xhr){
-                if(xhr&&xhr.status===429&&retries<3){setTimeout(function(){_fetch(url,picker,lng,done,retries+1);},_retryDelay*(retries+1));}
-                else{_done();done(null);}
+        var logoQueue = [];
+        var logoRunning = 0;
+        var LOGO_MAX_CONCURRENT = 2;
+        var LOGO_RETRY_DELAY = 1500;
+
+        function enqueueLogoFetch(task) {
+            logoQueue.push(task);
+            drainLogoQueue();
+        }
+
+        function drainLogoQueue() {
+            while (logoRunning < LOGO_MAX_CONCURRENT && logoQueue.length) {
+                logoRunning++;
+                logoQueue.shift()();
+            }
+        }
+
+        function completeLogoFetch() {
+            logoRunning = Math.max(0, logoRunning - 1);
+            drainLogoQueue();
+        }
+
+        function fetchLogo(url, picker, lng, done, retries) {
+            retries = retries || 0;
+            try {
+                $.get(url, function (res) {
+                    var picked = null;
+                    try { picked = res ? picker(res.logos, lng) : null; } catch (e) {}
+                    completeLogoFetch();
+                    done(buildUrl(picked));
+                }).fail(function (xhr) {
+                    if (xhr && xhr.status === 429 && retries < 3) {
+                        setTimeout(function () {
+                            fetchLogo(url, picker, lng, done, retries + 1);
+                        }, LOGO_RETRY_DELAY * (retries + 1));
+                        return;
+                    }
+                    completeLogoFetch();
+                    done(null);
+                });
+            } catch (e) {
+                completeLogoFetch();
+                done(null);
+            }
+        }
+
+        function methodA(item, type, lng, key, done) {
+            var url;
+            try {
+                url = Lampa.TMDB.api(type + '/' + item.id + '/images?api_key=' + Lampa.TMDB.key() + '&include_image_language=' + lng + ',ru,en,null');
+            } catch (e) { return done(null); }
+
+            enqueueLogoFetch(function () {
+                fetchLogo(url, pickBest, lng, done);
             });
         }
-        function methodA(item,type,lng,key,done){
-            var url;try{url=Lampa.TMDB.api(type+'/'+item.id+'/images?api_key='+Lampa.TMDB.key()+'&include_image_language='+lng+',ru,en,null');}catch(e){return done(null);}
-            _enqueue(function(){_fetch(url,pickBest,lng,done);});
-        }
-        function methodB(item,type,lng,key,done){
-            var url;try{url=Lampa.TMDB.api(type+'/'+item.id+'/images?api_key='+Lampa.TMDB.key()+'&include_image_language='+lng+',en,null');}catch(e){return done(null);}
-            _enqueue(function(){_fetch(url,pickInterface,lng,done);});
+
+        function methodB(item, type, lng, key, done) {
+            var url;
+            try {
+                url = Lampa.TMDB.api(type + '/' + item.id + '/images?api_key=' + Lampa.TMDB.key() + '&include_image_language=' + lng + ',en,null');
+            } catch (e) { return done(null); }
+
+            enqueueLogoFetch(function () {
+                fetchLogo(url, pickInterface, lng, done);
+            });
         }
 
         function resolve(item, cb) {
@@ -4080,20 +4159,32 @@
         };
     })();
 
+    var booted = false;
+
+    // Keep startup order explicit: shared services first, UI modules after CSS
+    // and settings are in place, optional data source last.
+    var BOOT_MODULES = [
+        { name: 'Shots', module: Shots },
+        { name: 'MobilePlayer', module: MobilePlayer },
+        { name: 'Settings', module: Settings, method: 'buildAll' },
+        { name: 'Theme', module: Theme },
+        { name: 'Scale', module: Scale },
+        { name: 'Logos', module: Logos },
+        { name: 'Buttons', module: Buttons },
+        { name: 'Interface', module: Interface },
+        { name: 'Topbar', module: Topbar },
+        { name: 'TmdbMod', module: TmdbMod },
+        { name: 'Comments', module: Comments }
+    ];
+
     function boot() {
+        if (booted) return;
         ensureDefaults();
-        try { Shots.start();    } catch (e) {}
-        try { MobilePlayer.start(); } catch (e) {}
-        try { Settings.buildAll(); } catch (e) {}
-        try { Theme.start();    } catch (e) {}
-        try { Scale.start();    } catch (e) {}
-        try { Logos.start();    } catch (e) {}
-        try { Buttons.start();  } catch (e) {}
-        try { Interface.start(); } catch (e) {}
-        try { Topbar.start();   } catch (e) {}
-        try { TmdbMod.start();  } catch (e) {}
-        try { Comments.start(); } catch (e) {}
-        Util.log('Akira',CFG.version);
+        booted = true;
+        BOOT_MODULES.forEach(function (entry) {
+            startModule(entry.name, entry.module, entry.method);
+        });
+        Util.log('Akira', CFG.version);
     }
 
     if (window.appready) {
