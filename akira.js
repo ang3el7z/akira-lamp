@@ -1,6 +1,12 @@
 /* Akira v2 */
 (function () {
-    'use strict';if(typeof Lampa==='undefined')return;
+    'use strict';
+
+    if (typeof Lampa === 'undefined') return;
+
+    /* ================================================================
+     * 1. CORE CONFIG
+     * ================================================================ */
 
     var CFG = {
         guard: '__AKIRA_PLUGIN_V2__',
@@ -16,11 +22,21 @@
         bodyClass: 'akira-ui',
         brand: 'AKIRA',
         logoCachePrefix: 'akira_logo_v2_',
-        defaultNav: ['main', 'movie', 'tv', 'anime', 'release', 'favorite']
+        defaultNav: ['main', 'movie', 'tv', 'anime', 'release']
     };
 
     if (window[CFG.guard]) return;
     window[CFG.guard] = true;
+
+    /*
+     * Akira intentionally ships as one file: Lampa plugins are loaded as a
+     * single script. Architecture inside this monolith is still modular:
+     *
+     *  - CFG / K / L keep configuration, storage keys and translations.
+     *  - Util contains shared safe wrappers and small pure helpers.
+     *  - Feature modules are isolated IIFEs with a small public contract.
+     *  - boot() is the only full application startup path and preserves order.
+     */
 
     var SUB = {
         topbar: 'akira_topbar',
@@ -44,6 +60,8 @@
         ifaceEnabled: CFG.prefix + 'iface_enabled',
         ifaceCardLogos: CFG.prefix + 'iface_card_logos',
         ifaceHeroMode: CFG.prefix + 'iface_hero_mode',
+        ifaceHeroDescription: CFG.prefix + 'iface_hero_description',
+        ifaceHeroInfo: CFG.prefix + 'iface_hero_info',
 
         buttonsSeparate: CFG.prefix + 'buttons_separate',
         buttonsBig: CFG.prefix + 'buttons_big',
@@ -57,6 +75,9 @@
         logoSize: CFG.prefix + 'logo_size',
 
         scaleEnabled: CFG.prefix + 'scale_enabled',
+
+        shotsEnabled: CFG.prefix + 'shots_enabled',
+        mobilePlayerEnabled: CFG.prefix + 'mobile_player_enabled',
 
         tmdbEnabled: CFG.prefix + 'tmdb_enabled',
         tmdbCollection: CFG.prefix + 'tmdb_col_'
@@ -122,6 +143,112 @@
 
         clean: function (v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); },
 
+        originalTitle: function (item, mainTitle) {
+            if (!item) return '';
+            var original = this.clean(item.original_title || item.original_name || '');
+            var localized = this.clean(mainTitle || item.title || item.name || '');
+            if (!original || !localized) return '';
+            return original.toLowerCase() === localized.toLowerCase() ? '' : original;
+        },
+
+        countryName: function (code) {
+            code = this.clean(code).toUpperCase();
+            if (!code) return '';
+            var lang = this.langCode();
+            var short = {
+                ru: { US: 'США', KR: 'Южная Корея', GB: 'Великобритания', UK: 'Великобритания', CA: 'Канада', JP: 'Япония', CN: 'Китай', FR: 'Франция', DE: 'Германия', MX: 'Мексика', ZA: 'ЮАР', IN: 'Индия' },
+                uk: { US: 'США', KR: 'Південна Корея', GB: 'Велика Британія', UK: 'Велика Британія', CA: 'Канада', JP: 'Японія', CN: 'Китай', FR: 'Франція', DE: 'Німеччина', MX: 'Мексика', ZA: 'ПАР', IN: 'Індія' },
+                en: { US: 'USA', KR: 'South Korea', GB: 'UK', UK: 'UK', CA: 'Canada', JP: 'Japan', CN: 'China', FR: 'France', DE: 'Germany', MX: 'Mexico', ZA: 'South Africa', IN: 'India' }
+            };
+            if (short[lang] && short[lang][code]) return short[lang][code];
+            try {
+                if (typeof Intl !== 'undefined' && Intl.DisplayNames) {
+                    var display = new Intl.DisplayNames([lang], { type: 'region' });
+                    return this.clean(display.of(code) || code);
+                }
+            } catch (e) {}
+            return code;
+        },
+
+        shortCountry: function (name) {
+            name = this.clean(name);
+            if (!name) return '';
+            var lower = name.toLowerCase();
+            var lang = this.langCode();
+            var ru = {
+                'соединенные штаты': 'США',
+                'соединённые штаты': 'США',
+                'соединенные штаты америки': 'США',
+                'соединённые штаты америки': 'США',
+                'united states': 'США',
+                'united states of america': 'США',
+                'usa': 'США',
+                'республика корея': 'Южная Корея',
+                'южная корея': 'Южная Корея',
+                'south korea': 'Южная Корея',
+                'republic of korea': 'Южная Корея',
+                'united kingdom': 'Великобритания',
+                'великобритания': 'Великобритания',
+                'соединенное королевство': 'Великобритания',
+                'соединённое королевство': 'Великобритания',
+                'южно-африканская республика': 'ЮАР',
+                'south africa': 'ЮАР'
+            };
+            var uk = {
+                'united states': 'США',
+                'united states of america': 'США',
+                'usa': 'США',
+                'сполучені штати': 'США',
+                'сполучені штати америки': 'США',
+                'south korea': 'Південна Корея',
+                'republic of korea': 'Південна Корея',
+                'республіка корея': 'Південна Корея',
+                'південна корея': 'Південна Корея',
+                'united kingdom': 'Велика Британія',
+                'велика британія': 'Велика Британія',
+                'південно-африканська республіка': 'ПАР',
+                'south africa': 'ПАР'
+            };
+            var en = {
+                'united states': 'USA',
+                'united states of america': 'USA',
+                'usa': 'USA',
+                'south korea': 'South Korea',
+                'republic of korea': 'South Korea',
+                'united kingdom': 'UK',
+                'great britain': 'UK',
+                'south africa': 'South Africa'
+            };
+            var map = lang === 'uk' ? uk : (lang === 'en' ? en : ru);
+            return map[lower] || name;
+        },
+
+        itemCountryNames: function (item) {
+            var names = [];
+            var seen = {};
+            var self = this;
+            function add(name) {
+                name = self.shortCountry(name);
+                var key = name.toLowerCase();
+                if (!name || seen[key]) return;
+                seen[key] = true;
+                names.push(name);
+            }
+            try {
+                var sources = (Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb) ? Lampa.Api.sources.tmdb : null;
+                if (sources && typeof sources.parseCountries === 'function') {
+                    (sources.parseCountries(item) || []).forEach(add);
+                }
+            } catch (e) {}
+            if (item && item.production_countries && item.production_countries.length) {
+                item.production_countries.forEach(function (country) { add(country && (country.name || country.iso_3166_1)); });
+            }
+            if (item && item.origin_country && item.origin_country.length) {
+                item.origin_country.forEach(function (code) { add(self.countryName(code)); });
+            }
+            return names;
+        },
+
         hexToRgb: function (h) {
             var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h || '');
             return m ? parseInt(m[1], 16) + ',' + parseInt(m[2], 16) + ',' + parseInt(m[3], 16) : '229,9,20';
@@ -164,6 +291,12 @@
             iface_hero_mode: 'Главная картинка',
             iface_hero_mode_block: 'Отдельным окном',
             iface_hero_mode_fullscreen: 'На весь экран',
+            iface_hero_description: '\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u0432 \u0431\u043e\u043b\u044c\u0448\u043e\u0439 \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0435',
+            iface_hero_info: '\u0418\u043d\u0444\u043e \u0432 \u0431\u043e\u043b\u044c\u0448\u043e\u0439 \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0435',
+            iface_hero_info_all: '\u0412\u0441\u0451 \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c',
+            iface_hero_info_hide_description: '\u0421\u043a\u0440\u044b\u0442\u044c \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435',
+            iface_hero_info_hide_meta: '\u0421\u043a\u0440\u044b\u0442\u044c \u043c\u0435\u0442\u0430',
+            iface_hero_info_hide_all: '\u0421\u043a\u0440\u044b\u0442\u044c \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u0438 \u043c\u0435\u0442\u0430',
             buttons_title: 'Кнопки в карточке фильма',
             buttons_separate: 'Раскрытые кнопки (Смотреть/Торренты/Трейлер)',
             buttons_big: 'Сохранять текст на маленьких экранах',
@@ -179,6 +312,8 @@
             logos_clear_done: 'Кеш логотипов очищен',
             scale_title: 'Адаптивный масштаб',
             scale_enabled: 'Включить (рассчитывается автоматически по экрану)',
+            shots_enabled: 'Скрывать Shots',
+            mobile_player_enabled: 'Мобильный плеер fullscreen',
             tmdb_title: 'Akira TMDB',
             tmdb_enabled: 'Включить подборки Akira',
             tmdb_about: 'Подборки добавятся к источнику Akira (выбирается в стандартном выборе источника).'
@@ -212,6 +347,12 @@
             iface_hero_mode: 'Hero image',
             iface_hero_mode_block: 'Inside info block',
             iface_hero_mode_fullscreen: 'Fullscreen',
+            iface_hero_description: 'Show description in big card',
+            iface_hero_info: 'Big card info',
+            iface_hero_info_all: 'Show all',
+            iface_hero_info_hide_description: 'Hide description',
+            iface_hero_info_hide_meta: 'Hide meta',
+            iface_hero_info_hide_all: 'Hide description and meta',
             buttons_title: 'Movie card buttons',
             buttons_separate: 'Expanded buttons (Watch/Torrents/Trailer)',
             buttons_big: 'Keep button text on small screens',
@@ -227,6 +368,8 @@
             logos_clear_done: 'Logo cache cleared',
             scale_title: 'Adaptive scale',
             scale_enabled: 'Enable (auto computed from viewport)',
+            shots_enabled: 'Hide Shots',
+            mobile_player_enabled: 'Mobile player fullscreen',
             tmdb_title: 'Akira TMDB',
             tmdb_enabled: 'Enable Akira collections',
             tmdb_about: 'Collections appear under the Akira source (use the standard source picker).'
@@ -260,6 +403,12 @@
             iface_hero_mode: 'Головна картинка',
             iface_hero_mode_block: 'Окремим вікном',
             iface_hero_mode_fullscreen: 'На весь екран',
+            iface_hero_description: '\u041f\u043e\u043a\u0430\u0437\u0443\u0432\u0430\u0442\u0438 \u043e\u043f\u0438\u0441 \u0443 \u0432\u0435\u043b\u0438\u043a\u0456\u0439 \u043a\u0430\u0440\u0442\u0446\u0456',
+            iface_hero_info: '\u0406\u043d\u0444\u043e \u0443 \u0432\u0435\u043b\u0438\u043a\u0456\u0439 \u043a\u0430\u0440\u0442\u0446\u0456',
+            iface_hero_info_all: '\u041f\u043e\u043a\u0430\u0437\u0443\u0432\u0430\u0442\u0438 \u0432\u0441\u0435',
+            iface_hero_info_hide_description: '\u0421\u0445\u043e\u0432\u0430\u0442\u0438 \u043e\u043f\u0438\u0441',
+            iface_hero_info_hide_meta: '\u0421\u0445\u043e\u0432\u0430\u0442\u0438 \u043c\u0435\u0442\u0430',
+            iface_hero_info_hide_all: '\u0421\u0445\u043e\u0432\u0430\u0442\u0438 \u043e\u043f\u0438\u0441 \u0456 \u043c\u0435\u0442\u0430',
             buttons_title: 'Кнопки в картці',
             buttons_separate: 'Розкриті кнопки (Дивитись/Торенти/Трейлер)',
             buttons_big: 'Зберігати текст на малих екранах',
@@ -275,6 +424,8 @@
             logos_clear_done: 'Кеш логотипів очищено',
             scale_title: 'Адаптивний масштаб',
             scale_enabled: 'Увімкнути (рахується автоматично за екраном)',
+            shots_enabled: 'Ховати Shots',
+            mobile_player_enabled: 'Мобільний плеєр fullscreen',
             tmdb_title: 'Akira TMDB',
             tmdb_enabled: 'Увімкнути добірки Akira',
             tmdb_about: 'Добірки зявляться у джерелі Akira (стандартний перемикач джерел).'
@@ -300,6 +451,17 @@
         return { 'true': trLampa('extensions_enable', t('show')), 'false': trLampa('extensions_disable', t('hide')) };
     }
 
+    function safeRun(name, fn) {
+        try { return fn(); } catch (e) { Util.log(name, e); }
+    }
+
+    function startModule(name, module, method) {
+        method = method || 'start';
+        safeRun(name, function () {
+            if (module && typeof module[method] === 'function') module[method]();
+        });
+    }
+
     /* ================================================================
      * 4. ДЕФОЛТЫ ХРАНИЛИЩА
      * ================================================================ */
@@ -318,6 +480,7 @@
         Util.ensureOnOff(K.ifaceEnabled, true);
         Util.ensureOnOff(K.ifaceCardLogos, true);
         Util.ensure(K.ifaceHeroMode, 'block');
+        Util.ensure(K.ifaceHeroInfo, Util.isOn(K.ifaceHeroDescription, true) ? 'all' : 'hide_description');
 
         Util.ensureOnOff(K.buttonsSeparate, true);
         Util.ensureOnOff(K.buttonsBig, true);
@@ -332,6 +495,9 @@
 
         Util.ensureOnOff(K.scaleEnabled, true);
 
+        Util.ensureOnOff(K.shotsEnabled, true);
+        Util.ensureOnOff(K.mobilePlayerEnabled, false);
+
         Util.ensureOnOff(K.tmdbEnabled, true);
     }
 
@@ -343,8 +509,9 @@
         var ATTR_ON = 'data-akira-topbar';
         var ATTR_ALIGN = 'data-akira-topbar-align';
         var BRAND_VAR = '--akira-brand-w';
+        var BACK_VAR = '--akira-back-w';
 
-        var state = { clockTimer: null, domObserver: null, scheduled: false, listenersBound: false };
+        var state = { clockTimer: null, domObserver: null, scheduled: false, scheduleTimer: null, listenersBound: false };
 
         var FALLBACK_ITEMS = [
             { action: 'main',        labelKey: 'menu_main',        fallback: { ru: 'Главная',     en: 'Home',        uk: 'Головна' } },
@@ -553,12 +720,15 @@
 
         function syncBrandWidth(icon) {
             if (!icon) return;
-            requestAnimationFrame(function () {
+            function measure() {
                 try {
                     var w = Math.ceil(icon.getBoundingClientRect().width || 0);
                     if (w > 0) document.documentElement.style.setProperty(BRAND_VAR, w + 'px');
                 } catch (e) {}
-            });
+            }
+            requestAnimationFrame(measure);
+            setTimeout(measure, 80);
+            setTimeout(measure, 220);
         }
 
         function patchBrand(head) {
@@ -590,10 +760,16 @@
 
         function patchBar() {
             var old = Util.qs('.akira-topbar');
-            if (!moduleEnabled()) { if (old) old.remove(); restoreBrand(); stopClock(); return; }
+            if (!moduleEnabled()) { removeUi(); return; }
             var head = Util.qs('.head__body') || Util.qs('.head');
             if (!head) return;
             patchBrand(head);
+            var backDock = Util.qs('.akira-topbar-backdock', head);
+            if (!backDock) {
+                backDock = document.createElement('div');
+                backDock.className = 'akira-topbar-backdock';
+                head.appendChild(backDock);
+            }
             var bar = Util.qs('.akira-topbar', head);
             if (!bar) {
                 bar = document.createElement('div');
@@ -606,18 +782,25 @@
             itemsNode.innerHTML = '';
             rightNode.innerHTML = '';
 
-            if (nativeBack()) {
+            var hasBack = !!nativeBack();
+            var centerMode = topbarAlign() === 'center';
+            backDock.innerHTML = '';
+            itemsNode.classList.toggle('akira-topbar__items--no-back', !hasBack || centerMode);
+            try { document.documentElement.style.setProperty(BACK_VAR, centerMode && hasBack ? '3.08em' : '0px'); } catch (e) {}
+
+            if (hasBack) {
                 var back = document.createElement('div');
-                back.className = 'akira-topbar__item akira-topbar__icon selector';
+                back.className = 'akira-topbar__item akira-topbar__icon akira-topbar__back selector';
                 back.setAttribute('data-selector', 'true'); back.setAttribute('tabindex', '0');
                 back.innerHTML = iconBack();
                 bindAction(back, goBack);
-                itemsNode.appendChild(back);
+                if (centerMode) backDock.appendChild(back);
+                else itemsNode.appendChild(back);
             }
 
             selectedItems().forEach(function (item) {
                 var btn = document.createElement('div');
-                btn.className = 'akira-topbar__item selector';
+                btn.className = 'akira-topbar__item akira-topbar__nav selector';
                 btn.setAttribute('data-selector', 'true');
                 btn.setAttribute('data-action', item.action);
                 btn.setAttribute('tabindex', '0');
@@ -642,10 +825,7 @@
             });
 
             var clock = document.createElement('div');
-            clock.className = 'akira-topbar__clock selector';
-            clock.setAttribute('data-selector', 'true');
-            clock.setAttribute('tabindex', '0');
-            bindAction(clock, openSettings);
+            clock.className = 'akira-topbar__clock';
             rightNode.appendChild(clock);
             startClock();
 
@@ -670,28 +850,34 @@
             var bc = CFG.bodyClass;
             var css = [
                 'body.' + bc + '[' + ATTR_ON + '="on"] .head, body.' + bc + '[' + ATTR_ON + '="on"] .head__body, body.' + bc + '[' + ATTR_ON + '="on"] .head__wrapper { background: transparent !important; box-shadow: none !important; overflow: visible !important; }',
-                'body.' + bc + '[' + ATTR_ON + '="on"] .head__title, body.' + bc + '[' + ATTR_ON + '="on"] .head__time, body.' + bc + '[' + ATTR_ON + '="on"] .head__split, body.' + bc + '[' + ATTR_ON + '="on"] .head__logo, body.' + bc + '[' + ATTR_ON + '="on"] .open--search, body.' + bc + '[' + ATTR_ON + '="on"] .head__settings { display: none !important; }',
+                'body.' + bc + '[' + ATTR_ON + '="on"] .head__title, body.' + bc + '[' + ATTR_ON + '="on"] .head__time, body.' + bc + '[' + ATTR_ON + '="on"] .head__split, body.' + bc + '[' + ATTR_ON + '="on"] .head__navigator, body.' + bc + '[' + ATTR_ON + '="on"] .head__logo, body.' + bc + '[' + ATTR_ON + '="on"] .open--search, body.' + bc + '[' + ATTR_ON + '="on"] .head__settings { display: none !important; }',
                 'body.' + bc + '[' + ATTR_ON + '="on"] .head__body { position: relative !important; z-index: 48 !important; min-height: 0 !important; height: 0 !important; padding: 0 !important; overflow: visible !important; }',
                 'body.' + bc + '[' + ATTR_ON + '="on"] .head__history, body.' + bc + '[' + ATTR_ON + '="on"] .head__source, body.' + bc + '[' + ATTR_ON + '="on"] .head__markers, body.' + bc + '[' + ATTR_ON + '="on"] .head__backward, body.' + bc + '[' + ATTR_ON + '="on"] .settings-icon-holder, body.' + bc + '[' + ATTR_ON + '="on"] .head__action, body.' + bc + '[' + ATTR_ON + '="on"] .head__button { display: none !important; }',
-                'body.' + bc + ' .head__menu-icon.akira-head-brand { position: absolute !important; left: 1.05em !important; top: .54em !important; z-index: 50 !important; width: auto !important; max-width: min(30vw, 22em) !important; min-width: 4.4em !important; height: 2.62em !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 0 .95em !important; margin: 0 !important; border-radius: 8px !important; background: linear-gradient(92deg, ' + accent + ', rgba(' + rgb + ',.78)) !important; color: #fff !important; border: 1px solid rgba(255,255,255,.12) !important; box-shadow: 0 10px 28px ' + soft + ' !important; transform: none !important; overflow: hidden !important; }',
+                'body.' + bc + ' .head__menu-icon.akira-head-brand { position: absolute !important; left: 1.05em !important; top: .5em !important; z-index: 51 !important; width: auto !important; max-width: min(30vw, 22em) !important; min-width: 4.4em !important; height: 2.8em !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 0 .95em !important; margin: 0 !important; border-radius: 8px !important; background: linear-gradient(92deg, ' + accent + ', rgba(' + rgb + ',.78)) !important; color: #fff !important; border: 1px solid rgba(255,255,255,.12) !important; box-shadow: 0 10px 28px ' + soft + ' !important; transform: none !important; overflow: hidden !important; box-sizing: border-box !important; }',
                 'body.' + bc + ' .head__menu-icon.akira-head-brand span { display: block !important; max-width: 100% !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: .88em !important; line-height: 1 !important; font-weight: 900 !important; color: inherit !important; }',
                 'body.' + bc + ' .head__menu-icon.akira-head-brand.focus, body.' + bc + ' .head__menu-icon.akira-head-brand.hover { box-shadow: 0 0 0 2px rgba(255,255,255,.18), 0 12px 30px ' + soft + ' !important; transform: translateY(-1px) !important; }',
-                'body.' + bc + ' .akira-topbar { position: absolute; left: calc(var(' + BRAND_VAR + ', 5.2em) + 1.55em) !important; top: .54em !important; right: 1.05em !important; z-index: 49 !important; pointer-events: none; }',
-                'body.' + bc + ' .akira-topbar__inner { height: 2.8em; display: flex; align-items: center; gap: .34em !important; pointer-events: auto; }',
-                'body.' + bc + ' .akira-topbar__items, body.' + bc + ' .akira-topbar__right { display: inline-flex; align-items: center; gap: .18em; height: 2.62em; padding: .18em; border-radius: 8px; background: ' + panel + '; border: 1px solid ' + edge + '; backdrop-filter: blur(18px) saturate(130%); -webkit-backdrop-filter: blur(18px) saturate(130%); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 26px rgba(0,0,0,.22); }',
-                'body.' + bc + ' .akira-topbar__items { max-width: calc(100vw - var(' + BRAND_VAR + ', 5.2em) - 17em) !important; overflow: hidden !important; }',
-                'body.' + bc + ' .akira-topbar__right { margin-left: auto; }',
-                'body.' + bc + ' .akira-topbar__item { height: 2.18em; min-width: 2.18em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .88em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 700; white-space: nowrap; transition: background .18s ease, transform .18s ease, color .18s ease; }',
-                'body.' + bc + ' .akira-topbar__icon { width: 2.18em; padding: 0; }',
+                'body.' + bc + ' .akira-topbar-backdock { position: absolute !important; left: calc(1.05em + var(' + BRAND_VAR + ', 5.2em) + .45em) !important; top: .5em !important; z-index: 50 !important; height: 2.8em !important; display: inline-flex !important; align-items: center !important; gap: .18em !important; padding: .18em !important; border-radius: 8px !important; background: ' + panel + ' !important; border: 1px solid ' + edge + ' !important; backdrop-filter: blur(18px) saturate(130%) !important; -webkit-backdrop-filter: blur(18px) saturate(130%) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 26px rgba(0,0,0,.22) !important; box-sizing: border-box !important; pointer-events: auto !important; }',
+                'body.' + bc + ' .akira-topbar-backdock:empty { display: none !important; }',
+                'body.' + bc + ' .akira-topbar { position: absolute; left: calc(1.05em + var(' + BRAND_VAR + ', 5.2em) + .65em + var(' + BACK_VAR + ', 0px)) !important; top: .5em !important; right: 1.05em !important; z-index: 49 !important; pointer-events: none; max-width: calc(100vw - 1.05em - var(' + BRAND_VAR + ', 5.2em) - .65em - var(' + BACK_VAR + ', 0px) - 1.05em) !important; }',
+                'body.' + bc + ' .akira-topbar__inner { height: 2.8em; display: flex; align-items: center; gap: .34em !important; flex-wrap: nowrap !important; min-width: 0 !important; pointer-events: auto; }',
+                'body.' + bc + ' .akira-topbar__items, body.' + bc + ' .akira-topbar__right { display: inline-flex; align-items: center; gap: .18em; height: 2.8em; padding: .18em; border-radius: 8px; background: ' + panel + '; border: 1px solid ' + edge + '; backdrop-filter: blur(18px) saturate(130%); -webkit-backdrop-filter: blur(18px) saturate(130%); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 26px rgba(0,0,0,.22); box-sizing: border-box; white-space: nowrap; }',
+                'body.' + bc + ' .akira-topbar__items { flex: 0 1 auto; min-width: 0 !important; max-width: calc(100% - 10.5em) !important; overflow: hidden !important; }',
+                'body.' + bc + ' .akira-topbar__items:empty { display: none !important; }',
+                'body.' + bc + ' .akira-topbar__right { flex: 0 0 auto; margin-left: auto; }',
+                'body.' + bc + ' .akira-topbar__item { flex: 0 0 auto; height: 2.34em; min-width: 2.34em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .88em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 700; white-space: nowrap; transition: background .18s ease, transform .18s ease, color .18s ease; box-sizing: border-box; }',
+                'body.' + bc + ' .akira-topbar__icon { width: 2.34em; padding: 0; }',
                 'body.' + bc + ' .akira-topbar__icon svg { width: 1.08em; height: 1.08em; }',
-                'body.' + bc + ' .akira-topbar__clock { height: 2.18em; min-width: 4.1em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .72em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 800; }',
-                'body.' + bc + ' .akira-topbar__item.focus, body.' + bc + ' .akira-topbar__item.hover, body.' + bc + ' .akira-topbar__item.is-active, body.' + bc + ' .akira-topbar__clock.focus, body.' + bc + ' .akira-topbar__clock.hover { background: rgba(' + rgb + ',.85); color: #fff; transform: translateY(-1px); }',
-                'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar { left: 0 !important; right: 0 !important; pointer-events: none !important; }',
+                'body.' + bc + ' .akira-topbar__clock { flex: 0 0 auto; height: 2.34em; min-width: 4.1em; display: inline-flex; align-items: center; justify-content: center; padding: 0 .72em; border-radius: 7px; color: rgba(255,255,255,.9); font-size: .84em; font-weight: 800; cursor: default; pointer-events: none; box-sizing: border-box; }',
+                'body.' + bc + ' .akira-topbar__item.focus, body.' + bc + ' .akira-topbar__item.hover, body.' + bc + ' .akira-topbar__item.is-active { background: rgba(' + rgb + ',.85); color: #fff; transform: translateY(-1px); }',
+                'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar { left: 0 !important; right: 0 !important; max-width: none !important; pointer-events: none !important; }',
                 'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__inner { position: relative !important; width: 100% !important; justify-content: center !important; pointer-events: none !important; }',
-                'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__items { position: absolute !important; left: 50% !important; top: 0 !important; transform: translateX(-50%) !important; max-width: calc(100vw - 23em) !important; pointer-events: auto !important; }',
+                'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__items { position: absolute !important; left: 50% !important; top: 0 !important; transform: translateX(-50%) !important; max-width: calc(100vw - 2.1em - var(' + BRAND_VAR + ', 5.2em) - var(' + BACK_VAR + ', 0px) - 13em) !important; pointer-events: auto !important; }',
                 'body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__right { position: absolute !important; right: 1.05em !important; top: 0 !important; margin-left: 0 !important; pointer-events: auto !important; }',
-                '@media (max-width: 900px) { body.' + bc + ' .akira-topbar { left: .75em !important; right: .75em !important; top: 3.65em !important; } body.' + bc + ' .akira-topbar__items { display: none !important; } body.' + bc + ' .akira-topbar__right { margin-left: auto !important; } body.' + bc + ' .head__menu-icon.akira-head-brand { left: .75em !important; top: .55em !important; } }',
-                '@media (max-width: 560px) { body.' + bc + ' .akira-topbar { left: .65em !important; right: .65em !important; } body.' + bc + ' .head__menu-icon.akira-head-brand { max-width: min(42vw, 15em) !important; } }'
+                '@media (min-width: 1800px) { body.' + bc + ' .head__menu-icon.akira-head-brand, body.' + bc + ' .akira-topbar { font-size: 1.1em !important; } }',
+                '@media (min-width: 2500px) { body.' + bc + ' .head__menu-icon.akira-head-brand, body.' + bc + ' .akira-topbar { font-size: 1.18em !important; } }',
+                '@media (max-width: 900px) { body.' + bc + ' .akira-topbar-backdock { left: calc(.75em + var(' + BRAND_VAR + ', 5.2em) + .42em) !important; top: .55em !important; } body.' + bc + ' .akira-topbar, body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar { left: calc(.75em + var(' + BRAND_VAR + ', 5.2em) + .62em + var(' + BACK_VAR + ', 0px)) !important; right: .75em !important; top: .55em !important; max-width: calc(100vw - .75em - var(' + BRAND_VAR + ', 5.2em) - .62em - var(' + BACK_VAR + ', 0px) - .75em) !important; } body.' + bc + ' .akira-topbar__inner, body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__inner { justify-content: space-between !important; width: 100% !important; } body.' + bc + ' .akira-topbar__items { position: static !important; left: auto !important; top: auto !important; transform: none !important; display: inline-flex !important; flex: 0 0 auto !important; max-width: 2.8em !important; pointer-events: auto !important; } body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__items, body.' + bc + ' .akira-topbar__items--no-back { display: none !important; } body.' + bc + ' .akira-topbar__nav { display: none !important; } body.' + bc + ' .akira-topbar__right, body.' + bc + '[' + ATTR_ALIGN + '="center"] .akira-topbar__right { position: static !important; right: auto !important; top: auto !important; margin-left: auto !important; pointer-events: auto !important; } body.' + bc + ' .head__menu-icon.akira-head-brand { left: .75em !important; top: .55em !important; max-width: min(28vw, 13em) !important; } }',
+                '@media (max-width: 560px) { body.' + bc + ' .akira-topbar { right: .65em !important; } body.' + bc + ' .akira-topbar-backdock { left: calc(.65em + var(' + BRAND_VAR + ', 5.2em) + .36em) !important; } body.' + bc + ' .akira-topbar__right { gap: .08em !important; padding-left: .14em !important; padding-right: .14em !important; } body.' + bc + ' .head__menu-icon.akira-head-brand { left: .65em !important; max-width: min(30vw, 10em) !important; min-width: 3.8em !important; padding-left: .7em !important; padding-right: .7em !important; } }',
+                '@media (max-width: 380px) { body.' + bc + ' .akira-topbar__clock { display: none !important; } }'
             ].join('\n');
             if (style.textContent !== css) style.textContent = css;
             if (!style.parentNode) (document.head || document.body).appendChild(style);
@@ -718,22 +904,25 @@
                 document.body.removeAttribute(ATTR_ALIGN);
             }
             try { document.documentElement.style.removeProperty(BRAND_VAR); } catch (e) {}
+            try { document.documentElement.style.removeProperty(BACK_VAR); } catch (e2) {}
             var bar = Util.qs('.akira-topbar'); if (bar) bar.remove();
+            Util.qsa('.akira-topbar-backdock').forEach(function (node) { try { node.remove(); } catch (e3) {} });
             restoreBrand();
             stopClock();
         }
 
         function safePatch() {
             state.scheduled = false;
+            state.scheduleTimer = null;
             if (!moduleEnabled()) { removeUi(); return; }
             injectStyle();
             syncBody();
             patchBar();
         }
         function schedule(now) {
-            if (state.scheduled && !now) return;
+            if (state.scheduleTimer) clearTimeout(state.scheduleTimer);
             state.scheduled = true;
-            setTimeout(safePatch, now ? 10 : 120);
+            state.scheduleTimer = setTimeout(safePatch, now ? 60 : 140);
         }
 
         function observeDom() {
@@ -801,6 +990,457 @@
         };
     })();
 
+    var Comments = (function () {
+        var observer = null;
+        var timer = null;
+
+        function pluginEnabled() { return Util.isOn(K.enabled, true); }
+
+        function isCommentsTitle(text) {
+            var s = Util.clean(text).toLowerCase();
+            return s === 'comments' ||
+                s.indexOf('comment') > -1 ||
+                s.indexOf('\u043a\u043e\u043c\u043c\u0435\u043d\u0442') > -1 ||
+                s.indexOf('\u043a\u043e\u043c\u0435\u043d\u0442') > -1;
+        }
+
+        function scan() {
+            if (!pluginEnabled()) return;
+            try {
+                Util.qsa('.items-line').forEach(function (line) {
+                    var title = Util.qs('.items-line__title', line);
+                    if (!title || !isCommentsTitle(title.textContent || title.innerText || '')) return;
+                    line.setAttribute('data-akira-hidden-comments', 'on');
+                    line.style.display = 'none';
+                });
+            } catch (e) {}
+        }
+
+        function schedule() {
+            clearTimeout(timer);
+            timer = setTimeout(scan, 80);
+        }
+
+        function hasCommentsLine(nodes) {
+            try {
+                for (var i = 0; i < nodes.length; i++) {
+                    var node = nodes[i];
+                    if (!node || node.nodeType !== 1) continue;
+                    if ((node.classList && node.classList.contains('items-line')) ||
+                        (node.classList && node.classList.contains('items-line__title')) ||
+                        (node.querySelector && node.querySelector('.items-line, .items-line__title'))) return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        function bind() {
+            if (observer || !window.MutationObserver) return;
+            try {
+                observer = new MutationObserver(function (mutations) {
+                    for (var i = 0; i < mutations.length; i++) {
+                        if (hasCommentsLine(mutations[i].addedNodes || [])) {
+                            schedule();
+                            return;
+                        }
+                    }
+                });
+                observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
+            } catch (e) {}
+        }
+
+        return {
+            start: function () {
+                scan();
+                bind();
+            }
+        };
+    })();
+
+    var Shots = (function () {
+        var originalPutScriptAsync = null;
+        var patchInstalled = false;
+        var listenersBound = false;
+        var waitTimer = null;
+        var servicesCaptured = false;
+        var previousServices;
+
+        function pluginEnabled() { return Util.isOn(K.enabled, true); }
+        function moduleEnabled() { return pluginEnabled() && Util.isOn(K.shotsEnabled, true); }
+
+        function shouldBlock(url) {
+            return !!url && String(url).indexOf('/plugin/shots') > -1;
+        }
+
+        function syncGlobals() {
+            try {
+                if (typeof window.lampa_settings === 'undefined' || !window.lampa_settings) window.lampa_settings = {};
+                if (moduleEnabled()) {
+                    window.plugin_shots_ready = true;
+                    if (!servicesCaptured) {
+                        previousServices = window.lampa_settings.services;
+                        servicesCaptured = true;
+                    }
+                    window.lampa_settings.services = false;
+                } else {
+                    try { delete window.plugin_shots_ready; } catch (e2) { window.plugin_shots_ready = false; }
+                    if (servicesCaptured) {
+                        if (typeof previousServices === 'undefined') delete window.lampa_settings.services;
+                        else window.lampa_settings.services = previousServices;
+                        servicesCaptured = false;
+                        previousServices = undefined;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function installPatch() {
+            try {
+                if (patchInstalled) return true;
+                if (!Lampa.Utils || typeof Lampa.Utils.putScriptAsync !== 'function') return false;
+
+                originalPutScriptAsync = Lampa.Utils.putScriptAsync;
+                Lampa.Utils.putScriptAsync = function (items, complite, error, success, show_logs) {
+                    if (moduleEnabled() && Array.isArray(items)) {
+                        items = items.filter(function (url) { return !shouldBlock(url); });
+                    }
+                    return originalPutScriptAsync.call(this, items, complite, error, success, show_logs);
+                };
+                patchInstalled = true;
+                return true;
+            } catch (e) { return false; }
+        }
+
+        function waitForUtils() {
+            var tries = 0;
+            if (waitTimer) clearInterval(waitTimer);
+            waitTimer = setInterval(function () {
+                tries++;
+                syncGlobals();
+                if (installPatch() || tries > 100) {
+                    clearInterval(waitTimer);
+                    waitTimer = null;
+                }
+            }, 10);
+        }
+
+        function bindListeners() {
+            if (listenersBound) return;
+            try {
+                if (Lampa.Storage && Lampa.Storage.listener && Lampa.Storage.listener.follow) {
+                    Lampa.Storage.listener.follow('change', function (e) {
+                        if (!e || (e.name !== K.enabled && e.name !== K.shotsEnabled)) return;
+                        syncGlobals();
+                    });
+                    listenersBound = true;
+                }
+            } catch (e) {}
+        }
+
+        return {
+            start: function () {
+                bindListeners();
+                syncGlobals();
+                if (!installPatch()) waitForUtils();
+            },
+            sync: syncGlobals
+        };
+    })();
+
+    // Shots must patch Lampa.Utils as early as possible; boot() starts it again
+    // safely after defaults are ready.
+    startModule('Shots early start', Shots);
+
+    var MobilePlayer = (function () {
+        var STYLE_ID = 'lampac-mobile-player-safearea-style';
+        var RETRY_DELAY_MS = 120;
+        var RETRY_LIMIT = 2;
+        var listenersBound = false;
+        var storageBound = false;
+        var state = {
+            session: 0,
+            playerRoot: null,
+            video: null,
+            enteredElementFullscreen: false,
+            enteredVideoFullscreen: false
+        };
+
+        function pluginEnabled() { return Util.isOn(K.enabled, true); }
+        function moduleEnabled() { return pluginEnabled() && Util.isOn(K.mobilePlayerEnabled, true); }
+        function isFunction(fn) { return typeof fn === 'function'; }
+
+        function syncFlags() {
+            try {
+                if (moduleEnabled()) {
+                    window.lampac_mobile_player_safearea_ready = true;
+                    window.lampac_mobile_player_fullscreen_ready = true;
+                } else {
+                    try { delete window.lampac_mobile_player_safearea_ready; } catch (e1) { window.lampac_mobile_player_safearea_ready = false; }
+                    try { delete window.lampac_mobile_player_fullscreen_ready; } catch (e2) { window.lampac_mobile_player_fullscreen_ready = false; }
+                }
+            } catch (e) {}
+        }
+
+        function isMobileContext() {
+            try {
+                if (!window.Lampa || !Lampa.Platform) return false;
+                if (isFunction(Lampa.Platform.tv) && Lampa.Platform.tv()) return false;
+                if (isFunction(Lampa.Platform.desktop) && Lampa.Platform.desktop()) return false;
+                if (isFunction(Lampa.Platform.screen) && !Lampa.Platform.screen('mobile')) return false;
+            } catch (e) { return false; }
+
+            return Boolean(document.body && document.body.classList.contains('true--mobile'));
+        }
+
+        function isApkClient() {
+            var agent = '';
+            try { agent = String(navigator.userAgent || '').toLowerCase(); } catch (e) {}
+            return typeof window.AndroidJS !== 'undefined' || agent.indexOf('lampa_client') > -1;
+        }
+
+        function ensureViewportFitCover() {
+            var meta = document.querySelector('meta[name="viewport"]');
+            var content, parts, normalized, i, part;
+            var hasViewportFit = false;
+
+            if (!meta) {
+                meta = document.createElement('meta');
+                meta.setAttribute('name', 'viewport');
+                meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+                (document.head || document.documentElement).appendChild(meta);
+                return;
+            }
+
+            content = (meta.getAttribute('content') || '').trim();
+            parts = content ? content.split(',') : [];
+            normalized = [];
+            for (i = 0; i < parts.length; i++) {
+                part = (parts[i] || '').trim();
+                if (!part) continue;
+                if (part.toLowerCase().indexOf('viewport-fit') === 0) {
+                    normalized.push('viewport-fit=cover');
+                    hasViewportFit = true;
+                } else {
+                    normalized.push(part);
+                }
+            }
+            if (!hasViewportFit) normalized.push('viewport-fit=cover');
+            meta.setAttribute('content', normalized.join(', '));
+        }
+
+        function removeStyle() {
+            try {
+                var style = document.getElementById(STYLE_ID);
+                if (style && style.parentNode) style.parentNode.removeChild(style);
+            } catch (e) {}
+        }
+
+        function ensureStyle() {
+            var style;
+            if (!moduleEnabled()) { removeStyle(); return; }
+            if (document.getElementById(STYLE_ID)) return;
+
+            style = document.createElement('style');
+            style.id = STYLE_ID;
+            style.textContent = [
+                'body.true--mobile.player--viewing .player{width:100vw;height:100vh;height:100dvh;}',
+                'body.true--mobile.player--viewing .player-info{top:calc(env(safe-area-inset-top,0px) + .75em)!important;left:calc(env(safe-area-inset-left,0px) + .75em)!important;right:calc(env(safe-area-inset-right,0px) + .75em)!important;}',
+                'body.true--mobile.player--viewing .player-panel{left:calc(env(safe-area-inset-left,0px) + .75em)!important;right:calc(env(safe-area-inset-right,0px) + .75em)!important;bottom:calc(env(safe-area-inset-bottom,0px) + .75em)!important;width:auto!important;}',
+                'body.true--mobile.player--viewing .player-video__subtitles{left:0!important;right:0!important;margin-top:1.5em!important;margin-right:calc(env(safe-area-inset-right,0px) + .75em)!important;margin-bottom:calc(env(safe-area-inset-bottom,0px) + 1.5em)!important;margin-left:calc(env(safe-area-inset-left,0px) + .75em)!important;}',
+                'body.true--mobile.player--viewing .player-video__subtitles.on-top{top:0!important;margin-top:calc(env(safe-area-inset-top,0px) + 1.5em)!important;}',
+                'body.true--mobile.player--viewing .player-video__backwork-icon{left:calc(env(safe-area-inset-left,0px) + 10%)!important;}',
+                'body.true--mobile.player--viewing .player-video__forward-icon{right:calc(env(safe-area-inset-right,0px) + 10%)!important;}'
+            ].join('\n');
+            (document.head || document.documentElement).appendChild(style);
+        }
+
+        function resolvePlayerRoot() {
+            var root = null;
+            try {
+                if (window.Lampa && Lampa.Player && isFunction(Lampa.Player.render)) root = Lampa.Player.render();
+            } catch (e) {}
+            if (root && root.jquery) return root[0];
+            if (root && root.nodeType === 1) return root;
+            return document.querySelector('.player');
+        }
+
+        function resolvePlayerVideo() {
+            try {
+                if (window.Lampa && Lampa.PlayerVideo && isFunction(Lampa.PlayerVideo.video)) return Lampa.PlayerVideo.video() || null;
+            } catch (e) {}
+            return document.querySelector('.player video');
+        }
+
+        function getFullscreenElement() {
+            return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement || null;
+        }
+
+        function markSession(session, key, value) {
+            if (state.session !== session) return;
+            state[key] = value;
+        }
+
+        function requestVideoFullscreen(video, session) {
+            var request, result;
+            if (!video) return false;
+
+            request = video.requestFullscreen || video.webkitRequestFullscreen || video.mozRequestFullScreen || video.msRequestFullscreen;
+            if (request) {
+                try {
+                    result = request.call(video);
+                    if (result && isFunction(result.then)) {
+                        result.then(function () { markSession(session, 'enteredElementFullscreen', true); }).catch(function () {});
+                    } else {
+                        markSession(session, 'enteredElementFullscreen', true);
+                    }
+                    return true;
+                } catch (e) {}
+            }
+
+            if (isFunction(video.webkitEnterFullscreen)) {
+                try {
+                    video.webkitEnterFullscreen();
+                    markSession(session, 'enteredVideoFullscreen', true);
+                    return true;
+                } catch (e2) {}
+            }
+            return false;
+        }
+
+        function requestElementFullscreen(element, session) {
+            var request, result;
+            if (!element) return false;
+            request = element.requestFullscreen || element.webkitRequestFullscreen || element.mozRequestFullScreen || element.msRequestFullscreen;
+            if (!request) return false;
+
+            try {
+                result = request.call(element);
+                if (result && isFunction(result.then)) {
+                    result.then(function () { markSession(session, 'enteredElementFullscreen', true); }).catch(function () {
+                        if (state.session !== session || getFullscreenElement()) return;
+                        requestVideoFullscreen(resolvePlayerVideo(), session);
+                    });
+                } else {
+                    markSession(session, 'enteredElementFullscreen', true);
+                }
+                return true;
+            } catch (e) { return false; }
+        }
+
+        function tryEnterFullscreen(session, attempt) {
+            var root, video, started = false;
+            if (state.session !== session || !moduleEnabled() || !isMobileContext()) return;
+            if (getFullscreenElement()) return;
+
+            root = resolvePlayerRoot();
+            video = resolvePlayerVideo();
+            if (root) state.playerRoot = root;
+            if (video) state.video = video;
+
+            if (root) started = requestElementFullscreen(root, session);
+            if (!started && video) started = requestVideoFullscreen(video, session);
+            if (!started && attempt < RETRY_LIMIT) {
+                setTimeout(function () { tryEnterFullscreen(session, attempt + 1); }, RETRY_DELAY_MS);
+            }
+        }
+
+        function containsElement(parent, child) {
+            return Boolean(parent && child && parent.contains && parent.contains(child));
+        }
+
+        function exitManagedFullscreen() {
+            var exit, fullscreenElement = getFullscreenElement();
+            var playerRoot = state.playerRoot;
+            var video = state.video;
+
+            if (state.enteredElementFullscreen && fullscreenElement && (fullscreenElement === playerRoot || fullscreenElement === video || containsElement(playerRoot, fullscreenElement))) {
+                exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+                if (exit) {
+                    try { exit.call(document); } catch (e) {}
+                }
+            }
+
+            if (state.enteredVideoFullscreen && video) {
+                try {
+                    if (video.webkitDisplayingFullscreen && isFunction(video.webkitExitFullscreen)) video.webkitExitFullscreen();
+                } catch (e2) {}
+            }
+        }
+
+        function resetState() {
+            state.playerRoot = null;
+            state.video = null;
+            state.enteredElementFullscreen = false;
+            state.enteredVideoFullscreen = false;
+        }
+
+        function bindPlayerEvents() {
+            if (listenersBound) return;
+            if (!window.Lampa || !Lampa.Player || !Lampa.Player.listener || !isFunction(Lampa.Player.listener.follow)) return;
+
+            Lampa.Player.listener.follow('ready', function () {
+                if (!moduleEnabled()) return;
+                state.session += 1;
+                resetState();
+                tryEnterFullscreen(state.session, 0);
+            });
+
+            Lampa.Player.listener.follow('destroy', function () {
+                exitManagedFullscreen();
+                state.session += 1;
+                resetState();
+            });
+
+            listenersBound = true;
+        }
+
+        function sync() {
+            syncFlags();
+            if (!moduleEnabled()) {
+                removeStyle();
+                exitManagedFullscreen();
+                state.session += 1;
+                resetState();
+                return;
+            }
+            if (!isApkClient()) {
+                ensureViewportFitCover();
+                ensureStyle();
+            }
+            bindPlayerEvents();
+        }
+
+        function bindStorage() {
+            if (storageBound) return;
+            try {
+                if (Lampa.Storage && Lampa.Storage.listener && Lampa.Storage.listener.follow) {
+                    Lampa.Storage.listener.follow('change', function (e) {
+                        if (!e || (e.name !== K.enabled && e.name !== K.mobilePlayerEnabled)) return;
+                        sync();
+                    });
+                    storageBound = true;
+                }
+            } catch (e) {}
+        }
+
+        return {
+            start: function () {
+                removeStyle();
+                try { delete window.lampac_mobile_player_safearea_ready; } catch (e1) { window.lampac_mobile_player_safearea_ready = false; }
+                try { delete window.lampac_mobile_player_fullscreen_ready; } catch (e2) { window.lampac_mobile_player_fullscreen_ready = false; }
+                state.session += 1;
+                resetState();
+            },
+            sync: function () {
+                removeStyle();
+                state.session += 1;
+                resetState();
+            }
+        };
+    })();
+
+    // Mobile fullscreen hooks are disabled for testing player performance.
+
     /* ================================================================
      * 6. LOGO ENGINE — двойной fallback с общим кешем
      *
@@ -827,7 +1467,13 @@
 
     var Logos = (function () {
         var memCache = {};
+        var memCacheOrder = [];
         var pending = {};
+        var logoStorageWrites = 0;
+        var LOGO_MEM_CACHE_LIMIT = 2000;
+        var LOGO_STORAGE_CACHE_LIMIT = 5000;
+        var LOGO_PRUNE_BATCH = 400;
+        var LOGO_CACHE_INDEX_KEY = CFG.logoCachePrefix + 'index';
 
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
         function moduleEnabled() { return pluginEnabled() && Util.isOn(K.logosEnabled, true); }
@@ -849,33 +1495,138 @@
             return CFG.logoCachePrefix + type + '_' + id + '_' + lng;
         }
 
+        function isLogoCacheKey(key) {
+            return !!(key && key.indexOf(CFG.logoCachePrefix) === 0 && key !== LOGO_CACHE_INDEX_KEY);
+        }
+
+        function rememberCached(key, value) {
+            if (!(key in memCache)) memCacheOrder.push(key);
+            memCache[key] = value;
+            while (memCacheOrder.length > LOGO_MEM_CACHE_LIMIT) {
+                delete memCache[memCacheOrder.shift()];
+            }
+            return value;
+        }
+
+        function readLogoIndex() {
+            try {
+                var raw = localStorage.getItem(LOGO_CACHE_INDEX_KEY);
+                var parsed = raw ? JSON.parse(raw) : {};
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function writeLogoIndex(index) {
+            try { localStorage.setItem(LOGO_CACHE_INDEX_KEY, JSON.stringify(index || {})); } catch (e) {}
+        }
+
+        function listLogoStorageKeys(storage, index) {
+            var keys = [];
+            try {
+                for (var i = 0; i < storage.length; i++) {
+                    var key = storage.key(i);
+                    if (!isLogoCacheKey(key)) continue;
+                    keys.push(key);
+                    if (index && !index[key]) index[key] = 0;
+                }
+            } catch (e) {}
+            return keys;
+        }
+
+        function pruneLocalLogoCache(reserve) {
+            var index = readLogoIndex();
+            var keys = listLogoStorageKeys(localStorage, index);
+            var existing = {};
+            keys.forEach(function (key) { existing[key] = true; });
+            Object.keys(index).forEach(function (key) {
+                if (!isLogoCacheKey(key) || !existing[key]) delete index[key];
+            });
+
+            var target = Math.max(0, LOGO_STORAGE_CACHE_LIMIT - (reserve || 0));
+            if (keys.length <= target) {
+                writeLogoIndex(index);
+                return;
+            }
+
+            keys.sort(function (a, b) { return (index[a] || 0) - (index[b] || 0); });
+            keys.slice(0, keys.length - target).forEach(function (key) {
+                try { localStorage.removeItem(key); } catch (e) {}
+                delete index[key];
+            });
+            writeLogoIndex(index);
+        }
+
+        function pruneSessionLogoCache(reserve) {
+            try {
+                var keys = listLogoStorageKeys(sessionStorage);
+                var target = Math.max(0, LOGO_MEM_CACHE_LIMIT - (reserve || 0));
+                if (keys.length <= target) return;
+                keys.slice(0, keys.length - target).forEach(function (key) {
+                    try { sessionStorage.removeItem(key); } catch (e) {}
+                });
+            } catch (e) {}
+        }
+
+        function setSessionCached(key, value) {
+            try {
+                sessionStorage.setItem(key, value);
+            } catch (e) {
+                pruneSessionLogoCache(LOGO_PRUNE_BATCH);
+                try { sessionStorage.setItem(key, value); } catch (e2) {}
+            }
+        }
+
+        function setLocalCached(key, value) {
+            var index = readLogoIndex();
+            index[key] = new Date().getTime();
+            try {
+                localStorage.setItem(key, value);
+                writeLogoIndex(index);
+                logoStorageWrites++;
+                if (Object.keys(index).length > LOGO_STORAGE_CACHE_LIMIT || logoStorageWrites % 60 === 0) {
+                    pruneLocalLogoCache(0);
+                }
+            } catch (e) {
+                pruneLocalLogoCache(LOGO_PRUNE_BATCH);
+                try {
+                    localStorage.setItem(key, value);
+                    index = readLogoIndex();
+                    index[key] = new Date().getTime();
+                    writeLogoIndex(index);
+                } catch (e2) {}
+            }
+        }
+
         function getCached(key) {
             if (key in memCache) return memCache[key];
             try {
                 var s = sessionStorage.getItem(key);
-                if (s !== null && typeof s !== 'undefined') { memCache[key] = s; return s; }
+                if (s !== null && typeof s !== 'undefined') return rememberCached(key, s);
             } catch (e) {}
             try {
                 var l = localStorage.getItem(key);
-                if (l !== null && typeof l !== 'undefined') { memCache[key] = l; return l; }
+                if (l !== null && typeof l !== 'undefined') return rememberCached(key, l);
             } catch (e) {}
             return null;
         }
 
         function setCached(key, value) {
             var v = value || 'none';
-            memCache[key] = v;
-            try { sessionStorage.setItem(key, v); } catch (e) {}
-            try { localStorage.setItem(key, v); } catch (e) {}
+            rememberCached(key, v);
+            setSessionCached(key, v);
+            setLocalCached(key, v);
         }
 
         function clearCache() {
             memCache = {};
+            memCacheOrder = [];
             try {
                 var rmS = [];
                 for (var i = 0; i < sessionStorage.length; i++) {
                     var k = sessionStorage.key(i);
-                    if (k && k.indexOf(CFG.logoCachePrefix) === 0) rmS.push(k);
+                    if (isLogoCacheKey(k)) rmS.push(k);
                 }
                 rmS.forEach(function (k) { sessionStorage.removeItem(k); });
             } catch (e) {}
@@ -883,7 +1634,7 @@
                 var rm = [];
                 for (var j = 0; j < localStorage.length; j++) {
                     var k2 = localStorage.key(j);
-                    if (k2 && k2.indexOf(CFG.logoCachePrefix) === 0) rm.push(k2);
+                    if (isLogoCacheKey(k2) || k2 === LOGO_CACHE_INDEX_KEY) rm.push(k2);
                 }
                 rm.forEach(function (k) { localStorage.removeItem(k); });
             } catch (e) {}
@@ -935,24 +1686,72 @@
             list.forEach(function (cb) { try { cb(value); } catch (e) {} });
         }
 
-        var _queue=[],_running=0,_maxConcurrent=2,_retryDelay=1500;
-        function _enqueue(f){_queue.push(f);_drain();}
-        function _drain(){while(_running<_maxConcurrent&&_queue.length){_running++;_queue.shift()();}}
-        function _done(){_running--;_drain();}
-        function _fetch(url,picker,lng,done,retries){
-            retries=retries||0;
-            $.get(url,function(res){_done();var p=res?picker(res.logos,lng):null;done(buildUrl(p));}).fail(function(xhr){
-                if(xhr&&xhr.status===429&&retries<3){setTimeout(function(){_fetch(url,picker,lng,done,retries+1);},_retryDelay*(retries+1));}
-                else{_done();done(null);}
+        var logoQueue = [];
+        var logoRunning = 0;
+        var LOGO_MAX_CONCURRENT = 2;
+        var LOGO_RETRY_DELAY = 1500;
+
+        function enqueueLogoFetch(task) {
+            logoQueue.push(task);
+            drainLogoQueue();
+        }
+
+        function drainLogoQueue() {
+            while (logoRunning < LOGO_MAX_CONCURRENT && logoQueue.length) {
+                logoRunning++;
+                logoQueue.shift()();
+            }
+        }
+
+        function completeLogoFetch() {
+            logoRunning = Math.max(0, logoRunning - 1);
+            drainLogoQueue();
+        }
+
+        function fetchLogo(url, picker, lng, done, retries) {
+            retries = retries || 0;
+            try {
+                $.get(url, function (res) {
+                    var picked = null;
+                    try { picked = res ? picker(res.logos, lng) : null; } catch (e) {}
+                    completeLogoFetch();
+                    done(buildUrl(picked));
+                }).fail(function (xhr) {
+                    if (xhr && xhr.status === 429 && retries < 3) {
+                        setTimeout(function () {
+                            fetchLogo(url, picker, lng, done, retries + 1);
+                        }, LOGO_RETRY_DELAY * (retries + 1));
+                        return;
+                    }
+                    completeLogoFetch();
+                    done(null);
+                });
+            } catch (e) {
+                completeLogoFetch();
+                done(null);
+            }
+        }
+
+        function methodA(item, type, lng, key, done) {
+            var url;
+            try {
+                url = Lampa.TMDB.api(type + '/' + item.id + '/images?api_key=' + Lampa.TMDB.key() + '&include_image_language=' + lng + ',ru,en,null');
+            } catch (e) { return done(null); }
+
+            enqueueLogoFetch(function () {
+                fetchLogo(url, pickBest, lng, done);
             });
         }
-        function methodA(item,type,lng,key,done){
-            var url;try{url=Lampa.TMDB.api(type+'/'+item.id+'/images?api_key='+Lampa.TMDB.key()+'&include_image_language='+lng+',ru,en,null');}catch(e){return done(null);}
-            _enqueue(function(){_fetch(url,pickBest,lng,done);});
-        }
-        function methodB(item,type,lng,key,done){
-            var url;try{url=Lampa.TMDB.api(type+'/'+item.id+'/images?api_key='+Lampa.TMDB.key()+'&include_image_language='+lng+',en,null');}catch(e){return done(null);}
-            _enqueue(function(){_fetch(url,pickInterface,lng,done);});
+
+        function methodB(item, type, lng, key, done) {
+            var url;
+            try {
+                url = Lampa.TMDB.api(type + '/' + item.id + '/images?api_key=' + Lampa.TMDB.key() + '&include_image_language=' + lng + ',en,null');
+            } catch (e) { return done(null); }
+
+            enqueueLogoFetch(function () {
+                fetchLogo(url, pickInterface, lng, done);
+            });
         }
 
         function resolve(item, cb) {
@@ -992,9 +1791,41 @@
             } catch (e) { cb(null); }
         }
 
+        function cached(item) {
+            try {
+                if (!moduleEnabled()) return null;
+                if (!item || !item.id) return null;
+                var source = item.source || 'tmdb';
+                if (source !== 'tmdb' && source !== 'cub' && source !== 'akira_tmdb') return null;
+                var type = (item.media_type === 'tv' || item.name) ? 'tv' : 'movie';
+                var url = getCached(cacheKey(type, item.id, lang()));
+                return url && url !== 'none' ? url : null;
+            } catch (e) { return null; }
+        }
+
         function preload(item) { resolve(item, function () {}); }
 
         function setImageSizing(i){if(!i)return;i.style.height='';i.style.width='';i.style.maxHeight='';i.style.maxWidth='';i.style.objectFit='contain';i.style.objectPosition='left bottom';}
+
+        function makeLogoImage(cls, titleText, url) {
+            var img = new Image();
+            img.className = cls;
+            img.alt = titleText;
+            img.src = url;
+            setImageSizing(img);
+            return img;
+        }
+
+        function setContentInstant(container, node) {
+            if (!container) return;
+            container.style.opacity = '';
+            container.style.height = '';
+            container.style.overflow = '';
+            container.style.display = '';
+            container.innerHTML = '';
+            if (typeof node === 'string') container.textContent = node;
+            else if (node) container.appendChild(node);
+        }
 
         var FADE_OUT_MS=300,MORPH_MS=400,FADE_IN_MS=400;
         function rafAnimate(el,prop,from,to,dur,cb){var s=null;function step(ts){if(!s)s=ts;var t=Math.min((ts-s)/dur,1),e=1-Math.pow(1-t,3);el.style[prop]=(from+(to-from)*e)+(prop==='opacity'?'':'px');if(t<1)requestAnimationFrame(step);else if(cb)cb();}requestAnimationFrame(step);}
@@ -1031,16 +1862,16 @@
                     else titleEl.textContent = titleText;
                     return;
                 }
-                var img = new Image();
-                img.className = 'akira-info-logo';
-                img.alt = titleText;
-                img.src = url;
-                setImageSizing(img);
-                swapContent(titleEl, img);
+                    swapContent(titleEl, makeLogoImage('akira-info-logo', titleText, url));
             });
         }
 
         function applyToCard(card) {
+            function connected(node) {
+                if (!node) return false;
+                if (typeof node.isConnected === 'boolean') return node.isConnected;
+                return !!(document.documentElement && document.documentElement.contains && document.documentElement.contains(node));
+            }
             if (!card || !card.data || typeof card.render !== 'function') return;
             if (!Util.isOn(K.ifaceCardLogos, true)) return;
 
@@ -1086,10 +1917,11 @@
                 wrap.className = 'akira-card-logo';
                 view.appendChild(wrap);
             }
+            try { wrap.setAttribute('data-akira-logo-owner', 'card'); } catch (e) {}
 
             resolve(card.data, function (url) {
                 if (card.__akira_logo_req !== reqId) return;
-                if (!root.isConnected) return;
+                if (!connected(root)) return;
                 if (!url) { removeLogo(); return; }
                 if (view && view.classList) view.classList.add('akira-card-has-logo');
                 var img = new Image();
@@ -1138,10 +1970,17 @@
                 if (!titleEl.__akira_full_orig) titleEl.__akira_full_orig = titleText;
                 var originalText = titleEl.__akira_full_orig || titleText;
 
-                if (titleNode.text() !== originalText) titleNode.text(originalText);
-
                 var requestId = (titleEl.__akira_logo_req || 0) + 1;
                 titleEl.__akira_logo_req = requestId;
+
+                var cachedUrl = cached(item);
+                if (cachedUrl) {
+                    setContentInstant(titleEl, makeLogoImage('akira-full-logo', originalText, cachedUrl));
+                    return;
+                }
+
+                if (titleEl.querySelector && titleEl.querySelector('img.akira-full-logo')) setContentInstant(titleEl, originalText);
+                else if (titleNode.text() !== originalText) titleNode.text(originalText);
 
                 resolve(item, function (url) {
                     if (titleEl.__akira_logo_req !== requestId) return;
@@ -1151,12 +1990,7 @@
                         else if (titleNode.text() !== originalText) titleNode.text(originalText);
                         return;
                     }
-                    var img = new Image();
-                    img.className = 'akira-full-logo';
-                    img.alt = originalText;
-                    img.src = url;
-                    setImageSizing(img);
-                    swapContent(titleEl, img);
+                    swapContent(titleEl, makeLogoImage('akira-full-logo', originalText, url));
                 });
             } catch (e) {}
         }
@@ -1166,30 +2000,41 @@
             var style = document.getElementById(id) || document.createElement('style');
             style.id = id;
             var css = [
-                ':root{--akira-logo-max-h: clamp(3.6em, 11vh, 7.2em); --akira-card-logo-h: clamp(2.2em, 6vh, 3.8em);}',
+                ':root{--akira-logo-max-h: clamp(3.6em, 11vh, 7.2em); --akira-full-logo-max-h: clamp(3.2em, 7.5vh, 5.4em); --akira-card-logo-h: clamp(2.2em, 6vh, 3.8em);}',
                 '.akira-card-logo{position:absolute;left:0;right:0;bottom:0;padding:.25em .55em 1.05em;box-sizing:border-box;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.86) 0%,rgba(0,0,0,.48) 68%,rgba(0,0,0,0) 100%);z-index:12;}',
                 '.akira-card-logo img{display:block;max-width:100%;max-height:var(--akira-card-logo-h);width:auto;height:auto;object-fit:contain;object-position:left bottom;}',
                 '.akira-info-logo{display:block;max-width:100%;max-height:var(--akira-logo-max-h);width:auto;height:auto;object-fit:contain;object-position:left bottom;}',
-                '.full-start-new__title img.akira-full-logo, .full-start__title img.akira-full-logo{display:block;max-width:100%;max-height:var(--akira-logo-max-h);width:auto;height:auto;object-fit:contain;object-position:left bottom;margin-top:.25em;filter:none!important;background:none!important;box-shadow:none!important;}',
+                '.full-start-new__title img.akira-full-logo, .full-start__title img.akira-full-logo{display:block;max-width:min(100%,28em);max-height:var(--akira-full-logo-max-h);width:auto;height:auto;object-fit:contain;object-position:left bottom;margin-top:.25em;filter:none!important;background:none!important;box-shadow:none!important;}',
                 '.full-start-new,.full-start{position:relative!important;overflow:hidden!important;margin:0!important;padding:0!important;background:none!important;}',
                 '.full-start-new .full-start-new__background,.full-start-new .full-start__background,.full-start__background{position:absolute!important;top:-6em!important;left:0!important;width:100%!important;height:calc(100% + 6em)!important;margin:0!important;padding:0!important;mask-image:none!important;-webkit-mask-image:none!important;}',
                 '.full-start-new .full-start-new__background img,.full-start-new .full-start__background img,.full-start__background img{width:100%!important;height:100%!important;object-fit:cover!important;filter:none!important;}',
                 '.full-start-new::after,.full-start::after,.full-start-new__gradient,.full-start__gradient,.full-start-new__mask,.full-start__mask,.applecation__overlay,.application__overlay{display:none!important;content:none!important;background:none!important;}',
-                '.full-start-new::before,.full-start::before{content:""!important;display:block!important;position:absolute!important;top:-6em!important;left:0!important;right:0!important;bottom:0!important;height:calc(100% + 6em)!important;background:linear-gradient(to top,var(--akira-bg,#0a0d12) 0%,rgba(10,13,18,.85) 35%,transparent 80%)!important;opacity:.16!important;z-index:1!important;pointer-events:none!important;}',
+                '.full-start-new::before,.full-start::before{content:""!important;display:block!important;position:absolute!important;top:-6em!important;left:0!important;right:0!important;bottom:-1px!important;height:calc(100% + 6em + 1px)!important;background:linear-gradient(to top,var(--akira-bg,#0a0d12) 0%,rgba(10,13,18,.92) 20%,rgba(10,13,18,.52) 46%,transparent 82%)!important;opacity:.68!important;z-index:1!important;pointer-events:none!important;}',
                 '.full-start-new__title,.full-start__title,.full-start-new__head,.full-start__head,.full-start-new__details,.full-start__details,.full-start-new__right,.full-start__right,.full-start-new__body,.full-start__body{background:none!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;}',
                 '.full-start-new__title::before,.full-start-new__title::after,.full-start__title::before,.full-start__title::after,.full-start-new__right::before,.full-start-new__right::after,.full-start__right::before,.full-start__right::after,.full-start-new__body::before,.full-start-new__body::after,.full-start__body::before,.full-start__body::after{display:none!important;content:none!important;background:none!important;}',
-                '.full-start-new__body,.full-start__body{position:relative!important;z-index:2!important;padding-left:5%!important;display:flex!important;align-items:flex-end!important;min-height:80vh!important;padding-top:6em!important;padding-bottom:2em!important;}',
+                '.full-start-new__body,.full-start__body{position:relative!important;z-index:2!important;padding-left:5%!important;display:flex!important;align-items:flex-end!important;min-height:calc(100vh - .5em)!important;min-height:calc(100svh - .5em)!important;padding-top:6em!important;padding-bottom:clamp(4.6em,8vh,8.5em)!important;box-sizing:border-box!important;}',
                 '.full-start-new__left,.full-start__left{display:none!important;}',
-                '.full-start-new__right,.full-start__right{position:relative!important;z-index:3!important;max-width:min(650px,92vw)!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-end!important;gap:0!important;}',
+                '.full-start-new__right,.full-start__right{position:relative!important;z-index:3!important;width:min(1080px,92vw)!important;max-width:min(1080px,92vw)!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-end!important;gap:0!important;}',
                 '.full-start-new__title,.full-start__title{font-family:var(--akira-font,Arial,sans-serif)!important;font-weight:800!important;font-size:clamp(1.8em,3.4vw,2.8em)!important;line-height:1.08!important;color:#fff!important;text-shadow:0 2px 10px rgba(0,0,0,.7),0 6px 24px rgba(0,0,0,.8)!important;margin-bottom:8px!important;max-width:100%!important;}',
                 '.full-start-new__head,.full-start__head,.full-start-new__rate-line,.full-start__rate-line,.full-start-new__details,.full-start__details{font-family:var(--akira-font,Arial,sans-serif)!important;font-weight:500!important;font-size:.82em!important;line-height:1.3!important;color:rgba(255,255,255,.74)!important;text-shadow:0 2px 4px rgba(0,0,0,.5)!important;margin:0 0 2px 0!important;}',
                 '.full-start-new__tagline,.full-start__tagline{font-family:var(--akira-font,Arial,sans-serif)!important;font-weight:500!important;font-style:italic!important;font-size:.88em!important;line-height:1.3!important;color:rgba(255,255,255,.65)!important;text-shadow:0 2px 4px rgba(0,0,0,.5)!important;margin:0 0 4px 0!important;padding:0!important;}',
                 '.full-start-new__text,.full-start__text,.full-start-new__description,.full-start__description{font-family:var(--akira-font,Arial,sans-serif)!important;font-weight:500!important;color:rgba(255,255,255,.72)!important;font-size:.85em!important;line-height:1.4!important;text-shadow:0 2px 4px rgba(0,0,0,.5)!important;max-width:520px!important;margin:0 0 6px 0!important;}',
                 '.full-start-new__reactions,.full-start__reactions{display:none!important;height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;}',
+                '.full-start-new__buttons,.full-start__buttons{display:flex!important;align-items:center!important;flex-wrap:wrap!important;column-gap:.45em!important;row-gap:.55em!important;width:100%!important;max-width:100%!important;overflow:visible!important;padding-bottom:1em!important;}',
+                '.full-start-new__buttons .full-start__button,.full-start__buttons .full-start__button{flex:0 1 auto!important;margin:0!important;min-width:3.15em!important;max-width:100%!important;padding-left:1em!important;padding-right:1em!important;box-sizing:border-box!important;}',
+                '.full-start-new__buttons .full-start__button span,.full-start__buttons .full-start__button span{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}',
+                '.full-start-new__buttons .button--play,.full-start__buttons .button--play{order:1!important;}',
+                '.full-start-new__buttons .view--trailer,.full-start__buttons .view--trailer{order:2!important;}',
+                '.full-start-new__buttons .view--torrent,.full-start__buttons .view--torrent{order:3!important;}',
+                '.full-start-new__buttons .button--book,.full-start__buttons .button--book{order:4!important;}',
+                '.full-start-new__buttons .button--reaction,.full-start__buttons .button--reaction{order:5!important;}',
+                '.full-start-new__buttons .button--subscribe,.full-start__buttons .button--subscribe{order:6!important;}',
+                '.full-start-new__buttons .button--options,.full-start__buttons .button--options{order:7!important;}',
                 '.full-start__button,.full-start-new__button{font-family:var(--akira-font,Arial,sans-serif)!important;font-weight:600!important;border-radius:8px!important;border:1px solid rgba(255,255,255,.1)!important;background:rgba(120,120,120,.2)!important;backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important;box-shadow:0 4px 16px rgba(0,0,0,.3)!important;color:rgba(255,255,255,.82)!important;text-shadow:0 2px 4px rgba(0,0,0,.5)!important;transition:background 300ms ease,transform 200ms ease,box-shadow 300ms ease,border-color 300ms ease!important;}',
                 '.full-start__button.focus,.full-start__button:hover,.full-start-new__button.focus,.full-start-new__button:hover{background:rgba(var(--akira-accent-rgb,229,9,20),.7)!important;border-color:rgba(255,255,255,.3)!important;color:#fff!important;box-shadow:0 0 20px rgba(var(--akira-accent-rgb,229,9,20),.5),0 8px 28px rgba(0,0,0,.4)!important;transform:scale(1.04)!important;}',
+                '@media(min-width:1600px), (min-height:900px){.full-start-new__body,.full-start__body{min-height:calc(100vh - .5em)!important;min-height:calc(100svh - .5em)!important;padding-bottom:clamp(6em,10vh,10em)!important;}.full-start-new__right,.full-start__right{width:min(1180px,88vw)!important;max-width:min(1180px,88vw)!important;}}',
                 '@media(max-width:768px){.full-start-new__background,.full-start__background{display:none!important;}.full-start-new,.full-start{background-image:var(--akira-mobile-bg)!important;background-size:cover!important;background-position:center top!important;background-repeat:no-repeat!important;margin-top:-5.5em!important;padding-top:5.5em!important;}.applecation__overlay,.application__overlay{display:block!important;background:linear-gradient(to top,var(--akira-bg,#0a0d12) 0%,rgba(10,13,18,.85) 40%,rgba(10,13,18,.2) 75%,transparent 100%)!important;position:absolute!important;inset:0!important;pointer-events:none!important;}}',
-                '@media(max-width:576px){.full-start-new__title,.full-start__title{font-size:1.5em!important;margin-bottom:4px!important;}.full-start-new__title img,.full-start__title img{max-height:130px!important;}.full-start-new__body,.full-start__body{min-height:75vh!important;padding-left:2%!important;padding-bottom:2.5em!important;}.full-start-new__right,.full-start__right{max-width:94vw!important;}}'
+                '@media(max-width:576px){.full-start-new__title,.full-start__title{font-size:1.5em!important;margin-bottom:4px!important;}.full-start-new__title img,.full-start__title img{max-height:130px!important;}.full-start-new__body,.full-start__body{min-height:calc(100vh - .5em)!important;min-height:calc(100svh - .5em)!important;padding-left:2%!important;padding-bottom:2.5em!important;}.full-start-new__right,.full-start__right{max-width:94vw!important;}}'
             ].join('\n');
             if (style.textContent !== css) style.textContent = css;
             if (!style.parentNode) (document.head || document.body).appendChild(style);
@@ -1220,6 +2065,7 @@
             cleanupCard: cleanupCard,
             preload: preload,
             resolve: resolve,
+            cached: cached,
             clearCache: clearCache,
             enabled: moduleEnabled
         };
@@ -1227,6 +2073,10 @@
 
     var Interface = (function () {
         var started = false;
+        var HERO_OPEN_FALLBACK_MS = 900;
+        var HERO_SWAP_FALLBACK_MS = 360;
+        var HERO_INFO_FALLBACK_MS = 420;
+        var HERO_CLOSE_FALLBACK_MS = 900;
 
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
         function moduleEnabled() { return pluginEnabled() && Util.isOn(K.ifaceEnabled, true); }
@@ -1240,32 +2090,40 @@
                 '.akira-iface{position:relative;}',
                 '.akira-iface .card.card--wide, .akira-iface .card--small.card--wide{width:18.3em;}',
                 '.akira-iface .card-more__box, .akira-iface .card.card--wide + .card-more .card-more__box, .akira-iface .card--small.card--wide + .card-more .card-more__box{padding-bottom:95%;}',
-                '.akira-info{position:relative;padding:1.5em;height:var(--ni-info-h);overflow:hidden;z-index:3;}',
+                '.akira-info{position:relative;padding:0 1.5em;height:0;opacity:0;overflow:hidden;z-index:3;pointer-events:none;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;will-change:height,opacity,padding;transition:height .58s cubic-bezier(.2,.8,.2,1),padding-top .58s cubic-bezier(.2,.8,.2,1),padding-bottom .58s cubic-bezier(.2,.8,.2,1),opacity .58s ease;}',
+                '.akira-iface[data-akira-hero-state="opening"] .akira-info,.akira-iface[data-akira-hero-state="shown"] .akira-info,.akira-iface[data-akira-hero-state="closing"] .akira-info{height:var(--ni-info-h);padding-top:1.5em;padding-bottom:1.5em;opacity:1;}',
+                '.akira-iface[data-akira-hero-state="shown"] .akira-info{pointer-events:auto;}',
                 '.akira-info:before{display:none !important;}',
-                '.akira-info__body{position:relative;z-index:1;width:min(96%,78em);padding-top:1.1em;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);column-gap:clamp(16px,3vw,54px);align-items:end;height:100%;box-sizing:border-box;}',
+                '.akira-info__body{position:relative;z-index:1;width:min(96%,94em);padding-top:1.1em;display:grid;grid-template-columns:minmax(0,1fr) minmax(30em,.95fr);column-gap:clamp(28px,4.4vw,104px);align-items:end;height:100%;box-sizing:border-box;opacity:0;transform:translateY(.7em);will-change:opacity,transform;transition:opacity .26s ease,transform .52s cubic-bezier(.2,.8,.2,1);}',
+                '.akira-iface[data-akira-hero-state="shown"] .akira-info__body{opacity:1;transform:none;}',
+                '.akira-iface[data-akira-hero-state="closing"] .akira-info__body{opacity:0;transform:none;transition:opacity .24s ease-out;}',
                 '.akira-info__left,.akira-info__right{min-width:0;height:100%;}',
-                '.akira-info__textblock{margin-top:auto;display:flex;flex-direction:column;gap:.55em;min-height:0;}',
-                '.akira-info__right{padding-top:clamp(.2em,2.2vh,1.6em);padding-bottom:clamp(.8em,2.4vh,2em);display:flex;flex-direction:column;transform:translateX(clamp(1.5em,4vw,6em));}',
+                '.akira-info__textblock{margin-top:auto;display:flex;flex-direction:column;gap:.55em;min-height:0;max-width:min(52em,100%);padding:.85em 1em .95em;border-radius:10px;background:linear-gradient(90deg,rgba(5,7,12,.54),rgba(5,7,12,.32) 66%,rgba(5,7,12,.12));box-shadow:0 14px 46px rgba(0,0,0,.22);backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px);}',
+                '.akira-info__right{padding-top:clamp(.2em,2.2vh,1.6em);padding-bottom:clamp(.8em,2.4vh,2em);display:flex;flex-direction:column;align-items:flex-end;justify-self:end;transform:none;}',
                 '.akira-info__head{color:rgba(255,255,255,.6);margin-bottom:1em;font-size:1.3em;min-height:1em;}',
                 '.akira-info__head span{color:#fff;}',
                 '.akira-info__title{font-size:clamp(2.6em,4vw,3.6em);font-weight:600;margin-bottom:.3em;overflow:hidden;text-overflow:".";display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2;margin-left:-.03em;text-shadow:0 2px 16px rgba(0,0,0,.7),0 0 40px rgba(0,0,0,.4);}',
+                '.akira-info__original{font-size:clamp(1em,1.45vw,1.45em);font-weight:500;line-height:1.18;color:rgba(255,255,255,.82);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 2px 12px rgba(0,0,0,.82);margin-top:-.1em;}',
                 '.akira-info__meta{margin-bottom:0;display:flex;flex-direction:column;gap:.35em;min-height:1em;}',
-                '.akira-info__meta-top{display:flex;align-items:center;gap:.75em;flex-wrap:nowrap;min-height:1.9em;min-width:0;}',
+                '.akira-info__meta-top{display:flex;align-items:center;gap:.55em;flex-wrap:nowrap;min-height:1.9em;min-width:0;}',
                 '.akira-info__rate{flex:0 0 auto;}',
                 '.akira-info__genres{flex:1 1 auto;min-width:0;font-size:1.1em;line-height:1.25;overflow:hidden;text-overflow:".";display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;}',
                 '.akira-info__runtime{flex:0 0 auto;font-size:1.05em;white-space:nowrap;}',
                 '.akira-info__dot{flex:0 0 auto;font-size:.85em;opacity:.75;}',
                 '.akira-info__pg{flex:0 0 auto;white-space:nowrap;}',
                 '.akira-info__pg .full-start__pg{font-size:.95em;}',
-                '.akira-info__description{font-size:.87em;font-weight:300;line-height:1.38;color:rgba(255,255,255,.9);text-shadow:0 2px 12px rgba(0,0,0,.45);overflow:hidden;text-overflow:".";display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;width:auto;}',
-                '.akira-iface .akira-info__background{position:absolute!important;left:0!important;right:0!important;top:0!important;height:var(--ni-info-h)!important;overflow:hidden!important;pointer-events:none!important;z-index:0!important;}',
+                '.akira-info__description{font-size:.87em;font-weight:400;line-height:1.38;color:rgba(255,255,255,.94);text-shadow:0 1px 2px rgba(0,0,0,.92),0 4px 18px rgba(0,0,0,.82);overflow:hidden;text-overflow:".";display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;width:auto;}',
+                'body.' + CFG.bodyClass + '[data-akira-hero-info="hide_description"] .akira-info__description,body.' + CFG.bodyClass + '[data-akira-hero-info="hide_all"] .akira-info__description{display:none!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-hero-info="hide_meta"] .akira-info__meta,body.' + CFG.bodyClass + '[data-akira-hero-info="hide_all"] .akira-info__meta{display:none!important;}',
+                '.akira-iface .akira-info__background{position:absolute!important;left:0!important;right:0!important;top:0!important;height:0!important;overflow:hidden!important;pointer-events:none!important;z-index:0!important;opacity:0;will-change:height,opacity;transition:height .58s cubic-bezier(.2,.8,.2,1),opacity .58s ease;}',
+                '.akira-iface[data-akira-hero-state="opening"] .akira-info__background,.akira-iface[data-akira-hero-state="shown"] .akira-info__background,.akira-iface[data-akira-hero-state="closing"] .akira-info__background{height:var(--ni-info-h)!important;opacity:1;}',
                 '.akira-iface .akira-info__background img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:0;transition:opacity .55s ease-in-out;will-change:opacity;filter:none!important;}',
                 '.akira-iface .akira-info__background img.active{opacity:1;}',
-                '.akira-iface[data-akira-hero="fullscreen"] .akira-info__background{position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100vh!important;z-index:0!important;}',
+                '.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="opening"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="shown"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="closing"] .akira-info__background{position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100vh!important;z-index:0!important;}',
                 '.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,var(--akira-bg,#0a0d12) 0%,rgba(10,13,18,.78) 38%,rgba(10,13,18,.18) 72%,transparent 100%);z-index:1;}',
                 '.akira-iface[data-akira-hero="fullscreen"] .akira-info{position:relative!important;z-index:2!important;}',
                 '.akira-iface[data-akira-hero="fullscreen"] .akira-info__right{background:none!important;}',
-                '@media(max-width:767px){.akira-iface[data-akira-hero="fullscreen"] .akira-info__background{position:absolute!important;height:var(--ni-info-h)!important;width:100%!important;}.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{display:none;}}',
+                '@media(max-width:767px){.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="opening"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="shown"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="closing"] .akira-info__background{position:absolute!important;height:var(--ni-info-h)!important;width:100%!important;}.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{display:none;}}',
                 '.akira-iface .full-start__rate{font-size:1.3em;margin-right:0;}',
                 '.akira-iface .full-start__lines{padding-bottom:env(safe-area-inset-bottom,0px);}',
                 '.akira-iface .card__promo{display:none;}',
@@ -1278,19 +2136,21 @@
                 '.akira-iface .card{position:relative !important;transition:transform .3s cubic-bezier(.4,0,.2,1),z-index 0s !important;transform-origin:center center !important;}',
                 '.akira-iface .card.focus,.akira-iface .card.hover,.akira-iface .card:hover{z-index:100 !important;transform:scale(1.06) !important;}',
                 '.akira-iface .card .card__view{position:relative;overflow:hidden !important;border-radius:8px !important;border:2px solid transparent;transition:border-color .25s ease,box-shadow .25s ease;}',
-                '.akira-iface .card.focus .card__view,.akira-iface .card.hover .card__view,.akira-iface .card:hover .card__view{border-color:var(--akira-accent,#e50914);box-shadow:0 0 0 3px rgba(229,9,20,.30),0 0 22px 3px rgba(229,9,20,.46),0 8px 28px rgba(0,0,0,.58);}',
+                '.akira-iface .card.focus .card__view,.akira-iface .card.hover .card__view,.akira-iface .card:hover .card__view{border-color:var(--akira-accent,#e50914);box-shadow:0 0 0 3px rgba(var(--akira-accent-rgb,229,9,20),.30),0 0 22px 3px rgba(var(--akira-accent-rgb,229,9,20),.46),0 8px 28px rgba(0,0,0,.58);}',
                 '.akira-iface .card.focus ~ .card,.akira-iface .card.hover ~ .card,.akira-iface .card:hover ~ .card{transform:translateX(8px) !important;z-index:1 !important;}',
                 '.akira-iface .akira-card-type,.akira-iface .akira-card-rating,.akira-iface .akira-card-quality{position:absolute;z-index:22;pointer-events:none;font-family:var(--akira-font,Arial,sans-serif);font-weight:800;line-height:1.25;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.55);box-shadow:0 2px 10px rgba(0,0,0,.42);max-width:calc(100% - 12px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-                '.akira-iface .akira-card-type{left:6px;top:6px;padding:.32em .55em;border-radius:6px 0 6px 0;background:rgba(229,9,20,.86);font-size:.68em;letter-spacing:0;text-transform:uppercase;}',
+                '.akira-iface .akira-card-type{left:6px;top:6px;padding:.32em .55em;border-radius:6px 0 6px 0;background:rgba(var(--akira-accent-rgb,229,9,20),.86);font-size:.68em;letter-spacing:0;text-transform:uppercase;}',
                 '.akira-iface .akira-card-quality{display:block !important;left:auto !important;right:6px !important;bottom:auto !important;top:6px !important;padding:2px 8px !important;border-radius:4px !important;background:rgba(46,204,113,.88) !important;color:#fff !important;font-size:.7em !important;font-weight:800 !important;text-transform:uppercase !important;letter-spacing:0 !important;z-index:22 !important;}',
                 '.akira-iface .card__view.akira-card-has-rating .akira-card-quality{top:calc(6px + 2.05em) !important;}',
                 '.akira-iface .akira-card-rating{display:block !important;right:6px !important;left:auto !important;bottom:auto !important;top:6px !important;padding:2px 8px !important;border-radius:10px 0 10px 0 !important;background:rgba(12,14,20,.68);border:1px solid rgba(255,255,255,.14);color:#ffd13d !important;font-size:.75em !important;font-weight:900 !important;z-index:23 !important;backdrop-filter:blur(8px) saturate(140%);-webkit-backdrop-filter:blur(8px) saturate(140%);}',
-                '.akira-card-title{position:absolute;left:0;right:0;bottom:.35em;padding:.42em .55em 1.05em;color:#fff;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.52) 68%,transparent 100%);z-index:14;box-sizing:border-box;}','.akira-ct-meta{display:block;font-size:.66em;font-weight:500;line-height:1.15;color:rgba(255,255,255,.78);margin-bottom:.24em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}','.akira-ct-name{display:block;font-size:.82em;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}','.akira-card-has-logo .akira-card-title{bottom:calc(var(--akira-card-logo-h) + 1.35em);padding:.15em .55em 0;background:none;}','.akira-card-has-logo .akira-ct-name{display:none;}',
+                '.akira-card-title{position:absolute;left:0;right:0;bottom:0;padding:.42em .55em .72em;color:#fff;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.52) 68%,transparent 100%);z-index:14;box-sizing:border-box;}','.akira-ct-meta{display:block;font-size:.66em;font-weight:700;line-height:1.15;color:rgba(255,255,255,.86);margin-bottom:.24em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}','.akira-ct-name{display:block;font-size:.82em;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}','.akira-card-has-logo .akira-card-title{bottom:calc(var(--akira-card-logo-h) + 1em);padding:.15em .55em 0;background:none;}','.akira-card-has-logo .akira-ct-name{display:none;}',
                 'body.light--version .akira-card-title{color:#fff;}',
                 '.akira-iface-h{--ni-line-head-shift:-2vh;--ni-line-body-shift:-3vh;}',
-                '.akira-iface-h .items-line__head{position:relative;top:var(--ni-line-head-shift);z-index:2;}',
-                '.akira-iface-h .items-line__body > .scroll.scroll--horizontal{position:relative;top:var(--ni-line-body-shift);z-index:1;}',
-                '@media (max-width:1100px){.akira-info__right{transform:none;}}',
+                '.akira-iface-h[data-akira-hero-state="empty"],.akira-iface-h[data-akira-hero-state="hiding"]{--ni-line-head-shift:0;--ni-line-body-shift:0;}',
+                '.akira-iface-h .items-line__head{position:relative;top:var(--ni-line-head-shift);z-index:2;transition:top .56s cubic-bezier(.2,.8,.2,1);}',
+                '.akira-iface-h .items-line__body > .scroll.scroll--horizontal{position:relative;top:var(--ni-line-body-shift);z-index:1;transition:top .56s cubic-bezier(.2,.8,.2,1);}',
+                '@media (min-width:1800px){.akira-info__body{width:min(94%,112em);grid-template-columns:minmax(0,1.05fr) minmax(34em,.88fr);column-gap:clamp(70px,7vw,160px);}.akira-info__textblock{max-width:min(58em,100%);}}',
+                '@media (max-width:1100px){.akira-info__body{grid-template-columns:minmax(0,1fr) minmax(0,.9fr);column-gap:clamp(16px,3vw,54px);}.akira-info__right{align-items:stretch;justify-self:stretch;}.akira-info__textblock{padding:.55em .7em .65em;border-radius:8px;}}',
                 '@media (max-height:820px){.akira-info__right{padding-top:clamp(.15em,1.8vh,1.2em);}.akira-info__title{font-size:clamp(2.4em,3.6vw,3.1em);}.akira-info__description{-webkit-line-clamp:6;font-size:.83em;}}'
             ].join('\n');
             (document.head || document.body).appendChild(style);
@@ -1311,6 +2171,7 @@
                 +     '<div class="akira-info__left">'
                 +       '<div class="akira-info__head"></div>'
                 +       '<div class="akira-info__title"></div>'
+                +       '<div class="akira-info__original"></div>'
                 +     '</div>'
                 +     '<div class="akira-info__right">'
                 +       '<div class="akira-info__textblock">'
@@ -1334,12 +2195,12 @@
 
         function InfoBlock() {
             this.html = null;
-            this.timer = null;
             this.network = new Lampa.Reguest();
             this.loaded = {};
             this.currentUrl = null;
             this.updateSeq = 0;
-            this.drawTimer = null;
+            this.drawSeq = 0;
+            this.swapFallback = null;
         }
         InfoBlock.prototype.create = function () { if (this.html) return; this.html = $(buildInfoHtml()); };
         InfoBlock.prototype.render = function (js) { if (!this.html) this.create(); return js ? this.html[0] : this.html; };
@@ -1357,23 +2218,19 @@
             this.currentUrl = url;
             var self = this;
             if (this.loaded[url]) { if (done) done(this.loaded[url]); else if (!preload) this.draw(this.loaded[url]); return; }
-            clearTimeout(this.timer);
-            this.timer = setTimeout(function () {
-                self.network.clear();
-                self.network.timeout(5000);
-                var settled = false;
-                function finish(movie) {
-                    if (settled) return;
-                    settled = true;
-                    if (movie && movie.id) self.loaded[url] = movie;
-                    if (done) done(movie || data);
-                    else if (!preload && self.currentUrl === url) self.draw(movie || data);
-                }
-                self.network.silent(url, function (movie) {
-                    finish(movie);
-                }, function () { finish(data); });
-                if (done) setTimeout(function () { finish(data); }, 5400);
-            }, 0);
+            self.network.clear();
+            self.network.timeout(5000);
+            var settled = false;
+            function finish(movie) {
+                if (settled) return;
+                settled = true;
+                if (movie && movie.id) self.loaded[url] = movie;
+                if (done) done(movie || data);
+                else if (!preload && self.currentUrl === url) self.draw(movie || data);
+            }
+            self.network.silent(url, function (movie) {
+                finish(movie);
+            }, function () { finish(data); });
         };
         InfoBlock.prototype.preloadLogo = function (movie, done) {
             Logos.resolve(movie, function (url) {
@@ -1396,11 +2253,16 @@
                 });
             });
         };
-        InfoBlock.prototype.drawPrepared = function (movie, logoUrl) {
+        InfoBlock.prototype.drawPrepared = function (movie, logoUrl, options) {
             if (!movie || !this.html) return;
+            options = options || {};
+            var self = this;
+            var drawSeq = ++this.drawSeq;
             var html = this.html;
             var body = html.find('.akira-info__body')[0];
+            clearTimeout(this.swapFallback);
             var fill = function () {
+                if (drawSeq !== self.drawSeq) return;
                 var create = ((movie.release_date || movie.first_air_date || '0000') + '').slice(0, 4);
                 var voteNum = parseFloat((movie.vote_average || 0) + '');
                 var vote = isFinite(voteNum) ? voteNum.toFixed(1) : '0.0';
@@ -1428,6 +2290,8 @@
                 html.find('.akira-info__description').text(overview).toggle(!!overview);
                 var titleNode = html.find('.akira-info__title');
                 var titleText = (movie.title || movie.name || movie.original_title || movie.original_name || '') + '';
+                var originalText = Util.originalTitle(movie, titleText);
+                html.find('.akira-info__original').text(originalText).toggle(!!originalText);
                 if (logoUrl && titleNode[0]) {
                     var img = new Image();
                     img.className = 'akira-info-logo';
@@ -1440,16 +2304,39 @@
                 } else {
                     titleNode.text(titleText);
                 }
-                if (body) {
+                if (body && !options.hidden) {
                     body.style.transition = 'opacity .35s ease-in';
                     body.style.opacity = '1';
                 }
             };
-            if (body) {
+            if (body && options.hidden) {
+                body.style.transition = '';
+                body.style.opacity = '';
+                fill();
+            } else if (body) {
+                var alreadyHidden = false;
+                try {
+                    alreadyHidden = !!(window.getComputedStyle && parseFloat(window.getComputedStyle(body).opacity || '0') <= 0.02);
+                } catch (e) {}
                 body.style.transition = 'opacity .22s ease-out';
                 body.style.opacity = '0';
-                clearTimeout(this.drawTimer);
-                this.drawTimer = setTimeout(fill, 220);
+                var filled = false;
+                var finishFadeOut = function () {
+                    body.removeEventListener('transitionend', onFadeOut);
+                    clearTimeout(self.swapFallback);
+                    self.swapFallback = null;
+                    if (filled || drawSeq !== self.drawSeq) return;
+                    filled = true;
+                    fill();
+                };
+                var onFadeOut = function (e) {
+                    if (e && e.target === body && e.propertyName === 'opacity') finishFadeOut();
+                };
+                if (body.addEventListener) {
+                    body.addEventListener('transitionend', onFadeOut);
+                    if (alreadyHidden) finishFadeOut();
+                    else self.swapFallback = setTimeout(finishFadeOut, HERO_SWAP_FALLBACK_MS);
+                } else fill();
             } else fill();
         };
         InfoBlock.prototype.draw = function (movie) {
@@ -1458,17 +2345,17 @@
         };
         InfoBlock.prototype.empty = function () {
             if (!this.html) return;
-            this.html.find('.akira-info__head,.akira-info__title,.akira-info__genres,.akira-info__runtime,.akira-info__description').empty();
+            this.html.find('.akira-info__head,.akira-info__title,.akira-info__original,.akira-info__genres,.akira-info__runtime,.akira-info__description').empty();
             this.html.find('.akira-info__rate').empty();
             this.html.find('.akira-info__pg').empty();
             this.html.find('.akira-info__dot').hide();
         };
         InfoBlock.prototype.destroy = function () {
-            clearTimeout(this.timer);
-            clearTimeout(this.drawTimer);
+            clearTimeout(this.swapFallback);
             try { this.network.clear(); } catch (e) {}
             this.loaded = {};
             this.currentUrl = null;
+            this.drawSeq++;
             if (this.html) { this.html.remove(); this.html = null; }
         };
 
@@ -1522,13 +2409,16 @@
 
             var state = {
                 main: main, info: info, background: background, infoElement: null,
-                backgroundTimer: null, backgroundLast: '', backgroundSlot: 0, updateSeq: 0, attached: false,
+                backgroundLast: '', backgroundSlot: 0, updateSeq: 0, hideSeq: 0, attached: false, heroState: 'empty',
+                revealFallback: null, revealNode: null, revealEnd: null,
+                hideInfoFallback: null, hideFallback: null, hideBody: null, hideBodyEnd: null, hideNode: null, hideEnd: null,
                 attach: function () {
                     if (this.attached) return;
                     var container = main.render(true);
                     if (!container) return;
                     container.classList.add('akira-iface', 'akira-iface-h');
                     this.applyHeroMode(container);
+                    this.setHeroState('empty', container);
                     if (!background.parentElement) container.insertBefore(background, container.firstChild || null);
                     var infoNode = info.render(true);
                     this.infoElement = infoNode;
@@ -1546,13 +2436,68 @@
                     if (mode !== 'fullscreen') mode = 'block';
                     node.setAttribute('data-akira-hero', mode);
                 },
+                setHeroState: function (stateName, container) {
+                    var node = container || (main && main.render ? main.render(true) : null);
+                    if (!node || !node.setAttribute) return;
+                    var next = stateName === true ? 'shown' :
+                        (stateName === 'opening' || stateName === 'shown' || stateName === 'closing' || stateName === 'hiding' ? stateName : 'empty');
+                    this.heroState = next;
+                    if (node.getAttribute('data-akira-hero-state') !== next) node.setAttribute('data-akira-hero-state', next);
+                },
+                clearRevealWait: function () {
+                    clearTimeout(this.revealFallback);
+                    this.revealFallback = null;
+                    if (this.revealNode && this.revealEnd) this.revealNode.removeEventListener('transitionend', this.revealEnd);
+                    this.revealNode = null;
+                    this.revealEnd = null;
+                },
+                clearHideWait: function () {
+                    clearTimeout(this.hideInfoFallback);
+                    clearTimeout(this.hideFallback);
+                    this.hideInfoFallback = null;
+                    this.hideFallback = null;
+                    if (this.hideBody && this.hideBodyEnd) this.hideBody.removeEventListener('transitionend', this.hideBodyEnd);
+                    if (this.hideNode && this.hideEnd) this.hideNode.removeEventListener('transitionend', this.hideEnd);
+                    this.hideBody = null;
+                    this.hideBodyEnd = null;
+                    this.hideNode = null;
+                    this.hideEnd = null;
+                },
+                waitForOpen: function (seq) {
+                    var self = this;
+                    var node = this.infoElement;
+                    var done = false;
+                    this.clearRevealWait();
+                    function finishReveal() {
+                        if (done) return;
+                        done = true;
+                        self.clearRevealWait();
+                        if (seq !== self.updateSeq || self.heroState !== 'opening') return;
+                        self.setHeroState('shown');
+                    }
+                    if (node && node.addEventListener) {
+                        this.revealNode = node;
+                        this.revealEnd = function (e) {
+                            if (e && e.target === node && e.propertyName === 'height') finishReveal();
+                        };
+                        node.addEventListener('transitionend', this.revealEnd);
+                        this.revealFallback = setTimeout(finishReveal, HERO_OPEN_FALLBACK_MS);
+                    } else {
+                        finishReveal();
+                    }
+                },
+                backgroundPath: function (movie) {
+                    return movie && movie.backdrop_path ? Lampa.Api.img(movie.backdrop_path, 'w1280') : '';
+                },
                 update: function (data) {
                     if (!data || !canUseHeroData(data)) { this.reset(); return; }
                     var self = this;
                     var seq = ++this.updateSeq;
-                    var path = data && data.backdrop_path ? Lampa.Api.img(data.backdrop_path, 'w1280') : '';
+                    var path = this.backgroundPath(data);
                     var infoReady = false, bgReady = false, movieReady = null, logoReady = null;
-                    clearTimeout(this.backgroundTimer);
+                    this.hideSeq++;
+                    this.clearHideWait();
+                    if ((this.heroState === 'closing' || this.heroState === 'hiding') && this.backgroundLast) this.setHeroState('opening');
                     info.prepare(data, function (movie, logoUrl) {
                         if (seq !== self.updateSeq) return;
                         infoReady = true;
@@ -1567,36 +2512,56 @@
                     });
                     function commit() {
                         if (!infoReady || !bgReady || seq !== self.updateSeq) return;
-                        if (path && path !== self.backgroundLast) {
+                        var finalData = movieReady || data;
+                        var finalPath = self.backgroundPath(finalData);
+                        if (!finalPath) {
+                            self.reset();
+                            return;
+                        }
+                        if (finalPath !== path && finalPath !== self.backgroundLast) {
+                            self.preloadBackground(finalPath, function () {
+                                if (seq !== self.updateSeq) return;
+                                applyFinal(finalData, finalPath);
+                            });
+                            return;
+                        }
+                        applyFinal(finalData, finalPath);
+                    }
+                    function applyFinal(finalData, finalPath) {
+                        if (seq !== self.updateSeq) return;
+                        var wasShown = self.heroState === 'shown';
+                        if (finalPath && finalPath !== self.backgroundLast) {
                             var next = self.backgroundSlot ? backgroundA : backgroundB;
                             var prev = self.backgroundSlot ? backgroundB : backgroundA;
-                            next.src = path;
+                            next.src = finalPath;
                             next.classList.add('active');
                             prev.classList.remove('active');
                             self.backgroundSlot = self.backgroundSlot ? 0 : 1;
-                            self.backgroundLast = path;
-                        } else if (!path) {
-                            self.clearBackground();
+                            self.backgroundLast = finalPath;
                         }
-                        try { Lampa.Background.change(path ? Lampa.Utils.cardImgBackground(movieReady || data) : ''); } catch (e) {}
-                        info.drawPrepared(movieReady || data, logoReady);
+                        try { Lampa.Background.change(Lampa.Utils.cardImgBackground(finalData)); } catch (e) {}
+                        if (wasShown) {
+                            self.setHeroState('shown');
+                            info.drawPrepared(finalData, logoReady);
+                            return;
+                        }
+                        info.drawPrepared(finalData, logoReady, { hidden: true });
+                        self.setHeroState('opening');
+                        self.waitForOpen(seq);
                     }
                 },
                 preloadBackground: function (path, done) {
                     done = done || function () {};
                     if (!path || path === this.backgroundLast) return done();
-                    var self = this;
-                    this.backgroundTimer = setTimeout(function () {
-                        var img = new Image();
-                        var finished = false;
-                        function finish() { if (finished) return; finished = true; done(); }
-                        img.onload = finish;
-                        img.onerror = finish;
-                        img.src = path;
-                        if (img.complete) finish();
-                    }, 90);
+                    var img = new Image();
+                    var finished = false;
+                    function finish() { if (finished) return; finished = true; done(); }
+                    img.onload = finish;
+                    img.onerror = finish;
+                    img.src = path;
+                    if (img.complete) finish();
                 },
-                clearBackground: function () {
+                flushBackground: function () {
                     backgroundA.classList.remove('active');
                     backgroundB.classList.remove('active');
                     backgroundA.removeAttribute('src');
@@ -1605,9 +2570,78 @@
                     this.backgroundSlot = 0;
                     try { Lampa.Background.change(''); } catch (e) {}
                 },
-                reset: function () { this.updateSeq++; clearTimeout(this.backgroundTimer); this.clearBackground(); info.empty(); },
+                clearBackground: function (emptyInfo) {
+                    var self = this;
+                    if (this.heroState === 'empty' && !this.backgroundLast) {
+                        if (emptyInfo) info.empty();
+                        return;
+                    }
+                    if (this.heroState === 'closing' || this.heroState === 'hiding') return;
+                    this.clearRevealWait();
+                    this.clearHideWait();
+                    var hideToken = ++this.hideSeq;
+                    var done = false;
+                    var node = this.infoElement;
+                    var body = node && node.querySelector ? node.querySelector('.akira-info__body') : null;
+                    function finish() {
+                        if (done) return;
+                        done = true;
+                        self.clearHideWait();
+                        if (hideToken !== self.hideSeq || self.heroState !== 'hiding') return;
+                        self.flushBackground();
+                        self.setHeroState('empty');
+                        if (emptyInfo) info.empty();
+                    }
+                    function collapse() {
+                        if (hideToken !== self.hideSeq || done) return;
+                        self.setHeroState('hiding');
+                        if (node && node.addEventListener) {
+                            self.hideNode = node;
+                            self.hideEnd = function (e) {
+                                if (e && e.target === node && e.propertyName === 'height') finish();
+                            };
+                            node.addEventListener('transitionend', self.hideEnd);
+                            self.hideFallback = setTimeout(finish, HERO_CLOSE_FALLBACK_MS);
+                        } else {
+                            finish();
+                        }
+                    }
+                    this.setHeroState('closing');
+                    if (body && body.addEventListener) {
+                        this.hideBody = body;
+                        this.hideBodyEnd = function (e) {
+                            if (e && e.target === body && e.propertyName === 'opacity') {
+                                self.clearHideWait();
+                                collapse();
+                            }
+                        };
+                        body.addEventListener('transitionend', this.hideBodyEnd);
+                        this.hideInfoFallback = setTimeout(collapse, HERO_INFO_FALLBACK_MS);
+                    } else {
+                        collapse();
+                    }
+                },
+                clearBackgroundNow: function () {
+                    this.hideSeq++;
+                    this.clearRevealWait();
+                    this.clearHideWait();
+                    backgroundA.classList.remove('active');
+                    backgroundB.classList.remove('active');
+                    backgroundA.removeAttribute('src');
+                    backgroundB.removeAttribute('src');
+                    this.backgroundLast = '';
+                    this.backgroundSlot = 0;
+                    this.setHeroState('empty');
+                    try { Lampa.Background.change(''); } catch (e) {}
+                },
+                reset: function () {
+                    this.updateSeq++;
+                    this.clearRevealWait();
+                    this.clearBackground(true);
+                },
                 destroy: function () {
-                    clearTimeout(this.backgroundTimer);
+                    this.clearRevealWait();
+                    this.clearHideWait();
                     info.destroy();
                     var container = main.render(true);
                     if (container) container.classList.remove('akira-iface');
@@ -1718,15 +2752,42 @@
             return m + 'm';
         }
 
+        function itemCountryNames(d) {
+            var names = [];
+            var seen = {};
+            function add(name) {
+                name = Util.shortCountry(name);
+                var key = name.toLowerCase();
+                if (!name || seen[key]) return;
+                seen[key] = true;
+                names.push(name);
+            }
+            try {
+                var sources = (Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb) ? Lampa.Api.sources.tmdb : null;
+                if (sources && typeof sources.parseCountries === 'function') {
+                    (sources.parseCountries(d) || []).forEach(add);
+                }
+            } catch (e) {}
+            if (d && d.production_countries && d.production_countries.length) {
+                d.production_countries.forEach(function (item) { add(item && (item.name || item.iso_3166_1)); });
+            }
+            if (d && d.origin_country && d.origin_country.length) {
+                d.origin_country.forEach(function (code) { add(Util.countryName(code)); });
+            }
+            return names;
+        }
+
         function cardMetaText(d) {
             var parts = [];
             var year = d ? ((d.release_date || d.first_air_date || '') + '').slice(0,4) : '';
+            var countries = itemCountryNames(d);
             var genres = cardGenreNames(d);
             var runtime = cardRuntime(d);
             if (year) parts.push(year);
+            if (countries.length) parts.push(countries.slice(0, 2).join(', '));
             if (genres.length) parts.push(genres.slice(0, 1).join(', '));
             if (runtime) parts.push(runtime);
-            return parts.join(' · ');
+            return parts.join(', ');
         }
 
         function updateCardTitle(card, movieData) {
@@ -1909,16 +2970,32 @@
             } catch (e) {}
         }
 
+        function heroInfoMode() {
+            var mode = String(Util.get(K.ifaceHeroInfo, '') || '').toLowerCase();
+            if (!mode) mode = Util.isOn(K.ifaceHeroDescription, true) ? 'all' : 'hide_description';
+            if (mode !== 'hide_description' && mode !== 'hide_meta' && mode !== 'hide_all') mode = 'all';
+            return mode;
+        }
+
+        function syncHeroInfo() {
+            try {
+                if (!document.body) return;
+                document.body.setAttribute('data-akira-hero-info', heroInfoMode());
+            } catch (e) {}
+        }
+
         return {
             start: function () {
                 if (started) return;
                 started = true;
                 injectStyle();
+                syncHeroInfo();
                 try {
                     if (Lampa.Storage && Lampa.Storage.listener && typeof Lampa.Storage.listener.follow === 'function') {
                         Lampa.Storage.listener.follow('change', function (e) {
                             if (!e) return;
                             if (e.name === K.ifaceHeroMode) applyHeroModeToAll();
+                            if (e.name === K.ifaceHeroInfo || e.name === K.ifaceHeroDescription || e.name === K.enabled || e.name === K.ifaceEnabled) syncHeroInfo();
                         });
                     }
                 } catch (e) {}
@@ -1935,6 +3012,8 @@
      * ================================================================ */
 
     var Buttons = (function () {
+        var storageBound = false;
+
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
         function moduleEnabled() { return pluginEnabled() && Util.isOn(K.buttonsSeparate, true); }
 
@@ -1959,8 +3038,8 @@
             + '      <div class="full-start-new__reactions"><div>#{reactions_none}</div></div>'
             + '      <div class="full-start-new__buttons">'
             + '        <div class="full-start__button selector button--play"><svg><use xlink:href="#sprite-play"></use></svg><span>#{title_watch}</span></div>'
-            + '        <div class="full-start__button view--torrent"><svg><use xlink:href="#sprite-torrent"></use></svg><span>#{full_torrents}</span></div>'
             + '        <div class="full-start__button selector view--trailer"><svg><use xlink:href="#sprite-trailer"></use></svg><span>#{full_trailers}</span></div>'
+            + '        <div class="full-start__button view--torrent"><svg><use xlink:href="#sprite-torrent"></use></svg><span>#{full_torrents}</span></div>'
             + '        <div class="full-start__button selector button--book"><svg width="21" height="32" viewBox="0 0 21 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 1.5H19C19.276 1.5 19.5 1.724 19.5 2V27.962C19.5 28.376 19.026 28.61 18.697 28.36L12.621 23.73C11.368 22.776 9.632 22.776 8.379 23.73L2.303 28.36C1.974 28.61 1.5 28.376 1.5 27.962V2C1.5 1.724 1.724 1.5 2 1.5Z" stroke="currentColor" stroke-width="2.5"/></svg><span>#{settings_input_links}</span></div>'
             + '        <div class="full-start__button selector button--reaction"><svg><use xlink:href="#sprite-reaction"></use></svg><span>#{title_reactions}</span></div>'
             + '        <div class="full-start__button selector button--subscribe hide"><svg viewBox="0 0 25 30" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6.019 24C6.274 27.356 9.078 30 12.5 30C15.922 30 18.726 27.356 18.981 24H15.965C15.722 25.696 14.263 27 12.5 27C10.737 27 9.278 25.696 9.035 24H6.019Z" fill="currentColor"></path><path d="M3.82 14.596V10.268C3.82 5.413 7.718 1.5 12.5 1.5C17.282 1.5 21.18 5.413 21.18 10.268V14.596C21.18 15.846 21.54 17.071 22.217 18.121L23.073 19.45C24.208 21.211 22.939 23.5 20.91 23.5H4.09C2.061 23.5 0.792 21.211 1.927 19.45L2.783 18.121C3.46 17.071 3.82 15.846 3.82 14.596Z" stroke="currentColor" stroke-width="2.6"></path></svg><span>#{title_subscribe}</span></div>'
@@ -1997,12 +3076,14 @@
         }
 
         function bindStorageWatch() {
+            if (storageBound) return;
             try {
                 if (!Lampa.Storage || !Lampa.Storage.listener || !Lampa.Storage.listener.follow) return;
                 Lampa.Storage.listener.follow('change', function (e) {
                     if (!e || !e.name) return;
                     if (e.name === K.buttonsBig || e.name === K.enabled) injectBigStyle();
                 });
+                storageBound = true;
             } catch (e) {}
         }
 
@@ -2022,6 +3103,11 @@
      * ================================================================ */
 
     var Theme = (function () {
+        var storageBound = false;
+        var menuEventsBound = false;
+        var menuTimer = null;
+        var MENU_WIDTH_VAR = '--akira-menu-w';
+
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
         function moduleEnabled() { return pluginEnabled() && Util.isOn(K.themeEnabled, true); }
 
@@ -2051,27 +3137,58 @@
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] html, body.' + CFG.bodyClass + '[data-akira-theme="on"] .extensions{background:linear-gradient(135deg,#0a0d12,#13171f) !important;color:var(--akira-text) !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .navigation-bar__body{background:rgba(10,13,18,.92) !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .items-line__title{font-family:var(--akira-font) !important;font-weight:700 !important;font-size:1.25em !important;color:#fff !important;text-shadow:0 2px 10px rgba(0,0,0,.6) !important;padding-left:1.2em !important;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.traverse, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.hover, body.' + CFG.bodyClass + '[data-akira-theme="on"] .simple-button.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .full-start__button.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .selectbox-item.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings-folder.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings-param.focus{background:linear-gradient(90deg, var(--akira-accent), rgba(' + rgb + ',.85)) !important;color:#fff !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu{width:var(' + MENU_WIDTH_VAR + ',min(22em,94vw)) !important;max-width:94vw !important;padding-right:0!important;overflow:hidden!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__case, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__list{width:100%!important;max-width:100%!important;box-sizing:border-box!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item{position:relative!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important;padding-right:0!important;overflow:hidden!important;border-radius:0!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__text, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-name, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-text, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-title{min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}',
+                '@media(max-width:520px){body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu{width:min(var(' + MENU_WIDTH_VAR + ',22em),94vw)!important;}body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item{max-width:100%!important;}body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__text, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-name, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-text, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item-title{font-size:.88em!important;}}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.traverse, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.hover{background:linear-gradient(90deg, var(--akira-accent), rgba(' + rgb + ',.86)) !important;color:#fff !important;box-shadow:inset 0 0 0 2px rgba(255,255,255,.10)!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.focus:before, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.traverse:before, body.' + CFG.bodyClass + '[data-akira-theme="on"] .menu__item.hover:before{content:""!important;position:absolute!important;left:0!important;right:0!important;top:0!important;bottom:0!important;border-radius:0!important;pointer-events:none!important;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .simple-button.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .full-start__button.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .selectbox-item.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings-folder.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings-param.focus{background:linear-gradient(90deg, var(--akira-accent), rgba(' + rgb + ',.85)) !important;color:#fff !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card__type, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card--tv .card__type, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card__type::after{background:linear-gradient(90deg,var(--akira-accent),rgba(' + rgb + ',.72)) !important;color:#fff!important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.focus .card__view::after, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.hover .card__view::after, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card-more.focus .card-more__box::after{border:.18em solid var(--akira-accent) !important;box-shadow:0 0 0 .35em var(--akira-accent-soft) !important;border-radius:.6em !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card .card__view, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card .card__img{border-radius:.6em !important;overflow:hidden !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid{display:grid !important;grid-template-columns:repeat(auto-fit,minmax(17.6em,1fr)) !important;gap:1em .62em !important;align-items:start !important;overflow:visible !important;}',
                 '@media(max-width:1279px){body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid{grid-template-columns:repeat(auto-fit,minmax(15em,1fr)) !important;}}',
                 '@media(max-width:767px){body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid{grid-template-columns:repeat(auto-fit,minmax(13.4em,1fr)) !important;}}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card{width:auto !important;margin:0 !important;padding-bottom:0 !important;position:relative !important;z-index:1;overflow:visible !important;transform-origin:center center !important;transition:transform .28s cubic-bezier(.22,.61,.36,1),z-index 0s !important;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__view{position:relative !important;height:0 !important;padding-bottom:56.25% !important;margin-bottom:0 !important;border-radius:10px !important;overflow:hidden !important;border:1px solid rgba(255,255,255,.08) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 22px rgba(0,0,0,.28) !important;transition:transform .28s cubic-bezier(.22,.61,.36,1),box-shadow .28s ease,filter .28s ease,border-color .28s ease !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__view{--akira-grid-logo-h:clamp(1.35em,2.1vw,2.35em);position:relative !important;height:0 !important;padding-bottom:56.25% !important;margin-bottom:0 !important;border-radius:10px !important;overflow:hidden !important;border:1px solid rgba(255,255,255,.08) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 22px rgba(0,0,0,.28) !important;transition:transform .28s cubic-bezier(.22,.61,.36,1),box-shadow .28s ease,filter .28s ease,border-color .28s ease !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-related-ready{width:18.3em!important;margin-right:.75em!important;padding-bottom:0!important;overflow:visible!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-related-ready .card__view{--akira-grid-logo-h:clamp(1.35em,2.1vw,2.35em);position:relative!important;height:0!important;padding-bottom:56.25%!important;margin-bottom:0!important;border-radius:10px!important;overflow:hidden!important;border:1px solid rgba(255,255,255,.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 22px rgba(0,0,0,.28)!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-related-ready.focus .card__view, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-related-ready.hover .card__view{border-color:var(--akira-accent)!important;box-shadow:0 0 0 2px var(--akira-accent),0 0 22px rgba(var(--akira-accent-rgb),.42),0 18px 42px rgba(0,0,0,.42)!important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__view > img, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__img{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;object-fit:cover !important;object-position:center 22% !important;border-radius:10px !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-related-ready .card__view > img, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-related-ready .card__img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center 22%!important;border-radius:10px!important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.focus, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.hover{z-index:40 !important;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.focus .card__view{transform:translateY(-.08em) scale(1.055) !important;filter:saturate(1.05) brightness(1.02) !important;border-color:var(--akira-accent) !important;box-shadow:0 0 0 2px var(--akira-accent),0 0 22px rgba(var(--akira-accent-rgb),.42),0 18px 42px rgba(0,0,0,.42) !important;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.hover .card__view{transform:translateY(-.04em) scale(1.025) !important;filter:saturate(1.02) brightness(1.01) !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.focus .card__view{transform:none !important;filter:saturate(1.05) brightness(1.02) !important;border-color:var(--akira-accent) !important;box-shadow:0 0 0 2px var(--akira-accent),0 0 22px rgba(var(--akira-accent-rgb),.42),0 18px 42px rgba(0,0,0,.42) !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.hover .card__view{transform:none !important;filter:saturate(1.02) brightness(1.01) !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.focus::after, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.hover::after, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__view::before, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__view::after{display:none !important;content:none !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready > .card__title, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready > .card__age, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready .card__vote, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready .card__quality, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready .card__type, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card.akira-grid-ready .card__promo{display:none !important;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-overlay{position:absolute;left:0;right:0;bottom:0;z-index:12;padding:2.3em .72em .68em;box-sizing:border-box;background:linear-gradient(0deg,rgba(6,8,14,.92) 0%,rgba(6,8,14,.58) 44%,rgba(6,8,14,.16) 72%,rgba(6,8,14,0) 100%);pointer-events:none;border-radius:0 0 10px 10px;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-title{font-family:var(--akira-font) !important;font-size:.9em !important;line-height:1.14 !important;font-weight:800 !important;color:#fff !important;text-shadow:0 2px 10px rgba(0,0,0,.72);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-meta{font-family:var(--akira-font) !important;color:rgba(255,255,255,.76);font-size:.68em !important;font-weight:500 !important;line-height:1.2 !important;margin-top:.22em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 8px rgba(0,0,0,.64);}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-badge{position:absolute;z-index:14;display:inline-flex;align-items:center;justify-content:center;min-height:1.6em;padding:.16em .52em;border-radius:7px;font-family:var(--akira-font) !important;font-weight:900 !important;line-height:1.1 !important;color:#fff !important;text-shadow:0 1px 5px rgba(0,0,0,.55);box-shadow:0 3px 10px rgba(0,0,0,.36);pointer-events:none;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-rating{right:.46em;top:.46em;background:rgba(46,204,113,.9);font-size:.72em !important;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .akira-grid-quality{right:.46em;top:.46em;background:rgba(var(--akira-accent-rgb),.88);font-size:.64em !important;text-transform:uppercase;}',
-                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card__view.akira-grid-has-rating .akira-grid-quality{top:2.35em;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-title{position:absolute;left:0;right:0;bottom:0;padding:.42em .72em .72em;color:#fff;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.52) 68%,transparent 100%);z-index:14;box-sizing:border-box;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-ct-meta{display:block;max-width:100%;font-size:.66em;font-weight:700;line-height:1.15;color:rgba(255,255,255,.86);margin-bottom:.24em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);box-sizing:border-box;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-ct-name{display:block;font-size:.9em;font-weight:800;line-height:1.18;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-has-logo .akira-card-title{bottom:calc(var(--akira-grid-logo-h) + 1em);padding:.15em .72em 0;background:none;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-has-logo .akira-ct-name{display:none;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-logo{z-index:15;min-height:calc(var(--akira-grid-logo-h) + 1.05em);padding:.25em .72em .72em;border-radius:0 0 10px 10px;display:flex;align-items:flex-end;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-logo img{max-height:var(--akira-grid-logo-h);}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-type, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-rating, body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-quality{position:absolute;z-index:22;pointer-events:none;font-family:var(--akira-font,Arial,sans-serif);font-weight:800;line-height:1.25;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.55);box-shadow:0 2px 10px rgba(0,0,0,.42);max-width:calc(100% - 12px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-type{left:6px;top:6px;padding:.32em .55em;border-radius:6px 0 6px 0;background:rgba(var(--akira-accent-rgb),.86);font-size:.68em;letter-spacing:0;text-transform:uppercase;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-rating{display:block !important;right:6px !important;left:auto !important;bottom:auto !important;top:6px !important;padding:2px 8px !important;border-radius:10px 0 10px 0 !important;background:rgba(12,14,20,.68);border:1px solid rgba(255,255,255,.14);color:#ffd13d !important;font-size:.75em !important;font-weight:900 !important;z-index:23 !important;backdrop-filter:blur(8px) saturate(140%);-webkit-backdrop-filter:blur(8px) saturate(140%);}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .akira-card-quality{display:block !important;left:auto !important;right:6px !important;bottom:auto !important;top:6px !important;padding:2px 8px !important;border-radius:4px !important;background:rgba(46,204,113,.88) !important;color:#fff !important;font-size:.7em !important;font-weight:800 !important;text-transform:uppercase !important;letter-spacing:0 !important;z-index:22 !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .mapping--grid .card__view.akira-card-has-rating .akira-card-quality{top:calc(6px + 2.05em) !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready > .card__title, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready > .card__age, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .card__vote, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .card__quality, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .card__type, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .card__promo{display:none !important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .card__view{--akira-grid-logo-h:clamp(1.35em,2.1vw,2.35em);position:relative!important;overflow:hidden!important;border-radius:10px!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-title{position:absolute;left:0;right:0;bottom:0;padding:.42em .72em .72em;color:#fff;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.52) 68%,transparent 100%);z-index:14;box-sizing:border-box;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-ct-meta{display:block;max-width:100%;font-size:.66em;font-weight:700;line-height:1.15;color:rgba(255,255,255,.86);margin-bottom:.24em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);box-sizing:border-box;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-ct-name{display:block;font-size:.9em;font-weight:800;line-height:1.18;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.9);}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-has-logo .akira-card-title{bottom:calc(var(--akira-grid-logo-h,2.1em) + 1em);padding:.15em .72em 0;background:none;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-has-logo .akira-ct-name{display:none;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-logo{position:absolute;left:0;right:0;bottom:0;z-index:15;min-height:calc(var(--akira-grid-logo-h,2.1em) + 1.05em);padding:.25em .72em .72em;border-radius:0 0 10px 10px;display:flex;align-items:flex-end;box-sizing:border-box;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.86) 0%,rgba(0,0,0,.48) 68%,transparent 100%);}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-logo img{display:block;max-width:100%;max-height:var(--akira-grid-logo-h,2.1em);width:auto;height:auto;object-fit:contain;object-position:left bottom;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-type, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-rating, body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-quality{position:absolute;z-index:22;pointer-events:none;font-family:var(--akira-font,Arial,sans-serif);font-weight:800;line-height:1.25;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.55);box-shadow:0 2px 10px rgba(0,0,0,.42);max-width:calc(100% - 12px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-type{left:6px;top:6px;padding:.32em .55em;border-radius:6px 0 6px 0;background:rgba(var(--akira-accent-rgb),.86);font-size:.68em;letter-spacing:0;text-transform:uppercase;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-rating{display:block!important;right:6px!important;left:auto!important;bottom:auto!important;top:6px!important;padding:2px 8px!important;border-radius:10px 0 10px 0!important;background:rgba(12,14,20,.68);border:1px solid rgba(255,255,255,.14);color:#ffd13d!important;font-size:.75em!important;font-weight:900!important;z-index:23!important;backdrop-filter:blur(8px) saturate(140%);-webkit-backdrop-filter:blur(8px) saturate(140%);}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .akira-card-quality{display:block!important;left:auto!important;right:6px!important;bottom:auto!important;top:6px!important;padding:2px 8px!important;border-radius:4px!important;background:rgba(46,204,113,.88)!important;color:#fff!important;font-size:.7em!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:0!important;z-index:22!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-theme="on"] .card.akira-grid-ready .card__view.akira-card-has-rating .akira-card-quality{top:calc(6px + 2.05em)!important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .modal__content, body.' + CFG.bodyClass + '[data-akira-theme="on"] .selectbox__content, body.' + CFG.bodyClass + '[data-akira-theme="on"] .settings__content{background:rgba(10,13,18,.96) !important;border:0 !important;}',
                 'body.' + CFG.bodyClass + '[data-akira-theme="on"] .full-start__rate.rate--tmdb{background:linear-gradient(90deg, var(--akira-accent), rgba(' + rgb + ',.7)) !important;color:#fff !important;border-radius:.4em !important;padding:.3em .5em !important;}',
                 '@media (max-width:560px){body.' + CFG.bodyClass + '[data-akira-theme="on"] .items-line__title{padding-left:.7em !important;font-size:1.1em !important;}}'
@@ -2097,6 +3214,7 @@
         }
 
         function bindStorageWatch() {
+            if (storageBound) return;
             try {
                 if (!Lampa.Storage || !Lampa.Storage.listener || !Lampa.Storage.listener.follow) return;
                 Lampa.Storage.listener.follow('change', function (e) {
@@ -2106,6 +3224,7 @@
                         scheduleGridDecorate();
                     }
                 });
+                storageBound = true;
             } catch (e) {}
         }
 
@@ -2137,6 +3256,10 @@
             return y || domText(card, '.card__age');
         }
 
+        function gridCountries(data) {
+            return Util.itemCountryNames(data).slice(0, 2).join(', ');
+        }
+
         function gridRating(card, data) {
             var raw = data && (data.vote_average || data.vote || data.rating || data.rate);
             var n = parseFloat(String(raw || '').replace(',', '.'));
@@ -2156,6 +3279,21 @@
             }).filter(Boolean).join(', ');
         }
 
+        function gridMediaTypeLabel(data, card) {
+            var nativeType = nativeBadgeText(card, '.card__type');
+            var tv = !!((data && (data.media_type === 'tv' || data.name || data.first_air_date || data.number_of_seasons)) ||
+                (card && card.classList && card.classList.contains('card--tv')) ||
+                nativeType === 'TV');
+            var lang = Util.langCode();
+            return lang === 'en' ? (tv ? 'SERIES' : 'MOVIE') : lang === 'uk' ? (tv ? 'СЕРІАЛ' : 'ФІЛЬМ') : (tv ? 'СЕРИАЛ' : 'ФИЛЬМ');
+        }
+
+        function gridRatingColor(value) {
+            var n = parseFloat(value);
+            if (!isFinite(n) || n <= 0) return '';
+            return n >= 7.5 ? 'rgba(46,204,113,.88)' : n >= 6.5 ? 'rgba(241,196,15,.88)' : n >= 5 ? 'rgba(230,126,34,.88)' : 'rgba(229,9,20,.86)';
+        }
+
         function setGridBadge(view, cls, text) {
             var node = view.querySelector('.' + cls);
             if (!text) {
@@ -2164,14 +3302,137 @@
             }
             if (!node) {
                 node = document.createElement('div');
-                node.className = 'akira-grid-badge ' + cls;
+                node.className = cls;
                 view.appendChild(node);
             }
             if (node.textContent !== text) node.textContent = text;
         }
 
+        function cleanupGridLegacy(view) {
+            ['akira-grid-overlay', 'akira-grid-rating', 'akira-grid-quality'].forEach(function (cls) {
+                var node = view.querySelector('.' + cls);
+                if (node && node.parentNode) node.parentNode.removeChild(node);
+            });
+            if (view.classList) view.classList.remove('akira-grid-has-rating');
+        }
+
+        function isRelatedLineCard(card) {
+            if (!card || !card.closest) return false;
+            if (card.closest('.akira-iface,.mapping--grid,.card-more,.bookmarks-folder,.register,.full-person,.card-episode__footer')) return false;
+            var line = card.closest('.items-line');
+            if (!line) return false;
+            var title = Util.clean(domText(line, '.items-line__title')).toLowerCase();
+            return title === 'recommendations' || title === 'similar' ||
+                title === '\u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0430\u0446\u0438\u0438' ||
+                title === '\u043f\u043e\u0445\u043e\u0436\u0438\u0435' ||
+                title === '\u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0430\u0446\u0456\u0457' ||
+                title === '\u0441\u0445\u043e\u0436\u0456' ||
+                title === '\u043f\u043e\u0434\u0456\u0431\u043d\u0456';
+        }
+
+        function isGridCard(card) {
+            if (!card || !card.querySelector || !card.closest) return false;
+            if (card.closest('.mapping--grid')) return true;
+            if (isRelatedLineCard(card)) return true;
+            if (!card.classList || !card.classList.contains('card--wide')) return false;
+            if (card.closest('.scroll--horizontal,.full-start,.full-start-new,.card-more,.bookmarks-folder,.register,.full-person,.card-episode__footer')) return false;
+            return !!card.querySelector('.card__view');
+        }
+
+        function setGridLogo(card, view, data, title) {
+            function connected(node) {
+                if (!node) return false;
+                if (typeof node.isConnected === 'boolean') return node.isConnected;
+                return !!(document.documentElement && document.documentElement.contains && document.documentElement.contains(node));
+            }
+            function remove() {
+                var old = view.querySelector('.akira-card-logo');
+                if (old && old.parentNode) old.parentNode.removeChild(old);
+                if (view.classList) view.classList.remove('akira-card-has-logo');
+            }
+            if (!Util.isOn(K.ifaceCardLogos, true) || !Logos.enabled()) {
+                remove();
+                return;
+            }
+            if (!data || !data.id) {
+                return;
+            }
+            var requestId = (card.__akiraGridLogoReq || 0) + 1;
+            card.__akiraGridLogoReq = requestId;
+            var wrap = view.querySelector('.akira-card-logo');
+            if (!wrap) {
+                wrap = document.createElement('div');
+                wrap.className = 'akira-card-logo';
+                view.appendChild(wrap);
+            }
+            try { wrap.setAttribute('data-akira-logo-owner', 'theme'); } catch (e) {}
+            Logos.resolve(data, function (url) {
+                if (card.__akiraGridLogoReq !== requestId || !connected(card)) return;
+                if (!url) { remove(); return; }
+                if (!wrap.parentNode) {
+                    wrap = view.querySelector('.akira-card-logo');
+                    if (!wrap) {
+                        wrap = document.createElement('div');
+                        wrap.className = 'akira-card-logo';
+                        view.appendChild(wrap);
+                    }
+                }
+                try { wrap.setAttribute('data-akira-logo-owner', 'theme'); } catch (e) {}
+                var img = new Image();
+                img.alt = title || '';
+                img.src = url;
+                img.style.objectFit = 'contain';
+                img.style.objectPosition = 'left bottom';
+                wrap.innerHTML = '';
+                wrap.appendChild(img);
+                if (view.classList) view.classList.add('akira-card-has-logo');
+            });
+        }
+
+        function decorateGridCardUnified(card) {
+            if (!isGridCard(card)) return;
+            var view = card.querySelector('.card__view');
+            if (!view) return;
+            if ((view.classList && view.classList.contains('bookmarks-folder__inner')) ||
+                (view.closest && view.closest('.bookmarks-folder,.register,.full-person,.card-more,.card-episode__footer'))) {
+                return;
+            }
+            cleanupGridLegacy(view);
+
+            var data = gridData(card);
+            var title = Util.clean((data && (data.title || data.name || data.original_title || data.original_name)) || domText(card, '.card__title'));
+            var year = gridYear(card, data);
+            var countries = gridCountries(data);
+            var genres = gridGenres(data);
+            var metaParts = [];
+            if (year) metaParts.push(year);
+            if (countries) metaParts.push(countries);
+            if (genres) metaParts.push(genres);
+
+            var label = view.querySelector('.akira-card-title');
+            if (!label) {
+                label = document.createElement('div');
+                label.className = 'akira-card-title';
+                view.appendChild(label);
+            }
+            var html = (metaParts.length ? '<span class="akira-ct-meta">' + Util.escapeHtml(metaParts.join(', ')) + '</span>' : '')
+                + (title ? '<span class="akira-ct-name">' + Util.escapeHtml(title) + '</span>' : '');
+            if (label.innerHTML !== html) label.innerHTML = html;
+
+            var rating = gridRating(card, data);
+            setGridBadge(view, 'akira-card-type', gridMediaTypeLabel(data, card));
+            setGridBadge(view, 'akira-card-rating', rating);
+            if (view.classList) view.classList.toggle('akira-card-has-rating', !!rating);
+            var ratingNode = view.querySelector('.akira-card-rating');
+            if (ratingNode && rating) ratingNode.style.background = gridRatingColor(rating);
+            setGridBadge(view, 'akira-card-quality', gridQuality(card, data));
+            setGridLogo(card, view, data, title);
+            card.classList.add('akira-grid-ready');
+            card.classList.toggle('akira-related-ready', isRelatedLineCard(card));
+        }
+
         function decorateGridCard(card) {
-            if (!card || !card.querySelector || !card.closest || !card.closest('.mapping--grid')) return;
+            if (!isGridCard(card)) return;
             var view = card.querySelector('.card__view');
             if (!view) return;
             if ((view.classList && view.classList.contains('bookmarks-folder__inner')) ||
@@ -2182,9 +3443,11 @@
             var data = gridData(card);
             var title = Util.clean((data && (data.title || data.name || data.original_title || data.original_name)) || domText(card, '.card__title'));
             var year = gridYear(card, data);
+            var countries = gridCountries(data);
             var genres = gridGenres(data);
             var metaParts = [];
             if (year) metaParts.push(year);
+            if (countries) metaParts.push(countries);
             if (genres) metaParts.push(genres);
 
             var overlay = view.querySelector('.akira-grid-overlay');
@@ -2194,7 +3457,7 @@
                 view.appendChild(overlay);
             }
             var html = (title ? '<div class="akira-grid-title">' + Util.escapeHtml(title) + '</div>' : '')
-                + (metaParts.length ? '<div class="akira-grid-meta">' + Util.escapeHtml(metaParts.join(' · ')) + '</div>' : '');
+                + (metaParts.length ? '<div class="akira-grid-meta">' + Util.escapeHtml(metaParts.join(', ')) + '</div>' : '');
             if (overlay.innerHTML !== html) overlay.innerHTML = html;
 
             var rating = gridRating(card, data);
@@ -2206,16 +3469,18 @@
 
         function cleanupGridCards() {
             try {
-                var cards = document.querySelectorAll('.mapping--grid .card.akira-grid-ready');
+                var cards = document.querySelectorAll('.card.akira-grid-ready');
                 Array.prototype.forEach.call(cards, function (card) {
                     card.classList.remove('akira-grid-ready');
                     var view = card.querySelector && card.querySelector('.card__view');
                     if (!view) return;
-                    ['akira-grid-overlay', 'akira-grid-rating', 'akira-grid-quality'].forEach(function (cls) {
+                    ['akira-grid-overlay', 'akira-grid-rating', 'akira-grid-quality', 'akira-card-title', 'akira-card-logo', 'akira-card-type', 'akira-card-rating', 'akira-card-quality'].forEach(function (cls) {
                         var node = view.querySelector('.' + cls);
                         if (node && node.parentNode) node.parentNode.removeChild(node);
                     });
-                    if (view.classList) view.classList.remove('akira-grid-has-rating');
+                    if (view.classList) view.classList.remove('akira-grid-has-rating', 'akira-card-has-rating', 'akira-card-has-logo');
+                    card.classList.remove('akira-related-ready');
+                    delete card.__akiraGridLogoReq;
                 });
             } catch (e) {}
         }
@@ -2223,9 +3488,69 @@
         function decorateGrid() {
             if (!moduleEnabled()) { cleanupGridCards(); return; }
             try {
-                var cards = document.querySelectorAll('.mapping--grid .card');
-                Array.prototype.forEach.call(cards, decorateGridCard);
+                var cards = document.querySelectorAll('.mapping--grid .card, .card.card--wide, .items-line .mapping--line .card');
+                Array.prototype.forEach.call(cards, decorateGridCardUnified);
             } catch (e) {}
+        }
+
+        function syncMenuWidth() {
+            if (!moduleEnabled()) {
+                try { document.documentElement.style.removeProperty(MENU_WIDTH_VAR); } catch (e) {}
+                return;
+            }
+            try {
+                var menus = document.querySelectorAll ? document.querySelectorAll('.menu') : [];
+                var menu = null;
+                Array.prototype.forEach.call(menus, function (node) {
+                    var rect = node.getBoundingClientRect ? node.getBoundingClientRect() : null;
+                    if (!menu || (rect && rect.width > 0)) menu = node;
+                });
+                if (!menu) return;
+                var max = 0;
+                var items = menu.querySelectorAll('.menu__item');
+                var canvas = syncMenuWidth.canvas || (syncMenuWidth.canvas = document.createElement('canvas'));
+                var ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+                Array.prototype.forEach.call(items, function (item) {
+                    var label = item.querySelector && item.querySelector('.menu__text, .menu__item-name, .menu__item-text, .menu__item-title');
+                    var icon = item.querySelector && item.querySelector('.menu__ico, .menu__icon, .menu__item-icon, svg, img');
+                    var itemRect = item.getBoundingClientRect ? item.getBoundingClientRect() : null;
+                    var labelRect = label && label.getBoundingClientRect ? label.getBoundingClientRect() : null;
+                    var iconRect = icon && icon.getBoundingClientRect ? icon.getBoundingClientRect() : null;
+                    var text = label ? Util.clean(label.textContent || '') : '';
+                    var labelWidth = label ? Math.ceil(Math.max(label.scrollWidth || 0, labelRect ? labelRect.width : 0)) : 0;
+                    if (ctx && text) {
+                        try {
+                            var cs = window.getComputedStyle ? window.getComputedStyle(label) : null;
+                            ctx.font = cs ? [cs.fontStyle, cs.fontVariant, cs.fontWeight, cs.fontSize, cs.fontFamily].join(' ') : '400 28px Arial';
+                            labelWidth = Math.max(labelWidth, Math.ceil(ctx.measureText(text).width));
+                            var fontSize = cs ? parseFloat(cs.fontSize || '0') : 0;
+                            if (fontSize > 0) labelWidth = Math.max(labelWidth, Math.ceil(text.length * fontSize * .76));
+                        } catch (e) {}
+                    } else if (text) {
+                        labelWidth = Math.max(labelWidth, text.length * 24);
+                    }
+                    var labelOffset = itemRect && labelRect ? Math.max(0, Math.round(labelRect.left - itemRect.left)) : 0;
+                    var iconOffset = itemRect && iconRect ? Math.max(0, Math.round(iconRect.left - itemRect.left)) : 0;
+                    if (!labelWidth) labelWidth = Math.ceil((itemRect && itemRect.width) || item.scrollWidth || 0);
+                    if (!labelOffset) labelOffset = Math.max(76, iconOffset + Math.ceil((iconRect && iconRect.width) || 32) + 24);
+                    max = Math.max(max, labelOffset + labelWidth + Math.max(48, iconOffset || 0));
+                });
+                if (!max) return;
+                var viewportMax = Math.floor((window.innerWidth || 420) * .94);
+                var width = Math.min(Math.max(max, 240), Math.min(viewportMax, 460));
+                document.documentElement.style.setProperty(MENU_WIDTH_VAR, width + 'px');
+                menu.style.setProperty('width', width + 'px', 'important');
+                menu.style.setProperty('max-width', '94vw', 'important');
+                var body = menu.parentNode && menu.parentNode.classList && menu.parentNode.classList.contains('scroll__body') ? menu.parentNode : null;
+                var content = body && body.parentNode && body.parentNode.classList && body.parentNode.classList.contains('scroll__content') ? body.parentNode : null;
+                if (body) body.style.setProperty('width', width + 'px', 'important');
+                if (content) content.style.setProperty('width', width + 'px', 'important');
+            } catch (e2) {}
+        }
+
+        function scheduleMenuWidth() {
+            clearTimeout(menuTimer);
+            menuTimer = setTimeout(syncMenuWidth, 90);
         }
 
         function scheduleGridDecorate() {
@@ -2233,11 +3558,75 @@
             gridTimer = setTimeout(decorateGrid, 80);
         }
 
+        function shouldSyncMenuFromMutations(mutations) {
+            try {
+                for (var i = 0; i < mutations.length; i++) {
+                    var nodes = mutations[i].addedNodes || [];
+                    for (var j = 0; j < nodes.length; j++) {
+                        var node = nodes[j];
+                        if (!node || node.nodeType !== 1) continue;
+                        if ((node.matches && node.matches('.menu, .menu__item')) ||
+                            (node.closest && node.closest('.menu')) ||
+                            (node.querySelector && node.querySelector('.menu, .menu__item'))) {
+                            return true;
+                        }
+                    }
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        function shouldDecorateFromMutations(mutations) {
+            function isAkiraDecorNode(node) {
+                return !!(node && node.nodeType === 1 && (
+                    (node.classList && (
+                        node.classList.contains('akira-card-title') ||
+                        node.classList.contains('akira-card-logo') ||
+                        node.classList.contains('akira-card-type') ||
+                        node.classList.contains('akira-card-rating') ||
+                        node.classList.contains('akira-card-quality') ||
+                        node.classList.contains('akira-ct-meta') ||
+                        node.classList.contains('akira-ct-name')
+                    )) ||
+                    (node.closest && node.closest('.akira-card-title, .akira-card-logo, .akira-card-type, .akira-card-rating, .akira-card-quality'))
+                ));
+            }
+
+            try {
+                for (var i = 0; i < mutations.length; i++) {
+                    var nodes = mutations[i].addedNodes || [];
+                    for (var j = 0; j < nodes.length; j++) {
+                        var node = nodes[j];
+                        if (!node || node.nodeType !== 1) continue;
+                        if (isAkiraDecorNode(node)) continue;
+                        if ((node.matches && node.matches('.mapping--grid, .mapping--line, .items-line, .card')) ||
+                            (node.closest && node.closest('.mapping--grid, .mapping--line, .items-line, .card')) ||
+                            (node.querySelector && node.querySelector('.mapping--grid, .mapping--line, .items-line, .card'))) {
+                            return true;
+                        }
+                    }
+                }
+            } catch (e) {}
+            return false;
+        }
+
         function bindGridObserver() {
             if (gridObserver || !window.MutationObserver) return;
             try {
-                gridObserver = new MutationObserver(scheduleGridDecorate);
+                gridObserver = new MutationObserver(function (mutations) {
+                    if (shouldSyncMenuFromMutations(mutations)) scheduleMenuWidth();
+                    if (shouldDecorateFromMutations(mutations)) scheduleGridDecorate();
+                });
                 gridObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
+            } catch (e) {}
+        }
+
+        function bindMenuWidthEvents() {
+            if (menuEventsBound) return;
+            menuEventsBound = true;
+            try {
+                window.addEventListener('resize', scheduleMenuWidth);
+                window.addEventListener('orientationchange', scheduleMenuWidth);
             } catch (e) {}
         }
 
@@ -2245,8 +3634,12 @@
             start: function () {
                 injectStyle();
                 bindStorageWatch();
+                bindMenuWidthEvents();
                 bindGridObserver();
+                scheduleMenuWidth();
                 scheduleGridDecorate();
+                setTimeout(scheduleMenuWidth, 450);
+                setTimeout(scheduleMenuWidth, 1200);
                 setTimeout(scheduleGridDecorate, 450);
                 setTimeout(scheduleGridDecorate, 1200);
             }
@@ -2264,6 +3657,10 @@
      * ================================================================ */
 
     var Scale = (function () {
+        var eventsBound = false;
+        var storageBound = false;
+        var layerWrapped = false;
+
         /* Адаптивная таблица. Подбирали так, чтобы:
          *  - на смартфоне (~360-400px) текст был читаем (12-13px),
          *  - на ноутбуке (1366-1920) был привычный 16-18px,
@@ -2307,7 +3704,7 @@
                 'body.' + CFG.bodyClass + '[data-akira-scale="on"]{font-size:var(--akira-base-font-size) !important;}',
                 /* Hero-блок: ограничиваем максимальную ширину текста и
                  * аккуратно растим описание на широких экранах. */
-                'body.' + CFG.bodyClass + '[data-akira-scale="on"] .akira-info__body{max-width:min(96%, calc(78em + 6vw));}',
+                'body.' + CFG.bodyClass + '[data-akira-scale="on"] .akira-info__body{max-width:min(96%, calc(98em + 8vw));}',
                 'body.' + CFG.bodyClass + '[data-akira-scale="on"] .akira-info__description{-webkit-line-clamp:7;}',
                 '@media (min-width:2200px){body.' + CFG.bodyClass + '[data-akira-scale="on"] .akira-info__description{-webkit-line-clamp:9;}}',
                 '@media (min-width:3200px){body.' + CFG.bodyClass + '[data-akira-scale="on"] .akira-info__description{-webkit-line-clamp:11;}}'
@@ -2337,18 +3734,22 @@
         }
 
         function bind() {
-            window.addEventListener('resize', debouncedApply);
-            window.addEventListener('orientationchange', debouncedApply);
+            if (!eventsBound) {
+                eventsBound = true;
+                window.addEventListener('resize', debouncedApply);
+                window.addEventListener('orientationchange', debouncedApply);
+            }
             try {
-                if (Lampa.Storage && Lampa.Storage.listener && Lampa.Storage.listener.follow) {
+                if (!storageBound && Lampa.Storage && Lampa.Storage.listener && Lampa.Storage.listener.follow) {
                     Lampa.Storage.listener.follow('change', function (e) {
                         if (!e || !e.name) return;
                         if (e.name === K.scaleEnabled || e.name === K.enabled) apply();
                     });
+                    storageBound = true;
                 }
             } catch (e) {}
             try {
-                if (Lampa.Layer && typeof Lampa.Layer.update === 'function') {
+                if (!layerWrapped && Lampa.Layer && typeof Lampa.Layer.update === 'function') {
                     var orig = Lampa.Layer.update;
                     Lampa.Layer.update = function (where) {
                         if (moduleEnabled()) {
@@ -2356,6 +3757,7 @@
                         }
                         return orig.call(this, where);
                     };
+                    layerWrapped = true;
                 }
             } catch (e) {}
         }
@@ -2381,24 +3783,63 @@
         var today = '';
         var thisYear = new Date().getFullYear();
         try { today = new Date().toISOString().substr(0, 10); } catch (e) { today = ''; }
+        var PARTS_LIMIT = 3;
+        var COLLECTION_CACHE_TIME = 1000 * 60 * 60;
+        var COLLECTION_CACHE_JITTER = 1000 * 60 * 20;
+        var DEFAULT_COLLECTION_TIMEOUT = 8000;
+        var PERSONAL_COLLECTION_TIMEOUT = 6000;
+        var PRIORITY_COLLECTION_TIMEOUT = 15000;
+        var FIRST_BATCH_RETRIES = 3;
+        var CACHE_PREFIX = CFG.prefix + 'tmdb_cache_';
+        var RECOMMENDED_FALLBACK_REQUEST = 'discover/movie?sort_by=popularity.desc&vote_count.gte=300&vote_average.gte=6.5&with_runtime.gte=40&without_genres=99';
 
         var COLLECTIONS = [
+            { id: 'personal_recommendations', emoji: '✨', name: { ru: 'Рекомендации для тебя', en: 'Recommended for you', uk: 'Рекомендації для тебе' },
+              fallbackName: { ru: '\u0420\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u0435\u043c \u043f\u043e\u0441\u043c\u043e\u0442\u0440\u0435\u0442\u044c', en: 'Worth watching', uk: '\u0420\u0430\u0434\u0438\u043c\u043e \u043f\u043e\u0434\u0438\u0432\u0438\u0442\u0438\u0441\u044f' },
+              loader: 'personal', priority: true, timeout: PRIORITY_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, seedLimit: 5 },
             { id: 'trending_movies', emoji: '🔥', name: { ru: 'Топ фильмов недели',  en: 'Top movies this week',  uk: 'Топ фільмів тижня' },
-              request: 'trending/movie/week' },
+              request: 'trending/movie/week', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'trending_tv',     emoji: '🔥', name: { ru: 'Топ сериалов недели', en: 'Top series this week',  uk: 'Топ серіалів тижня' },
-              request: 'trending/tv/week' },
+              request: 'trending/tv/week', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'hot_new_releases', emoji: '🎬', name: { ru: 'Свежие премьеры',    en: 'Hot new releases',      uk: 'Свіжі прем’єри' },
-              request: 'discover/movie?sort_by=primary_release_date.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&vote_count.gte=50&vote_average.gte=6&with_runtime.gte=40&without_genres=99' },
+              request: 'discover/movie?sort_by=primary_release_date.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&vote_count.gte=50&vote_average.gte=6&with_runtime.gte=40&without_genres=99', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'best_year',       emoji: '🌟', name: { ru: 'Лучшее текущего года', en: 'Best of the year',     uk: 'Найкраще поточного року' },
-              request: 'discover/movie?primary_release_year=' + thisYear + '&sort_by=vote_average.desc&vote_count.gte=300' },
+              request: 'discover/movie?primary_release_year=' + thisYear + '&sort_by=vote_average.desc&vote_count.gte=300', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'cult_classics',   emoji: '🍿', name: { ru: 'Классика и хиты',     en: 'Cult and classics',     uk: 'Класика та хіти' },
-              request: 'discover/movie?primary_release_date.gte=1980-01-01&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500' },
+              request: 'discover/movie?primary_release_date.gte=1980-01-01&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'animation',       emoji: '🧸', name: { ru: 'Лучшая анимация',     en: 'Top animation',         uk: 'Найкраща анімація' },
-              request: 'discover/movie?with_genres=16&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500' },
+              request: 'discover/movie?with_genres=16&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
+            { id: 'japanese_animation', emoji: '🌸', name: { ru: '\u0410\u043d\u0438\u043c\u0435 \u0444\u0438\u043b\u044c\u043c\u044b', en: 'Anime movies', uk: '\u0410\u043d\u0456\u043c\u0435 \u0444\u0456\u043b\u044c\u043c\u0438' },
+              requests: [
+                  { type: 'movie', request: 'discover/movie?with_genres=16&with_original_language=ja&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=120&with_runtime.gte=40' }
+              ], timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
+            { id: 'anime_plugin_tv', emoji: '🌸', name: { ru: '\u0410\u043d\u0438\u043c\u0435 \u0441\u0435\u0440\u0438\u0430\u043b\u044b', en: 'Anime series', uk: '\u0410\u043d\u0456\u043c\u0435 \u0441\u0435\u0440\u0456\u0430\u043b\u0438' },
+              request: 'discover/tv?vote_average.gte=6.5&vote_average.lte=9.5&first_air_date.lte=2026-12-31&first_air_date.gte=2020-01-01&with_original_language=ja',
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
             { id: 'world_series',    emoji: '🌍', name: { ru: 'Хиты мировых сериалов', en: 'World series hits',   uk: 'Хіти світових серіалів' },
-              request: 'discover/tv?sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500&first_air_date.gte=2020-01-01&without_genres=16,99,10764,10767' },
+              request: 'discover/tv?sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500&first_air_date.gte=2020-01-01&without_genres=16,99,10764,10767', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'netflix_best',    emoji: '⚫', name: { ru: 'Хиты Netflix',         en: 'Netflix hits',          uk: 'Хіти Netflix' },
-              request: 'discover/tv?with_networks=213&sort_by=last_air_date.desc&first_air_date.gte=2020-01-01&vote_average.gte=7&vote_count.gte=500' }
+              request: 'discover/tv?with_networks=213&sort_by=last_air_date.desc&first_air_date.gte=2020-01-01&vote_average.gte=7&vote_count.gte=500', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
+            { id: 'watching_now', emoji: '👀', name: { ru: '\u0421\u0435\u0439\u0447\u0430\u0441 \u0441\u043c\u043e\u0442\u0440\u044f\u0442', en: 'Watching now', uk: '\u0417\u0430\u0440\u0430\u0437 \u0434\u0438\u0432\u043b\u044f\u0442\u044c\u0441\u044f' },
+              request: 'discover/movie?sort_by=popularity.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&vote_count.gte=50&vote_average.gte=6&with_runtime.gte=40&without_genres=99',
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
+            { id: 'documentaries', emoji: '🎥', name: { ru: '\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u043b\u044c\u043d\u044b\u0435 \u0444\u0438\u043b\u044c\u043c\u044b', en: 'Documentaries', uk: '\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u043b\u044c\u043d\u0456 \u0444\u0456\u043b\u044c\u043c\u0438' },
+              request: 'discover/movie?with_genres=99&sort_by=popularity.desc&vote_count.gte=20&with_translations=ru&include_translations=ru',
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
+            { id: 'recent_tv_hits', emoji: '📺', name: { ru: '\u0421\u0435\u0440\u0438\u0430\u043b\u044b \u043f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0445 \u043b\u0435\u0442', en: 'Recent series hits', uk: '\u0425\u0456\u0442\u0438 \u0441\u0435\u0440\u0456\u0430\u043b\u0456\u0432 \u043e\u0441\u0442\u0430\u043d\u043d\u0456\u0445 \u0440\u043e\u043a\u0456\u0432' },
+              request: 'discover/tv?sort_by=popularity.desc&first_air_date.gte=2020-01-01&vote_average.gte=7&vote_count.gte=300&without_genres=16,99,10762,10763,10764,10766,10767',
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
+            { id: 'trending_all', emoji: '📈', name: { ru: '\u0422\u0440\u0435\u043d\u0434\u044b \u0441\u0435\u0439\u0447\u0430\u0441', en: 'Trending now', uk: '\u0422\u0440\u0435\u043d\u0434\u0438 \u0437\u0430\u0440\u0430\u0437' },
+              request: 'trending/all/week', mediaTypes: ['movie', 'tv'],
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
+            { id: 'high_rated_movies', emoji: '⭐', name: { ru: '\u0412\u044b\u0441\u043e\u043a\u0438\u0439 \u0440\u0435\u0439\u0442\u0438\u043d\u0433', en: 'Highly rated movies', uk: '\u0412\u0438\u0441\u043e\u043a\u0438\u0439 \u0440\u0435\u0439\u0442\u0438\u043d\u0433' },
+              request: 'discover/movie?sort_by=vote_count.desc&vote_average.gte=7.2&vote_count.gte=1000&with_runtime.gte=40&without_genres=99',
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
+            { id: 'russian_platforms', emoji: '📺', name: { ru: 'Российские платформы', en: 'Russian platforms',   uk: 'Російські платформи' },
+              requests: [
+                  { type: 'tv', request: 'discover/tv?with_networks=2493|2859|4085|3923|3871|3827|5806|806|1191&sort_by=first_air_date.desc&first_air_date.lte=' + today + '&vote_average.gte=5&vote_count.gte=3&without_genres=16,99,10762,10763,10764,10766,10767,10768' },
+                  { type: 'movie', request: 'discover/movie?with_companies=2493|2859|4085|3923|3871|3827|5806|806|1191&sort_by=primary_release_date.desc&primary_release_date.lte=' + today + '&vote_average.gte=5&vote_count.gte=3&with_runtime.gte=40&without_genres=16,99' }
+              ], timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false }
         ];
 
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
@@ -2415,7 +3856,365 @@
         }
 
         function ensureColDefaults() {
-            COLLECTIONS.forEach(function (c) { Util.ensureOnOff(colKey(c.id), true); });
+            COLLECTIONS.forEach(function (c) { Util.ensureOnOff(colKey(c.id), c.defaultOn !== false); });
+        }
+
+        function mediaTypeOf(item) {
+            if (!item) return 'movie';
+            var v = String(item.media_type || item.type || '').toLowerCase();
+            if (v === 'tv' || v === 'movie') return v;
+            return (item.name || item.first_air_date || item.number_of_seasons) ? 'tv' : 'movie';
+        }
+
+        function mediaKey(item) {
+            if (!item || !item.id) return '';
+            return mediaTypeOf(item) + ':' + item.id;
+        }
+
+        function collectMediaItems(value, out, depth) {
+            if (!value || out.length > 120 || depth > 5) return;
+            if (Array.isArray(value)) {
+                for (var i = 0; i < value.length; i++) collectMediaItems(value[i], out, depth + 1);
+                return;
+            }
+            if (typeof value !== 'object') return;
+            if (value.id && (value.title || value.name || value.original_title || value.original_name)) {
+                out.push(value);
+                return;
+            }
+            for (var k in value) {
+                if (!Object.prototype.hasOwnProperty.call(value, k)) continue;
+                if (k === 'card' || k === 'cards' || k === 'history' || k === 'movie' || k === 'tv' || k === 'data' || k === 'items' || k === 'results') {
+                    collectMediaItems(value[k], out, depth + 1);
+                }
+            }
+            if (depth > 0) {
+                for (var key in value) {
+                    if (!Object.prototype.hasOwnProperty.call(value, key) || out.length > 120) continue;
+                    collectMediaItems(value[key], out, depth + 1);
+                }
+            }
+        }
+
+        function readHistoryItems() {
+            var found = [];
+            try {
+                if (Lampa.Storage && typeof Lampa.Storage.get === 'function') {
+                    ['favorite', 'history', 'viewed', 'watched', 'online_view'].forEach(function (key) {
+                        try { collectMediaItems(Lampa.Storage.get(key, null), found, 0); } catch (err) {}
+                    });
+                }
+            } catch (e) {}
+            try {
+                if (Lampa.Favorite && typeof Lampa.Favorite.get === 'function') {
+                    ['history', 'view'].forEach(function (key) {
+                        try { collectMediaItems(Lampa.Favorite.get(key), found, 0); } catch (err2) {}
+                    });
+                }
+            } catch (e2) {}
+            var uniq = [], seen = {};
+            found.forEach(function (item) {
+                var key = mediaKey(item);
+                if (!key || seen[key]) return;
+                seen[key] = true;
+                uniq.push(item);
+            });
+            return uniq;
+        }
+
+        function debugEnabled() {
+            try {
+                return !!window.akira_tmdb_debug || Util.isOn(CFG.prefix + 'tmdb_debug', false);
+            } catch (e) { return false; }
+        }
+
+        function debugLog() {
+            if (!debugEnabled() || !window.console || !console.log) return;
+            try {
+                var args = Array.prototype.slice.call(arguments);
+                args.unshift('[Akira TMDB]');
+                console.log.apply(console, args);
+            } catch (e) {}
+        }
+
+        function cloneJson(value) {
+            if (!value) return value;
+            try { return JSON.parse(JSON.stringify(value)); } catch (e) { return value; }
+        }
+
+        function collectionHasResults(json) {
+            return !!(json && Array.isArray(json.results) && json.results.length);
+        }
+
+        function profileCachePart() {
+            var profile = '';
+            try { profile = Lampa.Storage.get('lampac_profile_id', '') || profile; } catch (e) {}
+            try { profile = Lampa.Storage.get('profile_id', '') || profile; } catch (e2) {}
+            try {
+                if (!profile && Lampa.Account && Lampa.Account.profile && Lampa.Account.profile.id) {
+                    profile = Lampa.Account.profile.id;
+                }
+            } catch (e3) {}
+            return String(profile || 'default');
+        }
+
+        function collectionCacheKey(cfg) {
+            return CACHE_PREFIX + cfg.id + '_' + Util.langCode() + '_' + profileCachePart();
+        }
+
+        function collectionCacheJitter(cfg) {
+            var raw = String((cfg && cfg.id) || '');
+            var hash = 0;
+            for (var i = 0; i < raw.length; i++) {
+                hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;
+            }
+            return Math.abs(hash) % COLLECTION_CACHE_JITTER;
+        }
+
+        function collectionExpiresAt(cfg, timestamp) {
+            var ttl = (cfg && cfg.cacheTime) || COLLECTION_CACHE_TIME;
+            return timestamp + ttl + collectionCacheJitter(cfg);
+        }
+
+        function readCollectionCache(cfg) {
+            if (!cfg || cfg.cache === false) return null;
+            try {
+                var node = Util.get(collectionCacheKey(cfg), null);
+                if (!node || !node.timestamp || !node.value) return null;
+                var expiresAt = node.expiresAt || collectionExpiresAt(cfg, node.timestamp);
+                if (new Date().getTime() > expiresAt) return null;
+                return cloneJson(node.value);
+            } catch (e) { return null; }
+        }
+
+        function writeCollectionCache(cfg, json) {
+            if (!cfg || cfg.cache === false || !collectionHasResults(json)) return;
+            try {
+                var now = new Date().getTime();
+                Util.set(collectionCacheKey(cfg), {
+                    timestamp: now,
+                    expiresAt: collectionExpiresAt(cfg, now),
+                    value: cloneJson(json)
+                });
+            } catch (e) {}
+        }
+
+        function emptyCollection(cfg) {
+            var name = localized(cfg.name);
+            return {
+                source: 'akira_tmdb',
+                results: [],
+                title: cfg.emoji ? cfg.emoji + ' ' + name : name
+            };
+        }
+
+        function prepareCollection(cfg, json) {
+            var name = localized(json && json.__akiraFallback && cfg.fallbackName ? cfg.fallbackName : cfg.name);
+            json = json || { source: 'akira_tmdb', results: [] };
+            if (!Array.isArray(json.results)) json.results = [];
+            if (cfg.mediaTypes && cfg.mediaTypes.length) {
+                json.results = json.results.filter(function (item) {
+                    var type = String(item && (item.media_type || item.type) || '').toLowerCase();
+                    if (!type) type = mediaTypeOf(item);
+                    return cfg.mediaTypes.indexOf(type) !== -1;
+                });
+            }
+            try { delete json.__akiraFallback; } catch (e) {}
+            json.source = json.source || 'akira_tmdb';
+            json.title = cfg.emoji ? cfg.emoji + ' ' + name : name;
+            if (Lampa.Utils && Lampa.Utils.addSource) Lampa.Utils.addSource(json, 'akira_tmdb');
+            return json;
+        }
+
+        function loadPersonalRecommendations(parent, params, done, fail, cfg) {
+            var seeds = readHistoryItems().slice(0, (cfg && cfg.seedLimit) || 5);
+            var watched = {};
+            seeds.forEach(function (item) { var key = mediaKey(item); if (key) watched[key] = true; });
+
+            function fallback() {
+                parent.get(RECOMMENDED_FALLBACK_REQUEST, params, function (json) {
+                    json = json || { source: 'akira_tmdb', results: [] };
+                    json.__akiraFallback = true;
+                    done(json);
+                }, fail || done);
+            }
+
+            if (!seeds.length) { fallback(); return; }
+
+            var index = 0;
+            var byKey = {};
+            var list = [];
+
+            function addItems(type, items) {
+                (items || []).forEach(function (item) {
+                    if (!item || !item.id) return;
+                    if (!item.media_type) item.media_type = type;
+                    var key = mediaKey(item);
+                    if (!key || watched[key]) return;
+                    if (!byKey[key]) {
+                        item.__akiraScore = 0;
+                        byKey[key] = item;
+                        list.push(item);
+                    }
+                    byKey[key].__akiraScore += 1;
+                });
+            }
+
+            function next() {
+                if (index >= seeds.length) {
+                    if (!list.length) { fallback(); return; }
+                    list.sort(function (a, b) {
+                        var as = (a.__akiraScore || 0) * 100 + (a.vote_average || 0) * 3 + Math.min(a.vote_count || 0, 1200) / 100;
+                        var bs = (b.__akiraScore || 0) * 100 + (b.vote_average || 0) * 3 + Math.min(b.vote_count || 0, 1200) / 100;
+                        return bs - as;
+                    });
+                    list = list.slice(0, 20).map(function (item) {
+                        try { delete item.__akiraScore; } catch (e) {}
+                        return item;
+                    });
+                    done({ source: 'akira_tmdb', results: list });
+                    return;
+                }
+                var seed = seeds[index++];
+                var type = mediaTypeOf(seed);
+                parent.get(type + '/' + seed.id + '/recommendations', params, function (json) {
+                    addItems(type, json && json.results);
+                    next();
+                }, function () { next(); });
+            }
+
+            next();
+        }
+
+        function itemDateValue(item) {
+            var raw = item && (item.release_date || item.first_air_date || '');
+            var time = raw ? Date.parse(raw) : 0;
+            return isFinite(time) ? time : 0;
+        }
+
+        function loadMultiRequestCollection(parent, params, requests, done, fail) {
+            requests = Array.isArray(requests) ? requests : [];
+            if (!requests.length) { if (fail) fail(); else done({ source: 'akira_tmdb', results: [] }); return; }
+
+            var index = 0;
+            var list = [];
+            var seen = {};
+
+            function add(type, items) {
+                (items || []).forEach(function (item) {
+                    if (!item || !item.id) return;
+                    if (!item.media_type) item.media_type = type || mediaTypeOf(item);
+                    var key = mediaKey(item);
+                    if (!key || seen[key]) return;
+                    seen[key] = true;
+                    list.push(item);
+                });
+            }
+
+            function next() {
+                if (index >= requests.length) {
+                    list.sort(function (a, b) {
+                        var dateDiff = itemDateValue(b) - itemDateValue(a);
+                        if (dateDiff) return dateDiff;
+                        return (b.popularity || 0) - (a.popularity || 0);
+                    });
+                    done({ source: 'akira_tmdb', results: list.slice(0, 20) });
+                    return;
+                }
+                var cfg = requests[index++];
+                parent.get(cfg.request, params, function (json) {
+                    add(cfg.type, json && json.results);
+                    next();
+                }, function () { next(); });
+            }
+
+            next();
+        }
+
+        function loadCollectionRaw(cfg, parent, params, done, fail) {
+            if (cfg.loader === 'personal') {
+                loadPersonalRecommendations(parent, params, done, fail, cfg);
+            } else if (cfg.requests) {
+                loadMultiRequestCollection(parent, params, cfg.requests, done, fail);
+            } else if (cfg.request) {
+                parent.get(cfg.request, params, done, fail);
+            } else {
+                fail();
+            }
+        }
+
+        function safePart(cfg, parent, params, call) {
+            var finished = false;
+            var timer = null;
+            var attempt = 0;
+            var retries = cfg.retries || 0;
+            var timeout = cfg.priority ? (cfg.timeout || PRIORITY_COLLECTION_TIMEOUT) : (cfg.timeout || DEFAULT_COLLECTION_TIMEOUT);
+            var cachedFirst = readCollectionCache(cfg);
+
+            if (cachedFirst && collectionHasResults(cachedFirst)) {
+                debugLog(cfg.id, 'cache-hit', cachedFirst.results.length);
+                call(prepareCollection(cfg, cachedFirst));
+                return;
+            }
+
+            function complete(json, reason) {
+                if (finished) return;
+                finished = true;
+                if (timer) {
+                    clearTimeout(timer);
+                    timer = null;
+                }
+
+                var prepared = prepareCollection(cfg, json);
+                if (collectionHasResults(prepared)) {
+                    if (reason !== 'cache') writeCollectionCache(cfg, prepared);
+                    debugLog(cfg.id, reason || 'success', prepared.results.length);
+                    call(prepared);
+                    return;
+                }
+
+                var cached = readCollectionCache(cfg);
+                if (cached && collectionHasResults(cached)) {
+                    debugLog(cfg.id, reason || 'empty', 'cache', cached.results.length);
+                    call(prepareCollection(cfg, cached));
+                    return;
+                }
+
+                debugLog(cfg.id, reason || 'empty', 'no-cache');
+                call(emptyCollection(cfg));
+            }
+
+            function fail(reason) {
+                if (attempt <= retries) {
+                    run(reason || 'error');
+                    return;
+                }
+                complete(null, reason || 'error');
+            }
+
+            function run(previousReason) {
+                if (finished) return;
+                if (timer) {
+                    clearTimeout(timer);
+                    timer = null;
+                }
+                attempt++;
+                timer = setTimeout(function () {
+                    fail('timeout');
+                }, timeout);
+                try {
+                    debugLog(cfg.id, attempt === 1 ? 'start' : 'retry', attempt, previousReason || '');
+                    loadCollectionRaw(cfg, parent, params, function (json) {
+                        complete(json, attempt === 1 ? 'success' : 'retry-success');
+                    }, function () {
+                        fail('error');
+                    });
+                } catch (e) {
+                    fail('exception');
+                }
+            }
+
+            run();
         }
 
         function buildDiscoveryMain(parent) {
@@ -2425,43 +4224,83 @@
                 var onerror = arguments[2];
                 var hasSeq = Lampa.Api && typeof Lampa.Api.sequentials === 'function';
                 var hasPart = Lampa.Api && typeof Lampa.Api.partNext === 'function';
-                if (!hasSeq && !hasPart) { if (onerror) onerror(); return function () {}; }
+                if (!hasPart && !hasSeq) { if (onerror) onerror(); return function () {}; }
 
-                var parts = []; var total = 0;
-                COLLECTIONS.forEach(function (cfg) {
+                var parts = [];
+                COLLECTIONS.forEach(function (cfg, index) {
                     if (!colEnabled(cfg.id)) return;
-                    total++;
-                    parts.push(function (call) {
-                        parent.get(cfg.request, params, function (json) {
-                            var name = localized(cfg.name);
-                            json.title = cfg.emoji ? cfg.emoji + ' ' + name : name;
-                            if (Lampa.Utils && Lampa.Utils.addSource) Lampa.Utils.addSource(json, 'akira_tmdb');
-                            call(json);
-                        }, function () {
-                            var name = localized(cfg.name);
-                            call({ source: 'akira_tmdb', results: [], title: cfg.emoji ? cfg.emoji + ' ' + name : name });
-                        });
-                    });
+                    parts.push(function (call) { safePart(cfg, parent, params, call); });
+                    if (parts.length <= PARTS_LIMIT && !cfg.retries) cfg.retries = FIRST_BATCH_RETRIES;
                 });
 
-                if (parts.length === 0) { if (onerror) onerror(); return function () {}; }
-                var method = hasSeq ? Lampa.Api.sequentials : Lampa.Api.partNext;
-                method(parts, total, oncomplete, onerror);
-                return function () {};
+                if (!parts.length) { if (onerror) onerror(); return function () {}; }
+
+                var emitted = 0;
+
+                function normalizeBatch(data) {
+                    var list = Array.isArray(data) ? data : [data];
+                    return list.filter(function (item) {
+                        return collectionHasResults(item);
+                    });
+                }
+
+                function loadPart(partLoaded, partEmpty) {
+                    var method = hasPart ? Lampa.Api.partNext : Lampa.Api.sequentials;
+                    var limit = hasPart ? PARTS_LIMIT : parts.length;
+                    method(parts, limit, function (data) {
+                        var list = normalizeBatch(data);
+                        if (list.length) {
+                            emitted += list.length;
+                            if (partLoaded) partLoaded(list);
+                        } else if (!emitted && partEmpty) {
+                            partEmpty();
+                        }
+                    }, function (err) {
+                        if (!emitted && partEmpty) partEmpty(err);
+                    });
+                }
+
+                loadPart(oncomplete, onerror);
+                return loadPart;
             };
+        }
+
+        function createAkiraMain(source, originalMain) {
+            var main = function () {
+                var args = Array.prototype.slice.call(arguments);
+                if (moduleEnabled() && this.type !== 'movie' && this.type !== 'tv') {
+                    return buildDiscoveryMain(source).apply(this, args);
+                }
+                return originalMain.apply(this, args);
+            };
+            main.__akiraMain = true;
+            return main;
+        }
+
+        function ensureParamsSource() {
+            try {
+                var sources = (Lampa.Params && Lampa.Params.values && Lampa.Params.values.source) ? Lampa.Params.values.source : {};
+                if (sources.akira_tmdb !== 'Akira') {
+                    sources.akira_tmdb = 'Akira';
+                    var current = 'tmdb';
+                    try {
+                        current = Lampa.Storage && Lampa.Storage.field ? Lampa.Storage.field('source') : Lampa.Storage.get('source', 'tmdb');
+                    } catch (e) {}
+                    Lampa.Params.select('source', sources, current || 'tmdb');
+                }
+            } catch (e2) {}
         }
 
         function installSource() {
             try {
                 if (!Lampa.Api || !Lampa.Api.sources || !Lampa.Api.sources.tmdb) return false;
                 if (Lampa.Api.sources.akira_tmdb) {
-                    try {
-                        var readySources = (Lampa.Params && Lampa.Params.values && Lampa.Params.values.source) ? Lampa.Params.values.source : {};
-                        if (readySources.akira_tmdb !== 'Akira') {
-                            readySources.akira_tmdb = 'Akira';
-                            Lampa.Params.select('source', readySources, (Lampa.Storage && Lampa.Storage.field ? Lampa.Storage.field('source') : 'tmdb') || 'tmdb');
-                        }
-                    } catch (readyErr) {}
+                    var readySource = Lampa.Api.sources.akira_tmdb;
+                    if (!readySource.main || !readySource.main.__akiraMain) {
+                        readySource.__akiraOriginalMain = readySource.__akiraOriginalMain || Lampa.Api.sources.tmdb.main;
+                        readySource.main = createAkiraMain(readySource, readySource.__akiraOriginalMain);
+                    }
+                    ensureParamsSource();
                     return true;
                 }
                 var origTmdb = Lampa.Api.sources.tmdb;
@@ -2469,26 +4308,9 @@
                 Lampa.Api.sources.akira_tmdb = clone;
                 try { Object.defineProperty(Lampa.Api.sources, 'akira_tmdb', { get: function () { return clone; } }); } catch (e) {}
                 var origMain = origTmdb.main;
-                clone.main = function () {
-                    var args = Array.prototype.slice.call(arguments);
-                    if (moduleEnabled() && this.type !== 'movie' && this.type !== 'tv') {
-                        return buildDiscoveryMain(clone).apply(this, args);
-                    }
-                    return origMain.apply(this, args);
-                };
-                if (Lampa.Params && Lampa.Params.select) {
-                    try {
-                        var sources = (Lampa.Params.values && Lampa.Params.values.source) ? Lampa.Params.values.source : {};
-                        if (sources.akira_tmdb !== 'Akira') {
-                            sources.akira_tmdb = 'Akira';
-                            var current = 'tmdb';
-                            try {
-                                current = Lampa.Storage && Lampa.Storage.field ? Lampa.Storage.field('source') : Lampa.Storage.get('source', 'tmdb');
-                            } catch (e2) {}
-                            Lampa.Params.select('source', sources, current || 'tmdb');
-                        }
-                    } catch (e) {}
-                }
+                clone.__akiraOriginalMain = origMain;
+                clone.main = createAkiraMain(clone, origMain);
+                if (Lampa.Params && Lampa.Params.select) ensureParamsSource();
                 return true;
             } catch (e) { return false; }
         }
@@ -2504,6 +4326,13 @@
             }
         };
     })();
+
+    /* ================================================================
+     * 12. SETTINGS вЂ” РєРѕСЂРЅРµРІРѕР№ РїСѓРЅРєС‚ "akira" + РІР»РѕР¶РµРЅРЅС‹Рµ РїРѕРґСЂР°Р·РґРµР»С‹
+     *     РїРѕ РѕР±СЂР°Р·С†Сѓ appletv_agnative: РєР°Р¶РґРѕРµ РїРѕРґРјРµРЅСЋ вЂ” РѕС‚РґРµР»СЊРЅС‹Р№
+     *     SettingsApi component, РѕС‚РєСЂС‹РІР°РµС‚СЃСЏ С‡РµСЂРµР· type:'button' СЃ
+     *     onChange в†’ Lampa.Settings.create(child, { onBack: parent }).
+     * ================================================================ */
 
     /* ================================================================
      * 12. SETTINGS — корневой пункт "akira" + вложенные подразделы
@@ -2554,21 +4383,14 @@
             return value || CFG.brand;
         }
 
-        function openBrandPrompt() {
-            var value = null;
-            try { value = window.prompt(t('topbar_brand'), currentBrand()); } catch (e) {}
-            if (value === null || typeof value === 'undefined') return;
-            Util.set(K.topbarBrand, Util.clean(value) || CFG.brand);
-            try { Topbar.schedule(true); } catch (e2) {}
-        }
-
         function buildRoot() {
             addComponent(CFG.component, t('root_name'));
             addParam(CFG.component, { name: CFG.prefix + 'about', type: 'static' },
                 { name: t('root_name'), description: t('root_about') });
             addParam(CFG.component, { name: K.enabled, type: 'trigger', default: true },
                 { name: t('master_enabled') });
-
+            addParam(CFG.component, { name: K.shotsEnabled, type: 'trigger', default: true },
+                { name: t('shots_enabled') }, function () { try { Shots.sync(); } catch (e) {} });
             addParam(CFG.component, { name: CFG.prefix + 'open_topbar', type: 'button' },
                 { name: t('open_topbar'), description: t('topbar_title') }, function () { openSub(SUB.topbar); });
             addParam(CFG.component, { name: CFG.prefix + 'open_iface', type: 'button' },
@@ -2592,8 +4414,12 @@
             addComponent(SUB.topbar, t('topbar_title'));
             addParam(SUB.topbar, { name: K.topbarEnabled, type: 'trigger', default: true },
                 { name: t('topbar_enabled') });
-            addParam(SUB.topbar, { name: CFG.prefix + 'brand_edit', type: 'button' },
-                { name: t('topbar_brand'), description: currentBrand() }, openBrandPrompt);
+            addParam(SUB.topbar, { name: K.topbarBrand, type: 'input', values: '', placeholder: CFG.brand, default: CFG.brand },
+                { name: t('topbar_brand'), description: currentBrand() }, function (value) {
+                    var clean = Util.clean(value) || CFG.brand;
+                    if (clean !== value) Util.set(K.topbarBrand, clean);
+                    try { Topbar.schedule(true); } catch (e) {}
+                });
             addParam(SUB.topbar, { name: K.topbarAlign, type: 'select', values: { start: t('topbar_align_start'), center: t('topbar_align_center') }, default: 'start' },
                 { name: t('topbar_align') }, function () { try { Topbar.schedule(true); } catch (e) {} });
             addParam(SUB.topbar, { name: CFG.prefix + 'open_topnav', type: 'button' },
@@ -2640,6 +4466,16 @@
                 values: { 'block': t('iface_hero_mode_block'), 'fullscreen': t('iface_hero_mode_fullscreen') },
                 default: 'block'
             }, { name: t('iface_hero_mode') });
+            addParam(SUB.iface, {
+                name: K.ifaceHeroInfo, type: 'select',
+                values: {
+                    'all': t('iface_hero_info_all'),
+                    'hide_description': t('iface_hero_info_hide_description'),
+                    'hide_meta': t('iface_hero_info_hide_meta'),
+                    'hide_all': t('iface_hero_info_hide_all')
+                },
+                default: 'all'
+            }, { name: t('iface_hero_info') });
         }
 
         function buildButtons() {
@@ -2714,7 +4550,7 @@
                 { name: t('tmdb_enabled') }, function () { Util.notify(t('reset_done')); });
             TmdbMod.collections.forEach(function (c) {
                 var name = (c.emoji ? c.emoji + ' ' : '') + TmdbMod.localized(c.name);
-                addParam(SUB.tmdb, { name: TmdbMod.colKey(c.id), type: 'trigger', default: true },
+                addParam(SUB.tmdb, { name: TmdbMod.colKey(c.id), type: 'trigger', default: c.defaultOn !== false },
                     { name: name });
             });
         }
@@ -2754,17 +4590,31 @@
         };
     })();
 
+    var booted = false;
+
+    // Keep startup order explicit: shared services first, UI modules after CSS
+    // and settings are in place, optional data source last.
+    var BOOT_MODULES = [
+        { name: 'Shots', module: Shots },
+        { name: 'Settings', module: Settings, method: 'buildAll' },
+        { name: 'Theme', module: Theme },
+        { name: 'Scale', module: Scale },
+        { name: 'Logos', module: Logos },
+        { name: 'Buttons', module: Buttons },
+        { name: 'Interface', module: Interface },
+        { name: 'Topbar', module: Topbar },
+        { name: 'TmdbMod', module: TmdbMod },
+        { name: 'Comments', module: Comments }
+    ];
+
     function boot() {
+        if (booted) return;
         ensureDefaults();
-        try { Settings.buildAll(); } catch (e) {}
-        try { Theme.start();    } catch (e) {}
-        try { Scale.start();    } catch (e) {}
-        try { Logos.start();    } catch (e) {}
-        try { Buttons.start();  } catch (e) {}
-        try { Interface.start(); } catch (e) {}
-        try { Topbar.start();   } catch (e) {}
-        try { TmdbMod.start();  } catch (e) {}
-        Util.log('Akira',CFG.version);
+        booted = true;
+        BOOT_MODULES.forEach(function (entry) {
+            startModule(entry.name, entry.module, entry.method);
+        });
+        Util.log('Akira', CFG.version);
     }
 
     if (window.appready) {
