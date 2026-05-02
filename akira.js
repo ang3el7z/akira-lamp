@@ -1006,10 +1006,30 @@
             timer = setTimeout(scan, 80);
         }
 
+        function hasCommentsLine(nodes) {
+            try {
+                for (var i = 0; i < nodes.length; i++) {
+                    var node = nodes[i];
+                    if (!node || node.nodeType !== 1) continue;
+                    if ((node.classList && node.classList.contains('items-line')) ||
+                        (node.classList && node.classList.contains('items-line__title')) ||
+                        (node.querySelector && node.querySelector('.items-line, .items-line__title'))) return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
         function bind() {
             if (observer || !window.MutationObserver) return;
             try {
-                observer = new MutationObserver(schedule);
+                observer = new MutationObserver(function (mutations) {
+                    for (var i = 0; i < mutations.length; i++) {
+                        if (hasCommentsLine(mutations[i].addedNodes || [])) {
+                            schedule();
+                            return;
+                        }
+                    }
+                });
                 observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
             } catch (e) {}
         }
@@ -1427,7 +1447,9 @@
 
     var Logos = (function () {
         var memCache = {};
+        var memCacheOrder = [];
         var pending = {};
+        var LOGO_MEM_CACHE_LIMIT = 300;
 
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
         function moduleEnabled() { return pluginEnabled() && Util.isOn(K.logosEnabled, true); }
@@ -1449,28 +1471,38 @@
             return CFG.logoCachePrefix + type + '_' + id + '_' + lng;
         }
 
+        function rememberCached(key, value) {
+            if (!(key in memCache)) memCacheOrder.push(key);
+            memCache[key] = value;
+            while (memCacheOrder.length > LOGO_MEM_CACHE_LIMIT) {
+                delete memCache[memCacheOrder.shift()];
+            }
+            return value;
+        }
+
         function getCached(key) {
             if (key in memCache) return memCache[key];
             try {
                 var s = sessionStorage.getItem(key);
-                if (s !== null && typeof s !== 'undefined') { memCache[key] = s; return s; }
+                if (s !== null && typeof s !== 'undefined') return rememberCached(key, s);
             } catch (e) {}
             try {
                 var l = localStorage.getItem(key);
-                if (l !== null && typeof l !== 'undefined') { memCache[key] = l; return l; }
+                if (l !== null && typeof l !== 'undefined') return rememberCached(key, l);
             } catch (e) {}
             return null;
         }
 
         function setCached(key, value) {
             var v = value || 'none';
-            memCache[key] = v;
+            rememberCached(key, v);
             try { sessionStorage.setItem(key, v); } catch (e) {}
             try { localStorage.setItem(key, v); } catch (e) {}
         }
 
         function clearCache() {
             memCache = {};
+            memCacheOrder = [];
             try {
                 var rmS = [];
                 for (var i = 0; i < sessionStorage.length; i++) {
@@ -1916,6 +1948,10 @@
 
     var Interface = (function () {
         var started = false;
+        var HERO_OPEN_FALLBACK_MS = 900;
+        var HERO_SWAP_FALLBACK_MS = 360;
+        var HERO_INFO_FALLBACK_MS = 420;
+        var HERO_CLOSE_FALLBACK_MS = 900;
 
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
         function moduleEnabled() { return pluginEnabled() && Util.isOn(K.ifaceEnabled, true); }
@@ -1930,10 +1966,12 @@
                 '.akira-iface .card.card--wide, .akira-iface .card--small.card--wide{width:18.3em;}',
                 '.akira-iface .card-more__box, .akira-iface .card.card--wide + .card-more .card-more__box, .akira-iface .card--small.card--wide + .card-more .card-more__box{padding-bottom:95%;}',
                 '.akira-info{position:relative;padding:0 1.5em;height:0;opacity:0;overflow:hidden;z-index:3;pointer-events:none;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;will-change:height,opacity,padding;transition:height .58s cubic-bezier(.2,.8,.2,1),padding-top .58s cubic-bezier(.2,.8,.2,1),padding-bottom .58s cubic-bezier(.2,.8,.2,1),opacity .58s ease;}',
-                '.akira-iface[data-akira-hero-state="shown"] .akira-info{height:var(--ni-info-h);padding-top:1.5em;padding-bottom:1.5em;opacity:1;pointer-events:auto;}',
+                '.akira-iface[data-akira-hero-state="opening"] .akira-info,.akira-iface[data-akira-hero-state="shown"] .akira-info,.akira-iface[data-akira-hero-state="closing"] .akira-info{height:var(--ni-info-h);padding-top:1.5em;padding-bottom:1.5em;opacity:1;}',
+                '.akira-iface[data-akira-hero-state="shown"] .akira-info{pointer-events:auto;}',
                 '.akira-info:before{display:none !important;}',
                 '.akira-info__body{position:relative;z-index:1;width:min(96%,94em);padding-top:1.1em;display:grid;grid-template-columns:minmax(0,1fr) minmax(30em,.95fr);column-gap:clamp(28px,4.4vw,104px);align-items:end;height:100%;box-sizing:border-box;opacity:0;transform:translateY(.7em);will-change:opacity,transform;transition:opacity .26s ease,transform .52s cubic-bezier(.2,.8,.2,1);}',
                 '.akira-iface[data-akira-hero-state="shown"] .akira-info__body{opacity:1;transform:none;}',
+                '.akira-iface[data-akira-hero-state="closing"] .akira-info__body{opacity:0;transform:none;transition:opacity .24s ease-out;}',
                 '.akira-info__left,.akira-info__right{min-width:0;height:100%;}',
                 '.akira-info__textblock{margin-top:auto;display:flex;flex-direction:column;gap:.55em;min-height:0;max-width:min(52em,100%);padding:.85em 1em .95em;border-radius:10px;background:linear-gradient(90deg,rgba(5,7,12,.54),rgba(5,7,12,.32) 66%,rgba(5,7,12,.12));box-shadow:0 14px 46px rgba(0,0,0,.22);backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px);}',
                 '.akira-info__right{padding-top:clamp(.2em,2.2vh,1.6em);padding-bottom:clamp(.8em,2.4vh,2em);display:flex;flex-direction:column;align-items:flex-end;justify-self:end;transform:none;}',
@@ -1953,14 +1991,14 @@
                 'body.' + CFG.bodyClass + '[data-akira-hero-info="hide_description"] .akira-info__description,body.' + CFG.bodyClass + '[data-akira-hero-info="hide_all"] .akira-info__description{display:none!important;}',
                 'body.' + CFG.bodyClass + '[data-akira-hero-info="hide_meta"] .akira-info__meta,body.' + CFG.bodyClass + '[data-akira-hero-info="hide_all"] .akira-info__meta{display:none!important;}',
                 '.akira-iface .akira-info__background{position:absolute!important;left:0!important;right:0!important;top:0!important;height:0!important;overflow:hidden!important;pointer-events:none!important;z-index:0!important;opacity:0;will-change:height,opacity;transition:height .58s cubic-bezier(.2,.8,.2,1),opacity .58s ease;}',
-                '.akira-iface[data-akira-hero-state="shown"] .akira-info__background{height:var(--ni-info-h)!important;opacity:1;}',
+                '.akira-iface[data-akira-hero-state="opening"] .akira-info__background,.akira-iface[data-akira-hero-state="shown"] .akira-info__background,.akira-iface[data-akira-hero-state="closing"] .akira-info__background{height:var(--ni-info-h)!important;opacity:1;}',
                 '.akira-iface .akira-info__background img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:0;transition:opacity .55s ease-in-out;will-change:opacity;filter:none!important;}',
                 '.akira-iface .akira-info__background img.active{opacity:1;}',
-                '.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="shown"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="hiding"] .akira-info__background{position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100vh!important;z-index:0!important;}',
+                '.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="opening"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="shown"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="closing"] .akira-info__background{position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100vh!important;z-index:0!important;}',
                 '.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,var(--akira-bg,#0a0d12) 0%,rgba(10,13,18,.78) 38%,rgba(10,13,18,.18) 72%,transparent 100%);z-index:1;}',
                 '.akira-iface[data-akira-hero="fullscreen"] .akira-info{position:relative!important;z-index:2!important;}',
                 '.akira-iface[data-akira-hero="fullscreen"] .akira-info__right{background:none!important;}',
-                '@media(max-width:767px){.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="shown"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="hiding"] .akira-info__background{position:absolute!important;height:var(--ni-info-h)!important;width:100%!important;}.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{display:none;}}',
+                '@media(max-width:767px){.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="opening"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="shown"] .akira-info__background,.akira-iface[data-akira-hero="fullscreen"][data-akira-hero-state="closing"] .akira-info__background{position:absolute!important;height:var(--ni-info-h)!important;width:100%!important;}.akira-iface[data-akira-hero="fullscreen"] .akira-info__background::after{display:none;}}',
                 '.akira-iface .full-start__rate{font-size:1.3em;margin-right:0;}',
                 '.akira-iface .full-start__lines{padding-bottom:env(safe-area-inset-bottom,0px);}',
                 '.akira-iface .card__promo{display:none;}',
@@ -2032,12 +2070,12 @@
 
         function InfoBlock() {
             this.html = null;
-            this.timer = null;
             this.network = new Lampa.Reguest();
             this.loaded = {};
             this.currentUrl = null;
             this.updateSeq = 0;
-            this.drawTimer = null;
+            this.drawSeq = 0;
+            this.swapFallback = null;
         }
         InfoBlock.prototype.create = function () { if (this.html) return; this.html = $(buildInfoHtml()); };
         InfoBlock.prototype.render = function (js) { if (!this.html) this.create(); return js ? this.html[0] : this.html; };
@@ -2055,23 +2093,19 @@
             this.currentUrl = url;
             var self = this;
             if (this.loaded[url]) { if (done) done(this.loaded[url]); else if (!preload) this.draw(this.loaded[url]); return; }
-            clearTimeout(this.timer);
-            this.timer = setTimeout(function () {
-                self.network.clear();
-                self.network.timeout(5000);
-                var settled = false;
-                function finish(movie) {
-                    if (settled) return;
-                    settled = true;
-                    if (movie && movie.id) self.loaded[url] = movie;
-                    if (done) done(movie || data);
-                    else if (!preload && self.currentUrl === url) self.draw(movie || data);
-                }
-                self.network.silent(url, function (movie) {
-                    finish(movie);
-                }, function () { finish(data); });
-                if (done) setTimeout(function () { finish(data); }, 5400);
-            }, 0);
+            self.network.clear();
+            self.network.timeout(5000);
+            var settled = false;
+            function finish(movie) {
+                if (settled) return;
+                settled = true;
+                if (movie && movie.id) self.loaded[url] = movie;
+                if (done) done(movie || data);
+                else if (!preload && self.currentUrl === url) self.draw(movie || data);
+            }
+            self.network.silent(url, function (movie) {
+                finish(movie);
+            }, function () { finish(data); });
         };
         InfoBlock.prototype.preloadLogo = function (movie, done) {
             Logos.resolve(movie, function (url) {
@@ -2094,11 +2128,16 @@
                 });
             });
         };
-        InfoBlock.prototype.drawPrepared = function (movie, logoUrl) {
+        InfoBlock.prototype.drawPrepared = function (movie, logoUrl, options) {
             if (!movie || !this.html) return;
+            options = options || {};
+            var self = this;
+            var drawSeq = ++this.drawSeq;
             var html = this.html;
             var body = html.find('.akira-info__body')[0];
+            clearTimeout(this.swapFallback);
             var fill = function () {
+                if (drawSeq !== self.drawSeq) return;
                 var create = ((movie.release_date || movie.first_air_date || '0000') + '').slice(0, 4);
                 var voteNum = parseFloat((movie.vote_average || 0) + '');
                 var vote = isFinite(voteNum) ? voteNum.toFixed(1) : '0.0';
@@ -2140,16 +2179,39 @@
                 } else {
                     titleNode.text(titleText);
                 }
-                if (body) {
+                if (body && !options.hidden) {
                     body.style.transition = 'opacity .35s ease-in';
                     body.style.opacity = '1';
                 }
             };
-            if (body) {
+            if (body && options.hidden) {
+                body.style.transition = '';
+                body.style.opacity = '';
+                fill();
+            } else if (body) {
+                var alreadyHidden = false;
+                try {
+                    alreadyHidden = !!(window.getComputedStyle && parseFloat(window.getComputedStyle(body).opacity || '0') <= 0.02);
+                } catch (e) {}
                 body.style.transition = 'opacity .22s ease-out';
                 body.style.opacity = '0';
-                clearTimeout(this.drawTimer);
-                this.drawTimer = setTimeout(fill, 220);
+                var filled = false;
+                var finishFadeOut = function () {
+                    body.removeEventListener('transitionend', onFadeOut);
+                    clearTimeout(self.swapFallback);
+                    self.swapFallback = null;
+                    if (filled || drawSeq !== self.drawSeq) return;
+                    filled = true;
+                    fill();
+                };
+                var onFadeOut = function (e) {
+                    if (e && e.target === body && e.propertyName === 'opacity') finishFadeOut();
+                };
+                if (body.addEventListener) {
+                    body.addEventListener('transitionend', onFadeOut);
+                    if (alreadyHidden) finishFadeOut();
+                    else self.swapFallback = setTimeout(finishFadeOut, HERO_SWAP_FALLBACK_MS);
+                } else fill();
             } else fill();
         };
         InfoBlock.prototype.draw = function (movie) {
@@ -2164,11 +2226,11 @@
             this.html.find('.akira-info__dot').hide();
         };
         InfoBlock.prototype.destroy = function () {
-            clearTimeout(this.timer);
-            clearTimeout(this.drawTimer);
+            clearTimeout(this.swapFallback);
             try { this.network.clear(); } catch (e) {}
             this.loaded = {};
             this.currentUrl = null;
+            this.drawSeq++;
             if (this.html) { this.html.remove(); this.html = null; }
         };
 
@@ -2222,7 +2284,9 @@
 
             var state = {
                 main: main, info: info, background: background, infoElement: null,
-                backgroundTimer: null, clearTimer: null, clearInfoTimer: null, backgroundLast: '', backgroundSlot: 0, updateSeq: 0, hideSeq: 0, attached: false, heroState: 'empty',
+                backgroundLast: '', backgroundSlot: 0, updateSeq: 0, hideSeq: 0, attached: false, heroState: 'empty',
+                revealFallback: null, revealNode: null, revealEnd: null,
+                hideInfoFallback: null, hideFallback: null, hideBody: null, hideBodyEnd: null, hideNode: null, hideEnd: null,
                 attach: function () {
                     if (this.attached) return;
                     var container = main.render(true);
@@ -2250,9 +2314,52 @@
                 setHeroState: function (stateName, container) {
                     var node = container || (main && main.render ? main.render(true) : null);
                     if (!node || !node.setAttribute) return;
-                    var next = stateName === true ? 'shown' : (stateName === 'shown' || stateName === 'hiding' ? stateName : 'empty');
+                    var next = stateName === true ? 'shown' :
+                        (stateName === 'opening' || stateName === 'shown' || stateName === 'closing' || stateName === 'hiding' ? stateName : 'empty');
                     this.heroState = next;
                     if (node.getAttribute('data-akira-hero-state') !== next) node.setAttribute('data-akira-hero-state', next);
+                },
+                clearRevealWait: function () {
+                    clearTimeout(this.revealFallback);
+                    this.revealFallback = null;
+                    if (this.revealNode && this.revealEnd) this.revealNode.removeEventListener('transitionend', this.revealEnd);
+                    this.revealNode = null;
+                    this.revealEnd = null;
+                },
+                clearHideWait: function () {
+                    clearTimeout(this.hideInfoFallback);
+                    clearTimeout(this.hideFallback);
+                    this.hideInfoFallback = null;
+                    this.hideFallback = null;
+                    if (this.hideBody && this.hideBodyEnd) this.hideBody.removeEventListener('transitionend', this.hideBodyEnd);
+                    if (this.hideNode && this.hideEnd) this.hideNode.removeEventListener('transitionend', this.hideEnd);
+                    this.hideBody = null;
+                    this.hideBodyEnd = null;
+                    this.hideNode = null;
+                    this.hideEnd = null;
+                },
+                waitForOpen: function (seq) {
+                    var self = this;
+                    var node = this.infoElement;
+                    var done = false;
+                    this.clearRevealWait();
+                    function finishReveal() {
+                        if (done) return;
+                        done = true;
+                        self.clearRevealWait();
+                        if (seq !== self.updateSeq || self.heroState !== 'opening') return;
+                        self.setHeroState('shown');
+                    }
+                    if (node && node.addEventListener) {
+                        this.revealNode = node;
+                        this.revealEnd = function (e) {
+                            if (e && e.target === node && e.propertyName === 'height') finishReveal();
+                        };
+                        node.addEventListener('transitionend', this.revealEnd);
+                        this.revealFallback = setTimeout(finishReveal, HERO_OPEN_FALLBACK_MS);
+                    } else {
+                        finishReveal();
+                    }
                 },
                 backgroundPath: function (movie) {
                     return movie && movie.backdrop_path ? Lampa.Api.img(movie.backdrop_path, 'w1280') : '';
@@ -2263,13 +2370,9 @@
                     var seq = ++this.updateSeq;
                     var path = this.backgroundPath(data);
                     var infoReady = false, bgReady = false, movieReady = null, logoReady = null;
-                    clearTimeout(this.backgroundTimer);
-                    clearTimeout(this.clearTimer);
-                    clearTimeout(this.clearInfoTimer);
-                    this.clearTimer = null;
-                    this.clearInfoTimer = null;
                     this.hideSeq++;
-                    if (this.heroState === 'hiding' && this.backgroundLast) this.setHeroState('shown');
+                    this.clearHideWait();
+                    if ((this.heroState === 'closing' || this.heroState === 'hiding') && this.backgroundLast) this.setHeroState('opening');
                     info.prepare(data, function (movie, logoUrl) {
                         if (seq !== self.updateSeq) return;
                         infoReady = true;
@@ -2301,6 +2404,7 @@
                     }
                     function applyFinal(finalData, finalPath) {
                         if (seq !== self.updateSeq) return;
+                        var wasShown = self.heroState === 'shown';
                         if (finalPath && finalPath !== self.backgroundLast) {
                             var next = self.backgroundSlot ? backgroundA : backgroundB;
                             var prev = self.backgroundSlot ? backgroundB : backgroundA;
@@ -2310,24 +2414,27 @@
                             self.backgroundSlot = self.backgroundSlot ? 0 : 1;
                             self.backgroundLast = finalPath;
                         }
-                        self.setHeroState('shown');
                         try { Lampa.Background.change(Lampa.Utils.cardImgBackground(finalData)); } catch (e) {}
-                        info.drawPrepared(finalData, logoReady);
+                        if (wasShown) {
+                            self.setHeroState('shown');
+                            info.drawPrepared(finalData, logoReady);
+                            return;
+                        }
+                        info.drawPrepared(finalData, logoReady, { hidden: true });
+                        self.setHeroState('opening');
+                        self.waitForOpen(seq);
                     }
                 },
                 preloadBackground: function (path, done) {
                     done = done || function () {};
                     if (!path || path === this.backgroundLast) return done();
-                    var self = this;
-                    this.backgroundTimer = setTimeout(function () {
-                        var img = new Image();
-                        var finished = false;
-                        function finish() { if (finished) return; finished = true; done(); }
-                        img.onload = finish;
-                        img.onerror = finish;
-                        img.src = path;
-                        if (img.complete) finish();
-                    }, 90);
+                    var img = new Image();
+                    var finished = false;
+                    function finish() { if (finished) return; finished = true; done(); }
+                    img.onload = finish;
+                    img.onerror = finish;
+                    img.src = path;
+                    if (img.complete) finish();
                 },
                 flushBackground: function () {
                     backgroundA.classList.remove('active');
@@ -2341,62 +2448,75 @@
                 clearBackground: function (emptyInfo) {
                     var self = this;
                     if (this.heroState === 'empty' && !this.backgroundLast) {
-                        clearTimeout(this.clearTimer);
-                        clearTimeout(this.clearInfoTimer);
-                        this.clearTimer = null;
-                        this.clearInfoTimer = null;
                         if (emptyInfo) info.empty();
                         return;
                     }
-                    if (this.heroState === 'hiding' && this.clearTimer) return;
-                    clearTimeout(this.clearTimer);
-                    clearTimeout(this.clearInfoTimer);
+                    if (this.heroState === 'closing' || this.heroState === 'hiding') return;
+                    this.clearRevealWait();
+                    this.clearHideWait();
                     var hideToken = ++this.hideSeq;
                     var done = false;
                     var node = this.infoElement;
-                    var onEnd = null;
+                    var body = node && node.querySelector ? node.querySelector('.akira-info__body') : null;
                     function finish() {
                         if (done) return;
                         done = true;
-                        if (node && onEnd) node.removeEventListener('transitionend', onEnd);
+                        self.clearHideWait();
                         if (hideToken !== self.hideSeq || self.heroState !== 'hiding') return;
-                        if (self.clearTimer) {
-                            clearTimeout(self.clearTimer);
-                            self.clearTimer = null;
-                        }
-                        if (self.clearInfoTimer) self.clearInfoTimer = null;
                         self.flushBackground();
                         self.setHeroState('empty');
                         if (emptyInfo) info.empty();
                     }
-                    this.setHeroState('hiding');
-                    if (node && node.addEventListener) {
-                        onEnd = function (e) {
-                            if (e && e.target === node && e.propertyName === 'height') finish();
-                        };
-                        node.addEventListener('transitionend', onEnd);
+                    function collapse() {
+                        if (hideToken !== self.hideSeq || done) return;
+                        self.setHeroState('hiding');
+                        if (node && node.addEventListener) {
+                            self.hideNode = node;
+                            self.hideEnd = function (e) {
+                                if (e && e.target === node && e.propertyName === 'height') finish();
+                            };
+                            node.addEventListener('transitionend', self.hideEnd);
+                            self.hideFallback = setTimeout(finish, HERO_CLOSE_FALLBACK_MS);
+                        } else {
+                            finish();
+                        }
                     }
-                    this.clearTimer = setTimeout(finish, 720);
+                    this.setHeroState('closing');
+                    if (body && body.addEventListener) {
+                        this.hideBody = body;
+                        this.hideBodyEnd = function (e) {
+                            if (e && e.target === body && e.propertyName === 'opacity') {
+                                self.clearHideWait();
+                                collapse();
+                            }
+                        };
+                        body.addEventListener('transitionend', this.hideBodyEnd);
+                        this.hideInfoFallback = setTimeout(collapse, HERO_INFO_FALLBACK_MS);
+                    } else {
+                        collapse();
+                    }
                 },
                 clearBackgroundNow: function () {
-                    clearTimeout(this.clearTimer);
-                    clearTimeout(this.clearInfoTimer);
-                    this.clearTimer = null;
-                    this.clearInfoTimer = null;
                     this.hideSeq++;
+                    this.clearRevealWait();
+                    this.clearHideWait();
                     backgroundA.classList.remove('active');
                     backgroundB.classList.remove('active');
                     backgroundA.removeAttribute('src');
                     backgroundB.removeAttribute('src');
                     this.backgroundLast = '';
                     this.backgroundSlot = 0;
+                    this.setHeroState('empty');
                     try { Lampa.Background.change(''); } catch (e) {}
                 },
-                reset: function () { this.updateSeq++; clearTimeout(this.backgroundTimer); this.clearBackground(true); },
+                reset: function () {
+                    this.updateSeq++;
+                    this.clearRevealWait();
+                    this.clearBackground(true);
+                },
                 destroy: function () {
-                    clearTimeout(this.backgroundTimer);
-                    clearTimeout(this.clearTimer);
-                    clearTimeout(this.clearInfoTimer);
+                    this.clearRevealWait();
+                    this.clearHideWait();
                     info.destroy();
                     var container = main.render(true);
                     if (container) container.classList.remove('akira-iface');
@@ -2767,6 +2887,8 @@
      * ================================================================ */
 
     var Buttons = (function () {
+        var storageBound = false;
+
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
         function moduleEnabled() { return pluginEnabled() && Util.isOn(K.buttonsSeparate, true); }
 
@@ -2829,12 +2951,14 @@
         }
 
         function bindStorageWatch() {
+            if (storageBound) return;
             try {
                 if (!Lampa.Storage || !Lampa.Storage.listener || !Lampa.Storage.listener.follow) return;
                 Lampa.Storage.listener.follow('change', function (e) {
                     if (!e || !e.name) return;
                     if (e.name === K.buttonsBig || e.name === K.enabled) injectBigStyle();
                 });
+                storageBound = true;
             } catch (e) {}
         }
 
@@ -2854,6 +2978,8 @@
      * ================================================================ */
 
     var Theme = (function () {
+        var storageBound = false;
+
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
         function moduleEnabled() { return pluginEnabled() && Util.isOn(K.themeEnabled, true); }
 
@@ -2957,6 +3083,7 @@
         }
 
         function bindStorageWatch() {
+            if (storageBound) return;
             try {
                 if (!Lampa.Storage || !Lampa.Storage.listener || !Lampa.Storage.listener.follow) return;
                 Lampa.Storage.listener.follow('change', function (e) {
@@ -2966,6 +3093,7 @@
                         scheduleGridDecorate();
                     }
                 });
+                storageBound = true;
             } catch (e) {}
         }
 
@@ -3221,10 +3349,46 @@
             gridTimer = setTimeout(decorateGrid, 80);
         }
 
+        function shouldDecorateFromMutations(mutations) {
+            function isAkiraDecorNode(node) {
+                return !!(node && node.nodeType === 1 && (
+                    (node.classList && (
+                        node.classList.contains('akira-card-title') ||
+                        node.classList.contains('akira-card-logo') ||
+                        node.classList.contains('akira-card-type') ||
+                        node.classList.contains('akira-card-rating') ||
+                        node.classList.contains('akira-card-quality') ||
+                        node.classList.contains('akira-ct-meta') ||
+                        node.classList.contains('akira-ct-name')
+                    )) ||
+                    (node.closest && node.closest('.akira-card-title, .akira-card-logo, .akira-card-type, .akira-card-rating, .akira-card-quality'))
+                ));
+            }
+
+            try {
+                for (var i = 0; i < mutations.length; i++) {
+                    var nodes = mutations[i].addedNodes || [];
+                    for (var j = 0; j < nodes.length; j++) {
+                        var node = nodes[j];
+                        if (!node || node.nodeType !== 1) continue;
+                        if (isAkiraDecorNode(node)) continue;
+                        if ((node.matches && node.matches('.mapping--grid, .mapping--line, .items-line, .card')) ||
+                            (node.closest && node.closest('.mapping--grid, .mapping--line, .items-line, .card')) ||
+                            (node.querySelector && node.querySelector('.mapping--grid, .mapping--line, .items-line, .card'))) {
+                            return true;
+                        }
+                    }
+                }
+            } catch (e) {}
+            return false;
+        }
+
         function bindGridObserver() {
             if (gridObserver || !window.MutationObserver) return;
             try {
-                gridObserver = new MutationObserver(scheduleGridDecorate);
+                gridObserver = new MutationObserver(function (mutations) {
+                    if (shouldDecorateFromMutations(mutations)) scheduleGridDecorate();
+                });
                 gridObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
             } catch (e) {}
         }
@@ -3252,6 +3416,10 @@
      * ================================================================ */
 
     var Scale = (function () {
+        var eventsBound = false;
+        var storageBound = false;
+        var layerWrapped = false;
+
         /* Адаптивная таблица. Подбирали так, чтобы:
          *  - на смартфоне (~360-400px) текст был читаем (12-13px),
          *  - на ноутбуке (1366-1920) был привычный 16-18px,
@@ -3325,18 +3493,22 @@
         }
 
         function bind() {
-            window.addEventListener('resize', debouncedApply);
-            window.addEventListener('orientationchange', debouncedApply);
+            if (!eventsBound) {
+                eventsBound = true;
+                window.addEventListener('resize', debouncedApply);
+                window.addEventListener('orientationchange', debouncedApply);
+            }
             try {
-                if (Lampa.Storage && Lampa.Storage.listener && Lampa.Storage.listener.follow) {
+                if (!storageBound && Lampa.Storage && Lampa.Storage.listener && Lampa.Storage.listener.follow) {
                     Lampa.Storage.listener.follow('change', function (e) {
                         if (!e || !e.name) return;
                         if (e.name === K.scaleEnabled || e.name === K.enabled) apply();
                     });
+                    storageBound = true;
                 }
             } catch (e) {}
             try {
-                if (Lampa.Layer && typeof Lampa.Layer.update === 'function') {
+                if (!layerWrapped && Lampa.Layer && typeof Lampa.Layer.update === 'function') {
                     var orig = Lampa.Layer.update;
                     Lampa.Layer.update = function (where) {
                         if (moduleEnabled()) {
@@ -3344,6 +3516,7 @@
                         }
                         return orig.call(this, where);
                     };
+                    layerWrapped = true;
                 }
             } catch (e) {}
         }
@@ -3371,6 +3544,7 @@
         try { today = new Date().toISOString().substr(0, 10); } catch (e) { today = ''; }
         var PARTS_LIMIT = 3;
         var COLLECTION_CACHE_TIME = 1000 * 60 * 60;
+        var COLLECTION_CACHE_JITTER = 1000 * 60 * 20;
         var DEFAULT_COLLECTION_TIMEOUT = 8000;
         var PERSONAL_COLLECTION_TIMEOUT = 6000;
         var PRIORITY_COLLECTION_TIMEOUT = 15000;
@@ -3547,13 +3721,27 @@
             return CACHE_PREFIX + cfg.id + '_' + Util.langCode() + '_' + profileCachePart();
         }
 
+        function collectionCacheJitter(cfg) {
+            var raw = String((cfg && cfg.id) || '');
+            var hash = 0;
+            for (var i = 0; i < raw.length; i++) {
+                hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;
+            }
+            return Math.abs(hash) % COLLECTION_CACHE_JITTER;
+        }
+
+        function collectionExpiresAt(cfg, timestamp) {
+            var ttl = (cfg && cfg.cacheTime) || COLLECTION_CACHE_TIME;
+            return timestamp + ttl + collectionCacheJitter(cfg);
+        }
+
         function readCollectionCache(cfg) {
             if (!cfg || cfg.cache === false) return null;
             try {
                 var node = Util.get(collectionCacheKey(cfg), null);
                 if (!node || !node.timestamp || !node.value) return null;
-                var ttl = cfg.cacheTime || COLLECTION_CACHE_TIME;
-                if (new Date().getTime() - node.timestamp > ttl) return null;
+                var expiresAt = node.expiresAt || collectionExpiresAt(cfg, node.timestamp);
+                if (new Date().getTime() > expiresAt) return null;
                 return cloneJson(node.value);
             } catch (e) { return null; }
         }
@@ -3561,8 +3749,10 @@
         function writeCollectionCache(cfg, json) {
             if (!cfg || cfg.cache === false || !collectionHasResults(json)) return;
             try {
+                var now = new Date().getTime();
                 Util.set(collectionCacheKey(cfg), {
-                    timestamp: new Date().getTime(),
+                    timestamp: now,
+                    expiresAt: collectionExpiresAt(cfg, now),
                     value: cloneJson(json)
                 });
             } catch (e) {}
@@ -3718,6 +3908,13 @@
             var attempt = 0;
             var retries = cfg.retries || 0;
             var timeout = cfg.priority ? (cfg.timeout || PRIORITY_COLLECTION_TIMEOUT) : (cfg.timeout || DEFAULT_COLLECTION_TIMEOUT);
+            var cachedFirst = readCollectionCache(cfg);
+
+            if (cachedFirst && collectionHasResults(cachedFirst)) {
+                debugLog(cfg.id, 'cache-hit', cachedFirst.results.length);
+                call(prepareCollection(cfg, cachedFirst));
+                return;
+            }
 
             function complete(json, reason) {
                 if (finished) return;
