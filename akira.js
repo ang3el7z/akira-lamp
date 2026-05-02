@@ -45,6 +45,7 @@
         ifaceCardLogos: CFG.prefix + 'iface_card_logos',
         ifaceHeroMode: CFG.prefix + 'iface_hero_mode',
         ifaceHeroDescription: CFG.prefix + 'iface_hero_description',
+        ifaceHeroInfo: CFG.prefix + 'iface_hero_info',
 
         buttonsSeparate: CFG.prefix + 'buttons_separate',
         buttonsBig: CFG.prefix + 'buttons_big',
@@ -275,6 +276,11 @@
             iface_hero_mode_block: 'Отдельным окном',
             iface_hero_mode_fullscreen: 'На весь экран',
             iface_hero_description: '\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u0432 \u0431\u043e\u043b\u044c\u0448\u043e\u0439 \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0435',
+            iface_hero_info: '\u0418\u043d\u0444\u043e \u0432 \u0431\u043e\u043b\u044c\u0448\u043e\u0439 \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0435',
+            iface_hero_info_all: '\u0412\u0441\u0451 \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c',
+            iface_hero_info_hide_description: '\u0421\u043a\u0440\u044b\u0442\u044c \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435',
+            iface_hero_info_hide_meta: '\u0421\u043a\u0440\u044b\u0442\u044c \u043c\u0435\u0442\u0430',
+            iface_hero_info_hide_all: '\u0421\u043a\u0440\u044b\u0442\u044c \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u0438 \u043c\u0435\u0442\u0430',
             buttons_title: 'Кнопки в карточке фильма',
             buttons_separate: 'Раскрытые кнопки (Смотреть/Торренты/Трейлер)',
             buttons_big: 'Сохранять текст на маленьких экранах',
@@ -326,6 +332,11 @@
             iface_hero_mode_block: 'Inside info block',
             iface_hero_mode_fullscreen: 'Fullscreen',
             iface_hero_description: 'Show description in big card',
+            iface_hero_info: 'Big card info',
+            iface_hero_info_all: 'Show all',
+            iface_hero_info_hide_description: 'Hide description',
+            iface_hero_info_hide_meta: 'Hide meta',
+            iface_hero_info_hide_all: 'Hide description and meta',
             buttons_title: 'Movie card buttons',
             buttons_separate: 'Expanded buttons (Watch/Torrents/Trailer)',
             buttons_big: 'Keep button text on small screens',
@@ -377,6 +388,11 @@
             iface_hero_mode_block: 'Окремим вікном',
             iface_hero_mode_fullscreen: 'На весь екран',
             iface_hero_description: '\u041f\u043e\u043a\u0430\u0437\u0443\u0432\u0430\u0442\u0438 \u043e\u043f\u0438\u0441 \u0443 \u0432\u0435\u043b\u0438\u043a\u0456\u0439 \u043a\u0430\u0440\u0442\u0446\u0456',
+            iface_hero_info: '\u0406\u043d\u0444\u043e \u0443 \u0432\u0435\u043b\u0438\u043a\u0456\u0439 \u043a\u0430\u0440\u0442\u0446\u0456',
+            iface_hero_info_all: '\u041f\u043e\u043a\u0430\u0437\u0443\u0432\u0430\u0442\u0438 \u0432\u0441\u0435',
+            iface_hero_info_hide_description: '\u0421\u0445\u043e\u0432\u0430\u0442\u0438 \u043e\u043f\u0438\u0441',
+            iface_hero_info_hide_meta: '\u0421\u0445\u043e\u0432\u0430\u0442\u0438 \u043c\u0435\u0442\u0430',
+            iface_hero_info_hide_all: '\u0421\u0445\u043e\u0432\u0430\u0442\u0438 \u043e\u043f\u0438\u0441 \u0456 \u043c\u0435\u0442\u0430',
             buttons_title: 'Кнопки в картці',
             buttons_separate: 'Розкриті кнопки (Дивитись/Торенти/Трейлер)',
             buttons_big: 'Зберігати текст на малих екранах',
@@ -437,7 +453,7 @@
         Util.ensureOnOff(K.ifaceEnabled, true);
         Util.ensureOnOff(K.ifaceCardLogos, true);
         Util.ensure(K.ifaceHeroMode, 'block');
-        Util.ensureOnOff(K.ifaceHeroDescription, true);
+        Util.ensure(K.ifaceHeroInfo, Util.isOn(K.ifaceHeroDescription, true) ? 'all' : 'hide_description');
 
         Util.ensureOnOff(K.buttonsSeparate, true);
         Util.ensureOnOff(K.buttonsBig, true);
@@ -1855,7 +1871,8 @@
                 '.akira-info__pg{flex:0 0 auto;white-space:nowrap;}',
                 '.akira-info__pg .full-start__pg{font-size:.95em;}',
                 '.akira-info__description{font-size:.87em;font-weight:400;line-height:1.38;color:rgba(255,255,255,.94);text-shadow:0 1px 2px rgba(0,0,0,.92),0 4px 18px rgba(0,0,0,.82);overflow:hidden;text-overflow:".";display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;width:auto;}',
-                'body.' + CFG.bodyClass + '[data-akira-hero-description="off"] .akira-info__description{display:none!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-hero-info="hide_description"] .akira-info__description,body.' + CFG.bodyClass + '[data-akira-hero-info="hide_all"] .akira-info__description{display:none!important;}',
+                'body.' + CFG.bodyClass + '[data-akira-hero-info="hide_meta"] .akira-info__meta,body.' + CFG.bodyClass + '[data-akira-hero-info="hide_all"] .akira-info__meta{display:none!important;}',
                 '.akira-iface .akira-info__background{position:absolute!important;left:0!important;right:0!important;top:0!important;height:0!important;overflow:hidden!important;pointer-events:none!important;z-index:0!important;opacity:0;will-change:height,opacity;transition:height .58s cubic-bezier(.2,.8,.2,1),opacity .58s ease;}',
                 '.akira-iface[data-akira-hero-state="shown"] .akira-info__background{height:var(--ni-info-h)!important;opacity:1;}',
                 '.akira-iface .akira-info__background img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:0;transition:opacity .55s ease-in-out;will-change:opacity;filter:none!important;}',
@@ -2629,10 +2646,17 @@
             } catch (e) {}
         }
 
-        function syncHeroDescription() {
+        function heroInfoMode() {
+            var mode = String(Util.get(K.ifaceHeroInfo, '') || '').toLowerCase();
+            if (!mode) mode = Util.isOn(K.ifaceHeroDescription, true) ? 'all' : 'hide_description';
+            if (mode !== 'hide_description' && mode !== 'hide_meta' && mode !== 'hide_all') mode = 'all';
+            return mode;
+        }
+
+        function syncHeroInfo() {
             try {
                 if (!document.body) return;
-                document.body.setAttribute('data-akira-hero-description', Util.isOn(K.ifaceHeroDescription, true) ? 'on' : 'off');
+                document.body.setAttribute('data-akira-hero-info', heroInfoMode());
             } catch (e) {}
         }
 
@@ -2641,13 +2665,13 @@
                 if (started) return;
                 started = true;
                 injectStyle();
-                syncHeroDescription();
+                syncHeroInfo();
                 try {
                     if (Lampa.Storage && Lampa.Storage.listener && typeof Lampa.Storage.listener.follow === 'function') {
                         Lampa.Storage.listener.follow('change', function (e) {
                             if (!e) return;
                             if (e.name === K.ifaceHeroMode) applyHeroModeToAll();
-                            if (e.name === K.ifaceHeroDescription || e.name === K.enabled || e.name === K.ifaceEnabled) syncHeroDescription();
+                            if (e.name === K.ifaceHeroInfo || e.name === K.ifaceHeroDescription || e.name === K.enabled || e.name === K.ifaceEnabled) syncHeroInfo();
                         });
                     }
                 } catch (e) {}
@@ -3266,37 +3290,62 @@
         var today = '';
         var thisYear = new Date().getFullYear();
         try { today = new Date().toISOString().substr(0, 10); } catch (e) { today = ''; }
+        var PARTS_LIMIT = 3;
+        var COLLECTION_CACHE_TIME = 1000 * 60 * 60;
+        var DEFAULT_COLLECTION_TIMEOUT = 8000;
+        var PERSONAL_COLLECTION_TIMEOUT = 6000;
+        var PRIORITY_COLLECTION_TIMEOUT = 15000;
+        var FIRST_BATCH_RETRIES = 3;
+        var CACHE_PREFIX = CFG.prefix + 'tmdb_cache_';
+        var RECOMMENDED_FALLBACK_REQUEST = 'discover/movie?sort_by=popularity.desc&vote_count.gte=300&vote_average.gte=6.5&with_runtime.gte=40&without_genres=99';
 
         var COLLECTIONS = [
             { id: 'personal_recommendations', emoji: '✨', name: { ru: 'Рекомендации для тебя', en: 'Recommended for you', uk: 'Рекомендації для тебе' },
-              fallbackName: { ru: 'Рекомендации', en: 'Recommendations', uk: 'Рекомендації' },
-              loader: 'personal' },
+              fallbackName: { ru: '\u0420\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u0435\u043c \u043f\u043e\u0441\u043c\u043e\u0442\u0440\u0435\u0442\u044c', en: 'Worth watching', uk: '\u0420\u0430\u0434\u0438\u043c\u043e \u043f\u043e\u0434\u0438\u0432\u0438\u0442\u0438\u0441\u044f' },
+              loader: 'personal', priority: true, timeout: PRIORITY_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, seedLimit: 5 },
             { id: 'trending_movies', emoji: '🔥', name: { ru: 'Топ фильмов недели',  en: 'Top movies this week',  uk: 'Топ фільмів тижня' },
-              request: 'trending/movie/week' },
+              request: 'trending/movie/week', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'trending_tv',     emoji: '🔥', name: { ru: 'Топ сериалов недели', en: 'Top series this week',  uk: 'Топ серіалів тижня' },
-              request: 'trending/tv/week' },
+              request: 'trending/tv/week', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'hot_new_releases', emoji: '🎬', name: { ru: 'Свежие премьеры',    en: 'Hot new releases',      uk: 'Свіжі прем’єри' },
-              request: 'discover/movie?sort_by=primary_release_date.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&vote_count.gte=50&vote_average.gte=6&with_runtime.gte=40&without_genres=99' },
+              request: 'discover/movie?sort_by=primary_release_date.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&vote_count.gte=50&vote_average.gte=6&with_runtime.gte=40&without_genres=99', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'best_year',       emoji: '🌟', name: { ru: 'Лучшее текущего года', en: 'Best of the year',     uk: 'Найкраще поточного року' },
-              request: 'discover/movie?primary_release_year=' + thisYear + '&sort_by=vote_average.desc&vote_count.gte=300' },
+              request: 'discover/movie?primary_release_year=' + thisYear + '&sort_by=vote_average.desc&vote_count.gte=300', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'cult_classics',   emoji: '🍿', name: { ru: 'Классика и хиты',     en: 'Cult and classics',     uk: 'Класика та хіти' },
-              request: 'discover/movie?primary_release_date.gte=1980-01-01&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500' },
+              request: 'discover/movie?primary_release_date.gte=1980-01-01&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'animation',       emoji: '🧸', name: { ru: 'Лучшая анимация',     en: 'Top animation',         uk: 'Найкраща анімація' },
-              request: 'discover/movie?with_genres=16&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500' },
-            { id: 'japanese_animation', emoji: '🌸', name: { ru: 'Японская анимация', en: 'Japanese animation',    uk: 'Японська анімація' },
+              request: 'discover/movie?with_genres=16&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
+            { id: 'japanese_animation', emoji: '🌸', name: { ru: '\u0410\u043d\u0438\u043c\u0435 \u0444\u0438\u043b\u044c\u043c\u044b', en: 'Anime movies', uk: '\u0410\u043d\u0456\u043c\u0435 \u0444\u0456\u043b\u044c\u043c\u0438' },
               requests: [
-                  { type: 'movie', request: 'discover/movie?with_genres=16&with_original_language=ja&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=120&with_runtime.gte=40' },
-                  { type: 'tv', request: 'discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=80&without_genres=10762,10763,10764,10767' }
-              ] },
+                  { type: 'movie', request: 'discover/movie?with_genres=16&with_original_language=ja&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=120&with_runtime.gte=40' }
+              ], timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
+            { id: 'anime_plugin_tv', emoji: '🌸', name: { ru: '\u0410\u043d\u0438\u043c\u0435 \u0441\u0435\u0440\u0438\u0430\u043b\u044b', en: 'Anime series', uk: '\u0410\u043d\u0456\u043c\u0435 \u0441\u0435\u0440\u0456\u0430\u043b\u0438' },
+              request: 'discover/tv?vote_average.gte=6.5&vote_average.lte=9.5&first_air_date.lte=2026-12-31&first_air_date.gte=2020-01-01&with_original_language=ja',
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
             { id: 'world_series',    emoji: '🌍', name: { ru: 'Хиты мировых сериалов', en: 'World series hits',   uk: 'Хіти світових серіалів' },
-              request: 'discover/tv?sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500&first_air_date.gte=2020-01-01&without_genres=16,99,10764,10767' },
+              request: 'discover/tv?sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500&first_air_date.gte=2020-01-01&without_genres=16,99,10764,10767', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
             { id: 'netflix_best',    emoji: '⚫', name: { ru: 'Хиты Netflix',         en: 'Netflix hits',          uk: 'Хіти Netflix' },
-              request: 'discover/tv?with_networks=213&sort_by=last_air_date.desc&first_air_date.gte=2020-01-01&vote_average.gte=7&vote_count.gte=500' },
+              request: 'discover/tv?with_networks=213&sort_by=last_air_date.desc&first_air_date.gte=2020-01-01&vote_average.gte=7&vote_count.gte=500', timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME },
+            { id: 'watching_now', emoji: '👀', name: { ru: '\u0421\u0435\u0439\u0447\u0430\u0441 \u0441\u043c\u043e\u0442\u0440\u044f\u0442', en: 'Watching now', uk: '\u0417\u0430\u0440\u0430\u0437 \u0434\u0438\u0432\u043b\u044f\u0442\u044c\u0441\u044f' },
+              request: 'discover/movie?sort_by=popularity.desc&with_release_type=4|5|6&primary_release_date.lte=' + today + '&vote_count.gte=50&vote_average.gte=6&with_runtime.gte=40&without_genres=99',
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
+            { id: 'documentaries', emoji: '🎥', name: { ru: '\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u043b\u044c\u043d\u044b\u0435 \u0444\u0438\u043b\u044c\u043c\u044b', en: 'Documentaries', uk: '\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u043b\u044c\u043d\u0456 \u0444\u0456\u043b\u044c\u043c\u0438' },
+              request: 'discover/movie?with_genres=99&sort_by=popularity.desc&vote_count.gte=20&with_translations=ru&include_translations=ru',
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
+            { id: 'recent_tv_hits', emoji: '📺', name: { ru: '\u0421\u0435\u0440\u0438\u0430\u043b\u044b \u043f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0445 \u043b\u0435\u0442', en: 'Recent series hits', uk: '\u0425\u0456\u0442\u0438 \u0441\u0435\u0440\u0456\u0430\u043b\u0456\u0432 \u043e\u0441\u0442\u0430\u043d\u043d\u0456\u0445 \u0440\u043e\u043a\u0456\u0432' },
+              request: 'discover/tv?sort_by=popularity.desc&first_air_date.gte=2020-01-01&vote_average.gte=7&vote_count.gte=300&without_genres=16,99,10762,10763,10764,10766,10767',
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
+            { id: 'trending_all', emoji: '📈', name: { ru: '\u0422\u0440\u0435\u043d\u0434\u044b \u0441\u0435\u0439\u0447\u0430\u0441', en: 'Trending now', uk: '\u0422\u0440\u0435\u043d\u0434\u0438 \u0437\u0430\u0440\u0430\u0437' },
+              request: 'trending/all/week', mediaTypes: ['movie', 'tv'],
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
+            { id: 'high_rated_movies', emoji: '⭐', name: { ru: '\u0412\u044b\u0441\u043e\u043a\u0438\u0439 \u0440\u0435\u0439\u0442\u0438\u043d\u0433', en: 'Highly rated movies', uk: '\u0412\u0438\u0441\u043e\u043a\u0438\u0439 \u0440\u0435\u0439\u0442\u0438\u043d\u0433' },
+              request: 'discover/movie?sort_by=vote_count.desc&vote_average.gte=7.2&vote_count.gte=1000&with_runtime.gte=40&without_genres=99',
+              timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false },
             { id: 'russian_platforms', emoji: '📺', name: { ru: 'Российские платформы', en: 'Russian platforms',   uk: 'Російські платформи' },
               requests: [
                   { type: 'tv', request: 'discover/tv?with_networks=2493|2859|4085|3923|3871|3827|5806|806|1191&sort_by=first_air_date.desc&first_air_date.lte=' + today + '&vote_average.gte=5&vote_count.gte=3&without_genres=16,99,10762,10763,10764,10766,10767,10768' },
                   { type: 'movie', request: 'discover/movie?with_companies=2493|2859|4085|3923|3871|3827|5806|806|1191&sort_by=primary_release_date.desc&primary_release_date.lte=' + today + '&vote_average.gte=5&vote_count.gte=3&with_runtime.gte=40&without_genres=16,99' }
-              ] }
+              ], timeout: DEFAULT_COLLECTION_TIMEOUT, cache: true, cacheTime: COLLECTION_CACHE_TIME, defaultOn: false }
         ];
 
         function pluginEnabled() { return Util.isOn(K.enabled, true); }
@@ -3313,7 +3362,7 @@
         }
 
         function ensureColDefaults() {
-            COLLECTIONS.forEach(function (c) { Util.ensureOnOff(colKey(c.id), true); });
+            COLLECTIONS.forEach(function (c) { Util.ensureOnOff(colKey(c.id), c.defaultOn !== false); });
         }
 
         function mediaTypeOf(item) {
@@ -3379,13 +3428,101 @@
             return uniq;
         }
 
-        function loadPersonalRecommendations(parent, params, done, fail) {
-            var seeds = readHistoryItems().slice(0, 8);
+        function debugEnabled() {
+            try {
+                return !!window.akira_tmdb_debug || Util.isOn(CFG.prefix + 'tmdb_debug', false);
+            } catch (e) { return false; }
+        }
+
+        function debugLog() {
+            if (!debugEnabled() || !window.console || !console.log) return;
+            try {
+                var args = Array.prototype.slice.call(arguments);
+                args.unshift('[Akira TMDB]');
+                console.log.apply(console, args);
+            } catch (e) {}
+        }
+
+        function cloneJson(value) {
+            if (!value) return value;
+            try { return JSON.parse(JSON.stringify(value)); } catch (e) { return value; }
+        }
+
+        function collectionHasResults(json) {
+            return !!(json && Array.isArray(json.results) && json.results.length);
+        }
+
+        function profileCachePart() {
+            var profile = '';
+            try { profile = Lampa.Storage.get('lampac_profile_id', '') || profile; } catch (e) {}
+            try { profile = Lampa.Storage.get('profile_id', '') || profile; } catch (e2) {}
+            try {
+                if (!profile && Lampa.Account && Lampa.Account.profile && Lampa.Account.profile.id) {
+                    profile = Lampa.Account.profile.id;
+                }
+            } catch (e3) {}
+            return String(profile || 'default');
+        }
+
+        function collectionCacheKey(cfg) {
+            return CACHE_PREFIX + cfg.id + '_' + Util.langCode() + '_' + profileCachePart();
+        }
+
+        function readCollectionCache(cfg) {
+            if (!cfg || cfg.cache === false) return null;
+            try {
+                var node = Util.get(collectionCacheKey(cfg), null);
+                if (!node || !node.timestamp || !node.value) return null;
+                var ttl = cfg.cacheTime || COLLECTION_CACHE_TIME;
+                if (new Date().getTime() - node.timestamp > ttl) return null;
+                return cloneJson(node.value);
+            } catch (e) { return null; }
+        }
+
+        function writeCollectionCache(cfg, json) {
+            if (!cfg || cfg.cache === false || !collectionHasResults(json)) return;
+            try {
+                Util.set(collectionCacheKey(cfg), {
+                    timestamp: new Date().getTime(),
+                    value: cloneJson(json)
+                });
+            } catch (e) {}
+        }
+
+        function emptyCollection(cfg) {
+            var name = localized(cfg.name);
+            return {
+                source: 'akira_tmdb',
+                results: [],
+                title: cfg.emoji ? cfg.emoji + ' ' + name : name
+            };
+        }
+
+        function prepareCollection(cfg, json) {
+            var name = localized(json && json.__akiraFallback && cfg.fallbackName ? cfg.fallbackName : cfg.name);
+            json = json || { source: 'akira_tmdb', results: [] };
+            if (!Array.isArray(json.results)) json.results = [];
+            if (cfg.mediaTypes && cfg.mediaTypes.length) {
+                json.results = json.results.filter(function (item) {
+                    var type = String(item && (item.media_type || item.type) || '').toLowerCase();
+                    if (!type) type = mediaTypeOf(item);
+                    return cfg.mediaTypes.indexOf(type) !== -1;
+                });
+            }
+            try { delete json.__akiraFallback; } catch (e) {}
+            json.source = json.source || 'akira_tmdb';
+            json.title = cfg.emoji ? cfg.emoji + ' ' + name : name;
+            if (Lampa.Utils && Lampa.Utils.addSource) Lampa.Utils.addSource(json, 'akira_tmdb');
+            return json;
+        }
+
+        function loadPersonalRecommendations(parent, params, done, fail, cfg) {
+            var seeds = readHistoryItems().slice(0, (cfg && cfg.seedLimit) || 5);
             var watched = {};
             seeds.forEach(function (item) { var key = mediaKey(item); if (key) watched[key] = true; });
 
             function fallback() {
-                parent.get('discover/movie?sort_by=popularity.desc&vote_count.gte=200&vote_average.gte=6.5&with_runtime.gte=40&without_genres=99', params, function (json) {
+                parent.get(RECOMMENDED_FALLBACK_REQUEST, params, function (json) {
                     json = json || { source: 'akira_tmdb', results: [] };
                     json.__akiraFallback = true;
                     done(json);
@@ -3484,6 +3621,85 @@
             next();
         }
 
+        function loadCollectionRaw(cfg, parent, params, done, fail) {
+            if (cfg.loader === 'personal') {
+                loadPersonalRecommendations(parent, params, done, fail, cfg);
+            } else if (cfg.requests) {
+                loadMultiRequestCollection(parent, params, cfg.requests, done, fail);
+            } else if (cfg.request) {
+                parent.get(cfg.request, params, done, fail);
+            } else {
+                fail();
+            }
+        }
+
+        function safePart(cfg, parent, params, call) {
+            var finished = false;
+            var timer = null;
+            var attempt = 0;
+            var retries = cfg.retries || 0;
+            var timeout = cfg.priority ? (cfg.timeout || PRIORITY_COLLECTION_TIMEOUT) : (cfg.timeout || DEFAULT_COLLECTION_TIMEOUT);
+
+            function complete(json, reason) {
+                if (finished) return;
+                finished = true;
+                if (timer) {
+                    clearTimeout(timer);
+                    timer = null;
+                }
+
+                var prepared = prepareCollection(cfg, json);
+                if (collectionHasResults(prepared)) {
+                    if (reason !== 'cache') writeCollectionCache(cfg, prepared);
+                    debugLog(cfg.id, reason || 'success', prepared.results.length);
+                    call(prepared);
+                    return;
+                }
+
+                var cached = readCollectionCache(cfg);
+                if (cached && collectionHasResults(cached)) {
+                    debugLog(cfg.id, reason || 'empty', 'cache', cached.results.length);
+                    call(prepareCollection(cfg, cached));
+                    return;
+                }
+
+                debugLog(cfg.id, reason || 'empty', 'no-cache');
+                call(emptyCollection(cfg));
+            }
+
+            function fail(reason) {
+                if (attempt <= retries) {
+                    run(reason || 'error');
+                    return;
+                }
+                complete(null, reason || 'error');
+            }
+
+            function run(previousReason) {
+                if (finished) return;
+                if (timer) {
+                    clearTimeout(timer);
+                    timer = null;
+                }
+                attempt++;
+                timer = setTimeout(function () {
+                    fail('timeout');
+                }, timeout);
+                try {
+                    debugLog(cfg.id, attempt === 1 ? 'start' : 'retry', attempt, previousReason || '');
+                    loadCollectionRaw(cfg, parent, params, function (json) {
+                        complete(json, attempt === 1 ? 'success' : 'retry-success');
+                    }, function () {
+                        fail('error');
+                    });
+                } catch (e) {
+                    fail('exception');
+                }
+            }
+
+            run();
+        }
+
         function buildDiscoveryMain(parent) {
             return function () {
                 var params = arguments[0] !== undefined ? arguments[0] : {};
@@ -3491,49 +3707,83 @@
                 var onerror = arguments[2];
                 var hasSeq = Lampa.Api && typeof Lampa.Api.sequentials === 'function';
                 var hasPart = Lampa.Api && typeof Lampa.Api.partNext === 'function';
-                if (!hasSeq && !hasPart) { if (onerror) onerror(); return function () {}; }
+                if (!hasPart && !hasSeq) { if (onerror) onerror(); return function () {}; }
 
-                var parts = []; var total = 0;
-                COLLECTIONS.forEach(function (cfg) {
+                var parts = [];
+                COLLECTIONS.forEach(function (cfg, index) {
                     if (!colEnabled(cfg.id)) return;
-                    total++;
-                    parts.push(function (call) {
-                        function finish(json) {
-                            var name = localized(json && json.__akiraFallback && cfg.fallbackName ? cfg.fallbackName : cfg.name);
-                            json = json || { source: 'akira_tmdb', results: [] };
-                            try { delete json.__akiraFallback; } catch (e) {}
-                            json.title = cfg.emoji ? cfg.emoji + ' ' + name : name;
-                            if (Lampa.Utils && Lampa.Utils.addSource) Lampa.Utils.addSource(json, 'akira_tmdb');
-                            call(json);
-                        }
-                        function empty() {
-                            var name = localized(cfg.name);
-                            call({ source: 'akira_tmdb', results: [], title: cfg.emoji ? cfg.emoji + ' ' + name : name });
-                        }
-                        if (cfg.loader === 'personal') loadPersonalRecommendations(parent, params, finish, empty);
-                        else if (cfg.requests) loadMultiRequestCollection(parent, params, cfg.requests, finish, empty);
-                        else parent.get(cfg.request, params, finish, empty);
-                    });
+                    parts.push(function (call) { safePart(cfg, parent, params, call); });
+                    if (parts.length <= PARTS_LIMIT && !cfg.retries) cfg.retries = FIRST_BATCH_RETRIES;
                 });
 
-                if (parts.length === 0) { if (onerror) onerror(); return function () {}; }
-                var method = hasSeq ? Lampa.Api.sequentials : Lampa.Api.partNext;
-                method(parts, total, oncomplete, onerror);
-                return function () {};
+                if (!parts.length) { if (onerror) onerror(); return function () {}; }
+
+                var emitted = 0;
+
+                function normalizeBatch(data) {
+                    var list = Array.isArray(data) ? data : [data];
+                    return list.filter(function (item) {
+                        return collectionHasResults(item);
+                    });
+                }
+
+                function loadPart(partLoaded, partEmpty) {
+                    var method = hasPart ? Lampa.Api.partNext : Lampa.Api.sequentials;
+                    var limit = hasPart ? PARTS_LIMIT : parts.length;
+                    method(parts, limit, function (data) {
+                        var list = normalizeBatch(data);
+                        if (list.length) {
+                            emitted += list.length;
+                            if (partLoaded) partLoaded(list);
+                        } else if (!emitted && partEmpty) {
+                            partEmpty();
+                        }
+                    }, function (err) {
+                        if (!emitted && partEmpty) partEmpty(err);
+                    });
+                }
+
+                loadPart(oncomplete, onerror);
+                return loadPart;
             };
+        }
+
+        function createAkiraMain(source, originalMain) {
+            var main = function () {
+                var args = Array.prototype.slice.call(arguments);
+                if (moduleEnabled() && this.type !== 'movie' && this.type !== 'tv') {
+                    return buildDiscoveryMain(source).apply(this, args);
+                }
+                return originalMain.apply(this, args);
+            };
+            main.__akiraMain = true;
+            return main;
+        }
+
+        function ensureParamsSource() {
+            try {
+                var sources = (Lampa.Params && Lampa.Params.values && Lampa.Params.values.source) ? Lampa.Params.values.source : {};
+                if (sources.akira_tmdb !== 'Akira') {
+                    sources.akira_tmdb = 'Akira';
+                    var current = 'tmdb';
+                    try {
+                        current = Lampa.Storage && Lampa.Storage.field ? Lampa.Storage.field('source') : Lampa.Storage.get('source', 'tmdb');
+                    } catch (e) {}
+                    Lampa.Params.select('source', sources, current || 'tmdb');
+                }
+            } catch (e2) {}
         }
 
         function installSource() {
             try {
                 if (!Lampa.Api || !Lampa.Api.sources || !Lampa.Api.sources.tmdb) return false;
                 if (Lampa.Api.sources.akira_tmdb) {
-                    try {
-                        var readySources = (Lampa.Params && Lampa.Params.values && Lampa.Params.values.source) ? Lampa.Params.values.source : {};
-                        if (readySources.akira_tmdb !== 'Akira') {
-                            readySources.akira_tmdb = 'Akira';
-                            Lampa.Params.select('source', readySources, (Lampa.Storage && Lampa.Storage.field ? Lampa.Storage.field('source') : 'tmdb') || 'tmdb');
-                        }
-                    } catch (readyErr) {}
+                    var readySource = Lampa.Api.sources.akira_tmdb;
+                    if (!readySource.main || !readySource.main.__akiraMain) {
+                        readySource.__akiraOriginalMain = readySource.__akiraOriginalMain || Lampa.Api.sources.tmdb.main;
+                        readySource.main = createAkiraMain(readySource, readySource.__akiraOriginalMain);
+                    }
+                    ensureParamsSource();
                     return true;
                 }
                 var origTmdb = Lampa.Api.sources.tmdb;
@@ -3541,26 +3791,9 @@
                 Lampa.Api.sources.akira_tmdb = clone;
                 try { Object.defineProperty(Lampa.Api.sources, 'akira_tmdb', { get: function () { return clone; } }); } catch (e) {}
                 var origMain = origTmdb.main;
-                clone.main = function () {
-                    var args = Array.prototype.slice.call(arguments);
-                    if (moduleEnabled() && this.type !== 'movie' && this.type !== 'tv') {
-                        return buildDiscoveryMain(clone).apply(this, args);
-                    }
-                    return origMain.apply(this, args);
-                };
-                if (Lampa.Params && Lampa.Params.select) {
-                    try {
-                        var sources = (Lampa.Params.values && Lampa.Params.values.source) ? Lampa.Params.values.source : {};
-                        if (sources.akira_tmdb !== 'Akira') {
-                            sources.akira_tmdb = 'Akira';
-                            var current = 'tmdb';
-                            try {
-                                current = Lampa.Storage && Lampa.Storage.field ? Lampa.Storage.field('source') : Lampa.Storage.get('source', 'tmdb');
-                            } catch (e2) {}
-                            Lampa.Params.select('source', sources, current || 'tmdb');
-                        }
-                    } catch (e) {}
-                }
+                clone.__akiraOriginalMain = origMain;
+                clone.main = createAkiraMain(clone, origMain);
+                if (Lampa.Params && Lampa.Params.select) ensureParamsSource();
                 return true;
             } catch (e) { return false; }
         }
@@ -3576,6 +3809,13 @@
             }
         };
     })();
+
+    /* ================================================================
+     * 12. SETTINGS вЂ” РєРѕСЂРЅРµРІРѕР№ РїСѓРЅРєС‚ "akira" + РІР»РѕР¶РµРЅРЅС‹Рµ РїРѕРґСЂР°Р·РґРµР»С‹
+     *     РїРѕ РѕР±СЂР°Р·С†Сѓ appletv_agnative: РєР°Р¶РґРѕРµ РїРѕРґРјРµРЅСЋ вЂ” РѕС‚РґРµР»СЊРЅС‹Р№
+     *     SettingsApi component, РѕС‚РєСЂС‹РІР°РµС‚СЃСЏ С‡РµСЂРµР· type:'button' СЃ
+     *     onChange в†’ Lampa.Settings.create(child, { onBack: parent }).
+     * ================================================================ */
 
     /* ================================================================
      * 12. SETTINGS — корневой пункт "akira" + вложенные подразделы
@@ -3716,8 +3956,16 @@
                 values: { 'block': t('iface_hero_mode_block'), 'fullscreen': t('iface_hero_mode_fullscreen') },
                 default: 'block'
             }, { name: t('iface_hero_mode') });
-            addParam(SUB.iface, { name: K.ifaceHeroDescription, type: 'trigger', default: true },
-                { name: t('iface_hero_description') });
+            addParam(SUB.iface, {
+                name: K.ifaceHeroInfo, type: 'select',
+                values: {
+                    'all': t('iface_hero_info_all'),
+                    'hide_description': t('iface_hero_info_hide_description'),
+                    'hide_meta': t('iface_hero_info_hide_meta'),
+                    'hide_all': t('iface_hero_info_hide_all')
+                },
+                default: 'all'
+            }, { name: t('iface_hero_info') });
         }
 
         function buildButtons() {
@@ -3792,7 +4040,7 @@
                 { name: t('tmdb_enabled') }, function () { Util.notify(t('reset_done')); });
             TmdbMod.collections.forEach(function (c) {
                 var name = (c.emoji ? c.emoji + ' ' : '') + TmdbMod.localized(c.name);
-                addParam(SUB.tmdb, { name: TmdbMod.colKey(c.id), type: 'trigger', default: true },
+                addParam(SUB.tmdb, { name: TmdbMod.colKey(c.id), type: 'trigger', default: c.defaultOn !== false },
                     { name: name });
             });
         }
